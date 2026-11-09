@@ -13,6 +13,6 @@ The three MY target-monitor binary presets remain read-only. Some JX3BOX records
 
 Open a preset in its feature tab, edit and apply the desired fields, then export a copy. Use the import destination displayed in that tab to import it into the corresponding addon.
 
-The download includes six sample presets. Private source history, the vendor reference baseline, development tests, and reference screenshots are not included. Electron's required application JavaScript is part of the installed program.
+The download includes six sample presets. Repository history, the vendor reference baseline, development tests, and reference screenshots are not included in the installer. Electron's required application JavaScript is part of the installed program.
 
 `SHA256SUMS.txt` and `release-manifest.json` identify the tested release files. `latest.yml` and the blockmap are used by the updater.

@@ -1,13 +1,13 @@
 # Publish a Windows release
 
-The application source stays in the private `853493541/ZPS-Plugin` repository. Installers and update files belong in the public, release-only `853493541/ZPS-Studio-Releases` repository. Creating that repository requires an account permission unavailable to the current GitHub connection. Publishing waits until the repository exists and the connection has write access.
+The source, installers, and update files all use the existing `853493541/ZPS-Plugin` repository. The user explicitly approved making it public, including its source history and addon references. The GitHub connection cannot change repository visibility and returns HTTP403 for that setting. A release can be prepared and published in the existing repository while it is private, but anonymous downloads and update checks work only after the owner changes visibility to Public. No separate repository is required.
 
 The first prepared version is `0.1.0`. It is unsigned because no publisher certificate is configured. Do not describe it as a signed or production-certified release. The editable JX, team-buff, and chat formats are supported; opaque target-monitor exports remain read-only. Real game-client import acceptance remains separate from installer tests.
 
 ## Build and verify
 
 1. Update the version in `package.json` and `package-lock.json` together for subsequent releases.
-2. Verify that `app/services/release.cjs` and `package.json` use the same public generic update URL.
+2. Verify that `app/services/release.cjs` and `package.json` use the same ZPS-Plugin generic update URL.
 3. Commit and push the exact source state. Run the Windows workflow for that branch.
 
 ```sh
@@ -17,11 +17,11 @@ gh workflow run windows.yml --repo 853493541/ZPS-Plugin --ref codex/jx3box-netwo
 4. Require the tests, native desktop smoke, installer lifecycle, and release-asset verification to pass. Download that run's `windows-desktop` artifact. Do not rebuild the installer during publication.
 5. Verify `release-manifest.json` records the expected source commit. Check the installer, blockmap, and `latest.yml` against its digests. `tools/verify-release.mjs` validates version, byte size, SHA-512, filenames, and feed consistency. On the Windows runner it also checks the application archive and sample-file selection.
 
-The package excludes development tests, regression fixtures, the addon reference baseline, and reference screenshots. It includes the six sample configuration files and their manifest. Electron packages contain the application JavaScript required to run the editor; keeping the source repository private does not make packaged JavaScript secret.
+The package excludes development tests, regression fixtures, the addon reference baseline, and reference screenshots. It includes the six sample configuration files and their manifest. Electron packages contain the application JavaScript required to run the editor; the public repository also exposes its source history as approved by the owner.
 
 ## Publish the tested bytes
 
-1. Create a draft `v0.1.0` release in the public distribution repository.
+1. Create a draft `v0.1.0` release in the existing ZPS-Plugin repository.
 2. Upload exactly these tested files from the successful build.
 
 - `ZPS-Studio-Setup-0.1.0.exe`
