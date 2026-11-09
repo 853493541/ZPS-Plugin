@@ -1,0 +1,16 @@
+'use strict';
+const { contextBridge, ipcRenderer } = require('electron');
+const invoke = (method, payload) => ipcRenderer.invoke(`studio:${method}`, payload);
+contextBridge.exposeInMainWorld('studio', Object.freeze({
+  samples: () => invoke('samples'),
+  openSample: path => invoke('openSample', path),
+  open: () => invoke('open'),
+  create: kind => invoke('create', kind),
+  edit: change => invoke('edit', change),
+  add: fields => invoke('add', fields),
+  save: () => invoke('save'),
+  lookup: query => invoke('lookup', query),
+  updates: action => invoke('updates', action),
+  report: text => invoke('report', text),
+  undo: () => invoke('undo')
+}));

@@ -6,3 +6,6 @@ __pycache__/
 **/userdata/
 **/custom.dat*
 output/
+node_modules/
+dist/
+artifacts/

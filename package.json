@@ -1,0 +1,56 @@
+{
+  "name": "zps-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MY and JX preset studio for Windows",
+  "main": "app/desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node app/tests/documents.test.mjs && node app/tests/catalog.test.cjs",
+    "preview": "node tools/preview.mjs",
+    "dist:win": "electron-builder --win nsis --x64 --publish never",
+    "test:desktop": "node tools/smoke-desktop.mjs"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2",
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12",
+    "playwright-core": "^1.56.1"
+  },
+  "build": {
+    "appId": "com.zps.studio",
+    "productName": "ZPS Studio",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "app/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "samples",
+        "to": "samples"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "853493541",
+        "repo": "ZPS-Plugin"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

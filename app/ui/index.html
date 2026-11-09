@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; connect-src 'self' https:; object-src 'none'">
+  <title>ZPS 配置工作台</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="rail" aria-label="工作区导航">
+      <div class="brand" aria-label="ZPS">Z<span>·</span></div>
+      <button class="rail-button active" title="配置工作台" aria-label="配置工作台" id="workspace-nav">▦</button>
+      <div class="rail-bottom">
+        <button class="rail-button" id="update-nav" title="检查更新" aria-label="检查更新">↑</button>
+        <button class="rail-button" id="report-nav" title="反馈问题" aria-label="反馈问题">?</button>
+        <div class="rail-avatar">ZP</div>
+      </div>
+    </nav>
+    <aside class="sidebar">
+      <div class="workspace-title"><span class="eyebrow">ZPS STUDIO</span><h1>配置工作台<span class="version">DESKTOP</span></h1></div>
+      <button class="sidebar-open" id="sidebar-open"><span>＋</span> 打开本地配置 <kbd>Ctrl O</kbd></button>
+      <div class="sidebar-section"><span>当前工作区</span><span class="tiny-dot"></span></div>
+      <button class="library-item selected" id="all-records"><span class="library-icon">▤</span><span>全部条目</span><b id="sidebar-count">0</b></button>
+      <div class="sidebar-section categories-title">分类 <span id="category-count">0</span></div>
+      <div id="category-list" class="category-list"></div>
+      <div class="sidebar-section sample-heading">配置样本 <span>LOCAL</span></div>
+      <div id="sample-list" class="sample-list"><p class="sidebar-hint">正在读取样本…</p></div>
+      <div class="sidebar-footer"><span class="online-dot"></span><div>本地文件，安心编辑<small>导出前保留原始配置</small></div></div>
+    </aside>
+    <main class="workspace">
+      <header class="topbar"><div class="breadcrumbs">工作区 <span>/</span> <strong id="breadcrumb-name">未打开文件</strong><i id="dirty-dot" hidden></i></div><div class="top-actions"><button class="button subtle" id="undo-button" disabled title="撤销上次修改">↶ <span>撤销</span></button><button class="button" id="new-button">＋ 新建</button><button class="button" id="open-button">打开文件</button><button class="button primary" id="save-button" disabled><span>↗</span> 导出配置</button></div></header>
+      <div class="content-heading"><div><div class="eyebrow">CONFIGURATION LIBRARY</div><h2 id="document-title">配置库</h2><p id="document-description">在一个工作区内管理 MY 与 JX 配置。</p></div><span class="format-badge" id="format-badge">就绪</span></div>
+      <div class="document-meta" id="document-meta"><span><i class="online-dot"></i> 本地工作区</span><span>保留原有格式与未知字段</span></div>
+      <section class="editor-grid">
+        <section class="records-panel" aria-label="配置条目">
+          <div class="records-toolbar"><label class="search-field"><span>⌕</span><input id="search" type="search" placeholder="搜索名称、ID 或字段…" aria-label="搜索配置条目"><kbd>Ctrl K</kbd></label><button class="button add-button" id="add-button" disabled>＋ 添加条目</button></div>
+          <div class="list-summary"><span id="list-summary">全部条目 <b>0</b></span><span id="list-caption">选择条目查看详情</span></div>
+          <div class="table-scroll"><table><thead><tr><th class="icon-column"></th><th>名称 / 标识</th><th>分类</th><th>字段</th><th class="row-arrow"></th></tr></thead><tbody id="records-body"></tbody></table><div id="empty-state" class="empty-state"><div class="empty-symbol">▤</div><h3>从一份配置开始</h3><p>打开本地文件，或选择左侧样本。<br>支持 JX Buff、MY 团队配置与聊天配置。</p><button class="button" id="empty-open">打开配置文件</button></div></div>
+          <footer class="table-footer"><span id="record-total">0 个条目</span><span><i class="small-ring"></i> 原始字段保留</span></footer>
+        </section>
+        <aside class="inspector" aria-label="条目详情"><div class="inspector-heading"><span class="eyebrow">INSPECTOR</span><span class="inspector-status" id="inspector-status">未选择</span></div><div id="selection-heading" class="selection-heading"><div class="record-glyph big">⌘</div><h3>条目详情</h3><p>从配置库中选择一个条目</p></div><div class="inspector-tabs" role="tablist"><button class="active" id="config-tab" role="tab" aria-selected="true">配置字段</button><button id="box-tab" role="tab" aria-selected="false">JX3BOX <span>↗</span></button><button id="source-tab" role="tab" aria-selected="false">原始数据</button></div><div class="inspector-content" id="inspector-content"></div></aside>
+      </section>
+      <footer class="statusbar"><span><i class="online-dot"></i> <span id="status-text">准备就绪</span></span><span>ZPS 配置工作台 <span class="status-separator">·</span> MY / JX</span></footer>
+    </main>
+  </div>
+  <dialog id="modal"><form id="modal-form"><header class="modal-header"><div><div class="eyebrow" id="modal-eyebrow">ZPS STUDIO</div><h2 id="modal-title"></h2></div><button class="icon-button" type="button" id="modal-close" aria-label="关闭">×</button></header><div id="modal-content"></div><footer class="modal-actions"><button class="button" type="button" id="modal-cancel">取消</button><button class="button primary" type="submit" id="modal-submit">确定</button></footer></form></dialog>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="renderer.js"></script>
+</body>
+</html>

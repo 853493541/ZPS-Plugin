@@ -1,0 +1,8 @@
+ts	phase	decision	why	evidence	result
+2026-11-09T10:11:13Z	frame	Research formats before designing editor	Keep exported files readable by the existing addons	samples/SAMPLES.json	open
+2026-11-09T10:17:44Z	architecture	Use Electron and source-span codec with explicit opaque files	One testable UI and no guessed binary decoding	docs/ARCHITECTURE.md	selected
+2026-11-09T10:17:44Z	research	Keep JX3BOX records and preset settings separate	Only known API fields are established; full raw response remains visible	docs/JX3BOX_API.md	live network blocked
+2026-11-09T10:22:17Z	verification	Pass 22 behavior tests and actual-sample UI smoke	Prove codec and visible editing behavior without claiming Windows execution	tools/smoke-ui.mjs	VERIFIED
+2026-11-09T10:22:17Z	verification	Load edited export in independent Lua reader	Check generated syntax outside the application parser	tools/verify-lua.lua	VERIFIED
+2026-11-09T10:22:17Z	review	Fix MY creation filename, escaped GBK ambiguity, unknown-field submit and metadata races	Independent same-model review found concrete failure cases	app/core/documents.mjs	fixed
+2026-11-09T10:22:17Z	limits	Keep native Windows, live API and addon import gates open	Linux headless Electron fails and cloud policy blocks JX3BOX	docs/WORK_STATUS.md	INCONCLUSIVE
