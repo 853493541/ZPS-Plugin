@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+**/*#[dD][aA][tT][aA]/
+**/userdata/
+**/custom.dat*
+output/
