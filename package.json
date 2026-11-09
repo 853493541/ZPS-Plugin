@@ -46,7 +46,7 @@
     "publish": [
       {
         "provider": "generic",
-        "url": "https://github.com/853493541/ZPS-Studio-Releases/releases/latest/download/"
+        "url": "https://github.com/853493541/ZPS-Plugin/releases/latest/download/"
       }
     ],
     "win": {
