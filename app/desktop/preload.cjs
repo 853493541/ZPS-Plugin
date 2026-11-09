@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 const invoke = (method, payload) => ipcRenderer.invoke(`studio:${method}`, payload);
 contextBridge.exposeInMainWorld('studio', Object.freeze({
   samples: () => invoke('samples'),
+  activateFeature: id => invoke('activateFeature', id),
+  setDraftState: value => invoke('setDraftState', value),
   openSample: path => invoke('openSample', path),
   open: () => invoke('open'),
   create: kind => invoke('create', kind),

@@ -44,11 +44,13 @@ await page.locator('[name="nPower"]').fill('11');
 await page.getByRole('button',{name:'保存条目修改'}).click();
 await page.waitForFunction(()=>document.querySelector('[name="nPower"]')?.value==='11'&&!document.querySelector('#undo-button').disabled);
 await page.locator('#undo-button').click();await page.waitForFunction(()=>document.querySelector('[name="nPower"]')?.value==='10');
+await page.locator('#feature-tabs [data-feature="my-team"]').click();await page.waitForFunction(()=>document.querySelector('#feature-tabs [data-feature="my-team"]')?.getAttribute('aria-selected')==='true');
 await page.locator('#new-button').click();await page.locator('[name="new-kind"][value="my-team"]').check();await page.locator('#modal-submit').click();
-await page.waitForFunction(()=>document.querySelector('#document-title').textContent.includes('MY'));
+await page.waitForFunction(()=>document.querySelector('#document-title').textContent.includes('团队气劲'));
 await page.locator('#add-button').click();await page.locator('#modal [name="reference"]').fill('测试气劲|lv1');await page.locator('#modal-submit').click();
 await page.waitForSelector('#records-body tr');assert.match(await page.locator('#records-body').innerText(),/测试气劲/);
-await page.locator('#sample-list button').filter({hasText:'其他辅助'}).click();await page.waitForFunction(()=>document.querySelector('#format-badge').textContent==='READ ONLY');
+await page.locator('#feature-tabs [data-feature="my-target"]').click();await page.waitForFunction(()=>document.querySelector('#feature-tabs [data-feature="my-target"]')?.getAttribute('aria-selected')==='true');
+await page.locator('#sample-list button').filter({hasText:'其他辅助'}).click();await page.waitForFunction(()=>document.querySelector('#save-button').disabled);
 assert.equal(await page.locator('#add-button').isDisabled(),true);
 console.log(`PASS: 275 actual JX records; 12784 std level 1 = 逃兵 (${first.source}, then cache); raw API payload retained; metadata leaves preset clean; search, edit, undo, MY creation, add, binary read-only; no page errors: ${errors.length}`);assert.deepEqual(errors,[]);
 } finally {

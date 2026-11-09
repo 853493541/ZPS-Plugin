@@ -8,7 +8,7 @@ const { createCatalog } = require('../services/catalog.cjs');
 const root = path.resolve(__dirname, '../..');
 const samplesRoot = app.isPackaged ? path.join(process.resourcesPath, 'samples') : path.join(root, 'samples');
 const uiURL = pathToFileURL(path.join(root, 'app/ui/index.html')).href;
-let win, codec, catalog, session;
+let win, codec, catalog, sessions, featureRegistry;
 let sampleList = [];
 let updateState = { status: 'idle' };
 let updater;
@@ -16,20 +16,11 @@ let quitApproved = false;
 let pending = Promise.resolve();
 
 const within = (target, directory) => target === directory || target.startsWith(directory + path.sep);
-async function snapshot() {
-  if (!session) return null;
-  return { document: codec.openDocument(session.bytes, session.filename), filename: session.filename, dirty: session.dirty, canUndo: session.undo.length > 0 };
-}
-async function confirmDiscard() {
-  if (!session?.dirty) return true;
-  const { response } = await dialog.showMessageBox(win, { type: 'warning', message: '当前修改尚未导出。是否放弃修改？', buttons: ['取消', '放弃修改'], defaultId: 0, cancelId: 0 });
+async function confirmDiscard(targets) {
+  const dirty = (Array.isArray(targets) ? targets : [targets]).filter(session => session?.dirty || session?.draftDirty);
+  if (!dirty.length) return true;
+  const { response } = await dialog.showMessageBox(win, { type: 'warning', message: '以下文档的修改尚未导出。是否放弃修改？', detail: dirty.map(session => session.filename).join('\n'), buttons: ['取消', '放弃修改'], defaultId: 0, cancelId: 0 });
   return response === 1;
-}
-function setSession(bytes, filename, dirty = false) {
-  const buffer = Buffer.from(bytes);
-  codec.openDocument(buffer, filename);
-  session = { bytes: buffer, filename: path.basename(filename), dirty, savedBytes: dirty ? undefined : buffer, undo: [] };
-  return snapshot();
 }
 function outputBytes(result) {
   return Buffer.from(result?.bytes ?? result);
@@ -37,7 +28,16 @@ function outputBytes(result) {
 async function readDocument(file) {
   const stat = await fs.stat(file);
   if (!stat.isFile() || stat.size > 32 * 1024 * 1024) throw new Error('文件不是有效的数据文件，或超过 32 MB。');
-  return setSession(await fs.readFile(file), file);
+  return { bytes: await fs.readFile(file), filename: file };
+}
+async function replaceDocument(file) {
+  const { bytes, filename } = await readDocument(file);
+  return sessions.replace(bytes, filename, { confirmDiscard });
+}
+function enqueue(operation) {
+  const task = pending.then(operation);
+  pending = task.catch(() => {});
+  return task;
 }
 async function protectedPath(file) {
   const absolute = path.resolve(file);
@@ -59,16 +59,14 @@ async function atomicExport(file, bytes) {
     await fs.rename(temporary, file);
   } finally { await fs.rm(temporary, { force: true }).catch(() => {}); }
 }
-async function save() {
+async function save(session = sessions.active) {
   if (!session) throw new Error('请先打开或新建数据。');
   const ext = path.extname(session.filename);
   const stem = path.basename(session.filename, ext);
   const { canceled, filePath } = await dialog.showSaveDialog(win, { title: '导出数据副本', defaultPath: path.join(app.getPath('documents'), `${stem}_edited${ext}`), filters: [{ name: '插件数据', extensions: ext === '.txt' ? ['txt'] : ['jx3dat'] }] });
   if (canceled || !filePath) return null;
   await atomicExport(filePath, session.bytes);
-  session.dirty = false;
-  session.savedBytes = session.bytes;
-  return { ...(await snapshot()), exported: true };
+  return { ...sessions.markSaved(session), exported: true };
 }
 function configureUpdates() {
   if (!app.isPackaged) { updateState = { status: 'unavailable', message: '开发模式不检查更新。' }; return; }
@@ -101,7 +99,13 @@ async function updates(action = 'status') {
     }
     if (action === 'install') {
       if (updateState.status !== 'ready') throw new Error('Update not ready');
-      if (session?.dirty && !(await save())) return updateState;
+      if (sessions.dirtySessions().some(session => session.draftDirty)) {
+        await dialog.showMessageBox(win, { type: 'info', message: '先应用或撤销草稿', detail: '尚有未应用的表单草稿。请在对应功能中应用或撤销草稿后，再安装更新。', buttons: ['确定'] });
+        return updateState;
+      }
+      for (const session of sessions.dirtySessions()) {
+        if (!(await save(session))) return updateState;
+      }
       const { response } = await dialog.showMessageBox(win, { type: 'question', message: '更新已下载。现在重启并安装？', buttons: ['取消', '重启安装'], defaultId: 0, cancelId: 0 });
       if (response === 1) { quitApproved = true; updater.quitAndInstall(); }
     }
@@ -120,6 +124,9 @@ async function report(text) {
 }
 async function start() {
   codec = await import('../core/documents.mjs');
+  featureRegistry = await import('../ui/features.mjs');
+  const { createFeatureSessions } = await import('../core/feature-sessions.mjs');
+  sessions = createFeatureSessions({ codec, ...featureRegistry });
   const manifest = JSON.parse(await fs.readFile(path.join(samplesRoot, 'SAMPLES.json'), 'utf8'));
   sampleList = Object.keys(manifest.files).filter(file => /\.jx3dat$/i.test(file) || /团队气劲\/[^/]+\.txt$/.test(file) || /推荐设置关键词\.txt$/.test(file)).map(file => ({ path: file, name: file, filename: path.basename(file) }));
   catalog = createCatalog({ fetch: (...args) => net.fetch(...args), cacheDir: path.join(app.getPath('userData'), 'buff-cache') });
@@ -129,55 +136,47 @@ async function start() {
   win.webContents.on('will-attach-webview', event => event.preventDefault());
   const handlers = {
     samples: () => sampleList,
+    setDraftState: value => sessions.setDraftState(value),
+    activateFeature: id => sessions.activate(id, async featureId => {
+      const sample = sampleList.find(item => featureRegistry.featureForSample(item.path) === featureId);
+      return sample ? readDocument(path.join(samplesRoot, sample.path)) : null;
+    }),
     openSample: async file => {
       if (!sampleList.some(item => item.path === file)) throw new Error('未列出的示例文件。');
-      if (!(await confirmDiscard())) return null;
-      return readDocument(path.join(samplesRoot, file));
+      return replaceDocument(path.join(samplesRoot, file));
     },
     open: async () => {
-      if (!(await confirmDiscard())) return null;
       const result = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: '插件数据', extensions: ['jx3dat', 'txt'] }] });
-      return result.canceled ? null : readDocument(result.filePaths[0]);
+      return result.canceled || !result.filePaths[0] ? null : replaceDocument(result.filePaths[0]);
     },
     create: async kind => {
-      if (!(await confirmDiscard())) return null;
       const result = codec.createDocument(kind);
-      return setSession(outputBytes(result), result.filename || ({ 'jx-buff': 'BuffData.jx3dat', 'my-team': 'my-team.txt', chat: 'chat-keywords.txt' }[kind]), true);
+      return sessions.replace(outputBytes(result), result.filename || ({ 'jx-buff': 'BuffData.jx3dat', 'my-team': 'my-team.txt', chat: 'chat-keywords.txt' }[kind]), { dirty: true, confirmDiscard });
     },
-    edit: change => mutate('editDocument', change),
-    add: fields => mutate('addRecord', fields),
-    undo: () => {
-      if (session?.undo.length) { const previous = session.undo.pop(); session.bytes = previous.bytes; session.dirty = !session.savedBytes?.equals(session.bytes); }
-      return snapshot();
-    },
-    save, lookup: query => catalog.lookup(query), updates, report
+    edit: change => sessions.mutate('editDocument', change),
+    add: fields => sessions.mutate('addRecord', fields),
+    undo: () => sessions.undo(),
+    save: () => save(), lookup: query => catalog.lookup(query), updates, report
   };
   for (const [name, handler] of Object.entries(handlers)) {
     ipcMain.handle(`studio:${name}`, (event, payload) => {
       if (event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame || event.senderFrame.url !== uiURL) throw new Error('Untrusted IPC sender');
       if (name === 'lookup' || name === 'samples' || name === 'updates' && payload !== 'install') return handler(payload);
-      const task = pending.then(() => handler(payload));
-      pending = task.catch(() => {});
-      return task;
+      return enqueue(() => handler(payload));
     });
   }
+  let closing = false;
   win.on('close', event => {
-    if (quitApproved || !session?.dirty) return;
+    if (quitApproved) return;
     event.preventDefault();
-    confirmDiscard().then(confirmed => { if (confirmed) { quitApproved = true; win.close(); } });
+    if (closing) return;
+    closing = true;
+    enqueue(async () => {
+      if (await confirmDiscard(sessions.dirtySessions())) { quitApproved = true; win.close(); }
+    }).catch(() => {}).finally(() => { closing = false; });
   });
   await win.loadFile(path.join(root, 'app/ui/index.html'));
   configureUpdates();
-}
-function mutate(operation, value) {
-  if (!session) throw new Error('请先打开或新建数据。');
-  const bytes = outputBytes(codec[operation](session.bytes, session.filename, value));
-  codec.openDocument(bytes, session.filename);
-  session.undo.push({ bytes: session.bytes, dirty: session.dirty });
-  if (session.undo.length > 30) session.undo.shift();
-  session.bytes = bytes;
-  session.dirty = !session.savedBytes?.equals(bytes);
-  return snapshot();
 }
 app.whenReady().then(start).catch(() => { dialog.showErrorBox('启动失败', '应用无法加载。请重新安装或检查数据文件。'); app.quit(); });
 app.on('window-all-closed', () => app.quit());

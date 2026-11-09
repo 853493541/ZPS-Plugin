@@ -37,3 +37,11 @@ The sample import instructions and `samples/SAMPLES.json` establish sample prove
 JX's `data/buff_info.db` is readable SQLite with `buff_type(BuffID, Level, Attrib_1, Value_1, Attrib_2, Value_2, Attrib_3, Value_3)`. It is attribute metadata, not a complete buff-name dictionary. JX3BOX enrichment stays separate from addon configuration. 真传 coverage must be verified rather than silently mapped to a different edition.
 
 Parser and independent Lua checks can prove syntax and preservation. Only importing an exported file into the actual Windows game addon can prove in-game behavior. That check remains required before release.
+
+## Feature workspaces
+
+The application has one tab per addon feature, defined in `app/ui/features.mjs`. The sample groups contain one JX BUFF preset, one MY team-buff preset, three MY target-monitor presets, and one chat-keyword preset. Each tab shows its own sample list and original addon import destination. Target-monitor presets remain opaque and read-only. Their grouping does not establish their individual internal rules or that the complete preset is a union of the other two.
+
+`app/core/feature-sessions.mjs` retains a separate byte-owned editing session per feature. Switching tabs preserves applied changes, undo history, saved-byte comparisons, and dirty state. The renderer separately retains search, selected record, inspector tab, metadata edition/level, and unapplied form drafts. Opening a new document routes it by parsed kind and asks before replacing a dirty destination session. Desktop close and replacement guards consider inactive dirty sessions and unapplied drafts as well as the active one. Drafts have a separate flag and are not exported until applied. Update installation waits for unapplied drafts to be applied or cleared.
+
+The preview uses the same session model and requires confirmation before replacing dirty documents. It still cannot export native files. Unknown opaque input opens read-only in the target-monitor workspace; classification as opaque is not proof of a valid MY binary preset.

@@ -18,8 +18,8 @@ try {
     window.testLookups = [];
     window.testEdits = 0;
     window.studio = {
-      samples: async () => [{ path: 'buff', name: 'BuffData.jx3dat' }, { path: 'chat', name: 'chat-keywords.txt' }],
-      openSample: async path => path === 'chat' ? { filename: 'chat-keywords.txt', dirty: false, canUndo: false, document: { kind: 'chat', writable: true, encoding: 'utf-8', records: [{ key: 'line:0', name: '聊天测试', fields: { keyword: '聊天测试' } }] } } : snapshot,
+      samples: async () => [{ path: '剑心目标增强/BuffData.jx3dat', name: 'BuffData.jx3dat' }, { path: '茗伊聊天监控/chat-keywords.txt', name: 'chat-keywords.txt' }],
+      openSample: async path => path.includes('chat') ? { filename: 'chat-keywords.txt', dirty: false, canUndo: false, document: { kind: 'chat', writable: true, encoding: 'utf-8', records: [{ key: 'line:0', name: '聊天测试', fields: { keyword: '聊天测试' } }] } } : snapshot,
       lookup: async query => {
         window.testLookups.push(query);
         let list = [];
@@ -62,7 +62,8 @@ try {
   await page.waitForFunction(() => typeof window.finishOldDocument === 'function');
   assert.equal(await disclosure.evaluate(node => node.open), true, 'unrelated metadata must not collapse expanded details');
   assert.equal(await disclosure.locator('summary').evaluate(node => node === document.activeElement), true, 'unrelated metadata must preserve details focus');
-  await page.locator('#sample-list button').filter({ hasText: 'chat-keywords.txt' }).click();
+  await page.evaluate(async () => {const snapshot=await window.studio.openSample('chat'); window.testNextOpen=snapshot; window.studio.open=async()=>snapshot;});
+  await page.locator('#open-button').click();
   await page.waitForFunction(() => document.querySelector('#document-title').textContent.includes('聊天'));
   await page.evaluate(() => window.finishOldDocument());
   assert.equal(await page.locator('#selection-heading h3').innerText(), '聊天测试');
@@ -72,7 +73,7 @@ try {
   await edition.addInitScript(({ snapshot, raw }) => {
     const one = { ...snapshot, document: { ...snapshot.document, records: [snapshot.document.records.find(record => record.id === 12784)] } };
     window.studio = {
-      samples: async () => [{ path: 'buff', name: 'BuffData.jx3dat' }],
+      samples: async () => [{ path: '剑心目标增强/BuffData.jx3dat', name: 'BuffData.jx3dat' }],
       openSample: async () => one,
       lookup: async query => {
         const name = query.client === 'std' ? await new Promise(resolve => { window.finishOldEdition = () => resolve('旧客户端测试'); }) : '缘起测试';
@@ -99,7 +100,7 @@ try {
   await offline.addInitScript(snapshot => {
     window.lookupAttempts = 0;
     window.studio = {
-      samples: async () => [{ path: 'buff', name: 'BuffData.jx3dat' }],
+      samples: async () => [{ path: '剑心目标增强/BuffData.jx3dat', name: 'BuffData.jx3dat' }],
       openSample: async () => snapshot,
       lookup: async () => { window.lookupAttempts++; throw new Error('Network unavailable'); }
     };
