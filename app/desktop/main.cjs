@@ -28,7 +28,7 @@ async function confirmDiscard() {
 function setSession(bytes, filename, dirty = false) {
   const buffer = Buffer.from(bytes);
   codec.openDocument(buffer, filename);
-  session = { bytes: buffer, savedBytes: dirty ? null : buffer, filename: path.basename(filename), dirty, savedBytes: dirty ? undefined : buffer, undo: [] };
+  session = { bytes: buffer, filename: path.basename(filename), dirty, savedBytes: dirty ? undefined : buffer, undo: [] };
   return snapshot();
 }
 function outputBytes(result) {
