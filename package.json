@@ -28,19 +28,25 @@
     },
     "files": [
       "app/**/*",
+      "!app/tests/**/*",
       "package.json"
     ],
     "extraResources": [
       {
         "from": "samples",
-        "to": "samples"
+        "to": "samples",
+        "filter": [
+          "SAMPLES.json",
+          "**/*.jx3dat",
+          "**/真传（仅）团队气劲.txt",
+          "**/推荐设置关键词.txt"
+        ]
       }
     ],
     "publish": [
       {
-        "provider": "github",
-        "owner": "853493541",
-        "repo": "ZPS-Plugin"
+        "provider": "generic",
+        "url": "https://github.com/853493541/ZPS-Studio-Releases/releases/latest/download/"
       }
     ],
     "win": {
@@ -51,6 +57,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "artifactName": "ZPS-Studio-Setup-${version}.${ext}"
   }
 }

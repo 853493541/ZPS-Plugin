@@ -5,6 +5,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { randomUUID } = require('node:crypto');
 const { createCatalog } = require('../services/catalog.cjs');
+const { updateFeed } = require('../services/release.cjs');
 const root = path.resolve(__dirname, '../..');
 const samplesRoot = app.isPackaged ? path.join(process.resourcesPath, 'samples') : path.join(root, 'samples');
 const uiURL = pathToFileURL(path.join(root, 'app/ui/index.html')).href;
@@ -74,7 +75,7 @@ function configureUpdates() {
     updater = require('electron-updater').autoUpdater;
     updater.autoDownload = false;
     updater.autoInstallOnAppQuit = false;
-    updater.setFeedURL({ provider: 'github', owner: '853493541', repo: 'ZPS-Plugin' });
+    updater.setFeedURL(updateFeed);
     updater.on('checking-for-update', () => { updateState = { status: 'checking' }; });
     updater.on('update-available', info => { updateState = { status: 'available', version: info.version }; });
     updater.on('update-not-available', () => { updateState = { status: 'current' }; });
