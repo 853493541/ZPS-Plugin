@@ -24,7 +24,7 @@ try {
   const archive = path.join(packagedRoot, 'app.asar');
   const entries = asar.listPackage(archive).map(entry => entry.replaceAll('\\', '/'));
   if (entries.some(entry => /^\/(?:vendor|\.git)(?:\/|$)|^\/app\/tests(?:\/|$)/.test(entry))) throw new Error('Development or reference files entered the app archive');
-  const releaseConfig = asar.extractFile(archive, 'app/services/release.cjs').toString();
+  const releaseConfig = asar.extractFile(archive, path.join('app', 'services', 'release.cjs')).toString();
   if (!releaseConfig.includes(updateFeed.url)) throw new Error('Packaged updater points to a different host');
   const walk = async directory => {
     const files = [];

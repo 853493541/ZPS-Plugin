@@ -26,6 +26,12 @@ jobs:
         run: ./tools/smoke-installer.ps1
       - name: Verify release assets
         run: node tools/verify-release.mjs
+      - name: Test installed version upgrade
+        shell: pwsh
+        timeout-minutes: 20
+        run: ./tools/smoke-upgrade.ps1 -PreviousVersion 0.0.9 -FeedDirectory dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v4
         with:
           name: windows-desktop
@@ -36,3 +42,13 @@ jobs:
             dist/release-manifest.json
             dist/SHA256SUMS.txt
           if-no-files-found: error
+      - name: Retain upgrade evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-evidence
+          path: |
+            ${{ runner.temp }}/zps-upgrade-*/state.json
+            ${{ runner.temp }}/zps-upgrade-*/events-*.jsonl
+            ${{ runner.temp }}/zps-upgrade-*/requests-*.json
+          if-no-files-found: ignore
