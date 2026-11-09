@@ -10,3 +10,4 @@ ts	phase	decision	why	evidence	result
 2026-11-09T10:56:11Z	start	Resume after prior rows 2026-11-09T10:11:13Z through 2026-11-09T10:25:42Z	No development agents are active and the working tree is clean	docs/WORK_STATUS.md	resumed
 2026-11-09T10:56:11Z	windows	Exercise installed NSIS app and uninstall with retained user files	Unpackaged desktop smoke does not prove installer lifecycle	tools/smoke-installer.ps1	pending
 2026-11-09T11:00:13Z	windows	Verify installed NSIS lifecycle and unchanged retained files	Check the real installed package instead of an unpackaged proxy	https://github.com/853493541/ZPS-Plugin/actions/runs/42605018666	VERIFIED
+2026-11-09T19:11:55Z	network	Confirm live policy difference and prepare accessible-session API probe	Another session homepage access does not establish this instance or API access	docs/SESSION_HANDOFF.md	current proxy denies both hosts

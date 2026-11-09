@@ -54,3 +54,9 @@ Read AGENTS.md and this file, inspect git status and in-progress work before sta
 ## Continuation policy
 
 No active development run was present at the start of this continuation. The remaining substantive gates require approved JX3BOX network access, update hosting/signing decisions, a Windows game client, or a verified binary interchange format. If those inputs and code have not changed, do not repeat successful builds or claim additional work. Keep the hourly task enabled while the overall requested application remains incomplete; report new progress or changed blockers only.
+
+## Session network diagnosis and handoff
+
+On 2026-11-09 the user supplied a screenshot of another session successfully reaching the JX3BOX homepage. The image became readable from the attachment path. The current instance's live proxy status at 19:10:14Z still reported `mode: allowlist`, `allow_all_domains: false`, and no JX3BOX rule. Fresh homepage and buff API requests both failed at proxy CONNECT with 403. This confirms a current-instance policy difference; it does not prove API accessibility or 真传 coverage in the other session.
+
+`tools/probe_jx3box.py` now tests the homepage and exact buff endpoint separately through inherited proxy/CA settings. Syntax validation passed and the real run correctly produced a failing report in `artifacts/jx3box-live.json` on this blocked instance. `docs/SESSION_HANDOFF.md` gives the accessible session a concrete pickup point. No app code, releases, or deployments changed. Do not disable proxy routing or TLS validation to bypass the restriction.
