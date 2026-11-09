@@ -14,3 +14,4 @@ ts	phase	decision	why	evidence	result
 2026-11-09T19:21:25Z	jx3box	Verify actual API and reuse existing catalog in browser preview	177 of 177 supplied JX IDs match std level 1; no historical-version equivalence claimed	docs/JX3BOX_COVERAGE.json	VERIFIED
 2026-11-09T19:36:14Z	ui	Display automatic buff names and official icons without changing preset bytes	Renderer overlay preserves edit focus;17 internal names explicitly labeled and missing icons fall back	tools/smoke-buff-icons-live.mjs	VERIFIED
 2026-11-09T19:58:00Z	features	Separate four addon features and group their own presets	Independent byte sessions and form drafts avoid losing edits across tabs; binary target presets remain readonly	tools/smoke-feature-tabs.mjs	VERIFIED
+2026-11-09T20:09:00Z	icons	Audit160 real icons and distinguish17 missing source IDs from failures	Make failed downloads explicitly retryable; retain correct unavailable states without guessed icons	tools/smoke-icon-retry.mjs	VERIFIED

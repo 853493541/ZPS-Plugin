@@ -221,24 +221,50 @@ function recordSubtitle(record) {
 function recordGlyph(record, entry = recordMetadata(record), big = false) {
   const glyph = record?.key.startsWith('class:') ? '▦' : state.document?.kind === 'chat' ? '☰' : state.document?.kind === 'opaque' ? '▧' : '✦';
   const node = element('div', `record-glyph${big ? ' big' : ''}`, glyph);
+  if (record?.key.startsWith('class:') || !['jx-buff', 'my-team'].includes(state.document?.kind)) return node;
   const displayName = entry ? metadataDisplayName(entry.item) : { name: recordName(record) };
   const label = `${displayName.name || '名称未提供'}${displayName.internal ? ' · 内部名' : ''}`;
   const icon = entry?.item.IconID;
   const iconID = typeof icon === 'number' || typeof icon === 'string' && /^\d+$/.test(icon) ? Number(icon) : NaN;
   const url = Number.isSafeInteger(iconID) && iconID > 0 ? `https://icon.jx3box.com/${entry.query.client === 'origin' ? 'origin_icon' : 'icon'}/${iconID}.png` : null;
+  const query = buffQuery(record);
+  const unavailable = !entry && (enrichmentStopped || query && attemptedMetadata.has(metadataKey(query)));
   node.setAttribute('role', 'img');
-  node.title = `${label} · 图标未提供`;
+  node.classList.add('icon-fallback');
+  node.textContent = entry ? '无图' : unavailable ? '未获' : '待查';
+  node.title = `${label} · ${entry ? '图标未提供' : unavailable ? '暂无图标信息' : '图标信息待查询'}`;
   node.setAttribute('aria-label', node.title);
-  if (url && !failedIcons.has(url)) {
+  if (!url) return node;
+  const showRetry = () => {
+    node.classList.remove('has-icon');
+    node.title = `${label} · 图标加载失败，点击重试`;
+    node.removeAttribute('role');
+    node.removeAttribute('aria-label');
+    const retry = element('button', 'icon-retry', '重试');
+    retry.type = 'button';
+    retry.setAttribute('aria-label', `重试${label}图标`);
+    retry.addEventListener('mousedown', event => event.preventDefault());
+    retry.addEventListener('keydown', event => { if (!event.ctrlKey && !event.metaKey && (event.key === 'Enter' || event.key === ' ')) event.stopPropagation(); });
+    retry.addEventListener('click', event => { event.stopPropagation(); loadIcon(); });
+    node.replaceChildren(retry);
+  };
+  const loadIcon = () => {
+    if (node.contains(document.activeElement)) { node.tabIndex = -1; node.focus({ preventScroll: true }); }
+    node.textContent = '…';
+    node.title = `${label} · 图标加载中`;
+    node.setAttribute('role', 'img');
+    node.setAttribute('aria-label', node.title);
     const image = element('img', 'buff-icon');
     image.loading = big ? 'eager' : 'lazy';
     image.decoding = 'async';
     image.alt = `${label} 图标`;
-    image.addEventListener('load', () => { node.classList.add('has-icon'); node.title = label; node.removeAttribute('role'); node.removeAttribute('aria-label'); });
-    image.addEventListener('error', () => { failedIcons.add(url); image.remove(); node.classList.remove('has-icon'); node.title = `${label} · 图标不可用`; node.setAttribute('role', 'img'); node.setAttribute('aria-label', node.title); }, { once: true });
+    image.addEventListener('load', () => { failedIcons.delete(url); node.classList.add('has-icon'); node.title = label; node.removeAttribute('role'); node.removeAttribute('aria-label'); }, { once: true });
+    image.addEventListener('error', () => { failedIcons.add(url); showRetry(); }, { once: true });
     image.src = url;
     node.append(image);
-  }
+  };
+  if (failedIcons.has(url)) showRetry();
+  else loadIcon();
   return node;
 }
 
