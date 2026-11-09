@@ -16,6 +16,21 @@ def api(path):
     return json.loads(gh('api', path))
 
 
+def tag_commit(repository, tag):
+    refs = api(f'repos/{repository}/git/matching-refs/tags/{tag}')
+    ref = next((item for item in refs if item['ref'] == f'refs/tags/{tag}'), None)
+    if ref is None:
+        return None
+    target = ref['object']
+    for _ in range(10):
+        if target['type'] == 'commit':
+            return target['sha']
+        if target['type'] != 'tag':
+            break
+        target = api(f'repos/{repository}/git/tags/{target["sha"]}')['object']
+    raise ValueError('Release tag does not resolve to a commit')
+
+
 repository = os.environ['GITHUB_REPOSITORY']
 run_id = os.environ['RELEASE_RUN_ID']
 if repository != '853493541/ZPS-Plugin' or not run_id.isdigit():
@@ -52,8 +67,16 @@ with tempfile.TemporaryDirectory(prefix='zps-release-') as temporary:
         release = next(item for item in api(f'repos/{repository}/releases?per_page=100') if item['tag_name'] == tag)
     if release['target_commitish'] != run['head_sha']:
         raise ValueError('Release target does not match the accepted source commit')
+    existing_tag = tag_commit(repository, tag)
+    if existing_tag is not None and existing_tag != run['head_sha']:
+        raise ValueError('Existing tag points to a different commit')
     if release['draft']:
-        gh('release', 'upload', tag, '--repo', repository, '--clobber', *[str(directory / name) for name in sorted(expected_names)])
+        existing_assets = {asset['name']: {'size': asset['size'], 'digest': asset['digest']} for asset in release['assets']}
+        if any(name not in expected or expected[name] != value for name, value in existing_assets.items()):
+            raise ValueError('Existing assets do not match the tested release; refusing replacement')
+        missing = expected_names - existing_assets.keys()
+        if missing:
+            gh('release', 'upload', tag, '--repo', repository, *[str(directory / name) for name in sorted(missing)])
     uploaded = api(f'repos/{repository}/releases/{release["id"]}')
     actual = {asset['name']: {'size': asset['size'], 'digest': asset['digest']} for asset in uploaded['assets']}
     if actual != expected:
@@ -63,6 +86,8 @@ with tempfile.TemporaryDirectory(prefix='zps-release-') as temporary:
     published = api(f'repos/{repository}/releases/{release["id"]}')
     if published['draft'] or published['prerelease'] or not published['published_at']:
         raise ValueError('Release did not become published')
+    if tag_commit(repository, tag) != run['head_sha']:
+        raise ValueError('Published release tag does not match accepted source')
     metadata = api(f'repos/{repository}')
     if metadata['visibility'] == 'public':
         for asset in published['assets']:

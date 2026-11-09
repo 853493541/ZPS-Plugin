@@ -61,6 +61,9 @@ jobs:
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_run_id != '' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: zps-studio-release-publication
+      cancel-in-progress: false
     permissions:
       actions: read
       contents: write
