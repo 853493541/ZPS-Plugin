@@ -1,0 +1,34 @@
+{
+   "files" : [
+      {
+         "name" : "info.ini",
+         "value" : "F1E84ACB40FE27DDCD5CF13BECEF3DCDAAF8303E"
+      },
+      {
+         "name" : "info.ini.zh_TW",
+         "value" : "E51AFEEF3EF1DA35481863CD45E306338FFE7F6E"
+      },
+      {
+         "name" : "JX_CraftPlus.lua",
+         "value" : "A53B7C40409FD4C4584FD17F634C911EDB84663F"
+      },
+      {
+         "name" : "JX_DoodadTopName.ini",
+         "value" : "CCF4F683EAE41095221749037D84D02D77A6FF22"
+      },
+      {
+         "name" : "JX_Doodad_Custom.lua",
+         "value" : "159382A8AC522543A4AA52FCB4925551A2DD73CB"
+      },
+      {
+         "name" : "JX_Doodad_Data.lua",
+         "value" : "FBB7B1AC88B8868D4478EB878F7D03B383B445B5"
+      },
+      {
+         "name" : "publisher.key",
+         "value" : "57E799B1881CC24ACAED98D2F581A363B6FC32F4"
+      }
+   ],
+   "id" : "JX_DoodadPlus",
+   "version" : 65
+}

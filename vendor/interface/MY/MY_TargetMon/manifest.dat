@@ -1,0 +1,50 @@
+{
+   "files" : [
+      {
+         "name" : "img/ST.Tga",
+         "value" : "05762F4241FCD0F1D4D6AD56DADD22E9B2B7DCF2"
+      },
+      {
+         "name" : "img/ST.txt",
+         "value" : "C9B3665B36587CE1611858726AE321CC755CD1B4"
+      },
+      {
+         "name" : "img/ST.UITex",
+         "value" : "B6A42AAAFF0A31829A766C61E5FD86A6E5123C70"
+      },
+      {
+         "name" : "info.ini",
+         "value" : "786B05FEFD5564D62BDF2A6182F7C23D9085B7BF"
+      },
+      {
+         "name" : "info.ini.zh_TW",
+         "value" : "548C91FEE83277039049C5271088530A60FD28D3"
+      },
+      {
+         "name" : "publisher.key",
+         "value" : "BC62CB6C529FE834FC0AEACFF528F3496F02F003"
+      },
+      {
+         "name" : "src.20260903085927-5fb116f86.lua",
+         "value" : "A318C8F00205B03E3E5466E3FDF56D37E65ED370"
+      },
+      {
+         "name" : "ui/MY_TargetMon.ini",
+         "value" : "5ADAA3B86046F9345927D84AC098B21501B1B060"
+      },
+      {
+         "name" : "ui/MY_TargetMon_PS.ini",
+         "value" : "DA922706FB2566666F8A213DF0E82FB1A8F1F2EB"
+      },
+      {
+         "name" : "ui/MY_TargetMon_Subscribe_Data.ini",
+         "value" : "C490A6B43EA67ED9BB976FDABAE7E70AB663D294"
+      },
+      {
+         "name" : "ui/MY_TargetMon_Subscribe_FavoriteData.ini",
+         "value" : "A25381586F32712B39CDA3020F96BF9DFE7E39F7"
+      }
+   ],
+   "id" : "MY_TargetMon",
+   "version" : 151
+}
