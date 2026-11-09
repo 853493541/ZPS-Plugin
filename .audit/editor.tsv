@@ -6,3 +6,4 @@ ts	phase	decision	why	evidence	result
 2026-11-09T10:22:17Z	verification	Load edited export in independent Lua reader	Check generated syntax outside the application parser	tools/verify-lua.lua	VERIFIED
 2026-11-09T10:22:17Z	review	Fix MY creation filename, escaped GBK ambiguity, unknown-field submit and metadata races	Independent same-model review found concrete failure cases	app/core/documents.mjs	fixed
 2026-11-09T10:22:17Z	limits	Keep native Windows, live API and addon import gates open	Linux headless Electron fails and cloud policy blocks JX3BOX	docs/WORK_STATUS.md	INCONCLUSIVE
+2026-11-09T10:25:42Z	windows	Pass native Windows smoke and build NSIS artifacts	Verify actual desktop IPC and disk operations on the target OS	https://github.com/853493541/ZPS-Plugin/actions/runs/42600425489	VERIFIED
