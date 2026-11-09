@@ -37,3 +37,5 @@ The package excludes development tests, regression fixtures, the addon reference
 Installed applications check the public feed automatically. Download and restart remain user actions. Future updates require a higher application version and a complete tested release at the same public host. Never embed a GitHub token in the application. Unapplied drafts block update installation, and applied unsaved documents must be exported before restart.
 
 An installer/updater check against a local disposable test feed is useful evidence, but it does not replace checking the final public feed after publication.
+
+The installed-upgrade test builds a fixture from the same source with version `0.0.9`, installs it, and upgrades it to the current version through a loopback HTTP feed. It verifies real NSIS replacement and retained user-data/export hashes. It establishes the update mechanism, not compatibility with an independently released historical version.
