@@ -3,7 +3,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {openDocument,editDocument,addRecord,createDocument} from '../app/core/documents.mjs';
+import {createCatalog} from '../app/services/catalog.cjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const catalog=createCatalog({fetch,cacheDir:process.env.PREVIEW_CACHE_DIR||path.join(root,'artifacts','preview-buff-cache')});
 const ui=path.join(root,'app/ui');
 const manifest=JSON.parse(await fs.readFile(path.join(root,'samples/SAMPLES.json'),'utf8'));
 const files=Object.keys(manifest.files).filter(p=>p.endsWith('.jx3dat')||p.includes('团队气劲')&&p.endsWith('.txt')||p.includes('推荐设置关键词'));
@@ -18,7 +20,7 @@ const methods={
  add:fields=>{if(!session)throw Error('Open a document');const next=addRecord(session.bytes,session.filename,fields);session.undo.push(session.bytes);session.bytes=Buffer.from(next);session.dirty=true;return snapshot();},
  undo:()=>{if(session?.undo.length){session.bytes=session.undo.pop();session.dirty=true;}return snapshot();},
  save:()=>{throw Error('Native export is available in the desktop app. Browser preview never writes source files.');},
- lookup:()=>{throw Error('Live JX3BOX access is blocked by this cloud network policy. No metadata has been fabricated.');},
+ lookup:query=>catalog.lookup(query),
  updates:()=>({status:'unavailable',message:'Updates are available in an installed Windows release.'}),
  report:()=>{throw Error('Local diagnostic export is available in the desktop app.');}
 };

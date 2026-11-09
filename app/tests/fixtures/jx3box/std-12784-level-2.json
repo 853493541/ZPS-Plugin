@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-11-09T19:18:40.436565+00:00",
+  "sourceUrl": "https://node.jx3box.com/buff/id/12784?client=std&level=2",
+  "query": {
+    "client": "std",
+    "id": "12784",
+    "level": 2
+  },
+  "raw": {
+    "total": 0,
+    "per": 10,
+    "pages": 0,
+    "page": 1,
+    "list": []
+  }
+}

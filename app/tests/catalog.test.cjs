@@ -11,6 +11,50 @@ async function setup(t, options = {}) {
   return { cacheDir, ...options };
 }
 const response = raw => ({ ok: true, json: async () => raw });
+test('the captured public buff response survives lookup, disk cache, and offline fallback', async t => {
+  const fixture = JSON.parse(await fs.readFile(path.join(__dirname, 'fixtures/jx3box/std-12784-level-1.json'), 'utf8'));
+  let current = Date.parse(fixture.capturedAt);
+  const options = await setup(t, { ttlMs: 10, intervalMs: 0, now: () => current });
+  const service = createCatalog({ ...options, fetch: async url => {
+    assert.equal(url, fixture.sourceUrl);
+    return response(fixture.raw);
+  } });
+  const live = await service.lookup(fixture.query);
+  assert.equal(live.source, 'network');
+  assert.equal(live.list[0].Name, '逃兵');
+  assert.equal(live.list[0].BuffID, 12784);
+  assert.equal(live.list[0].Level, 1);
+  assert.equal(live.list[0].CanCancel, false);
+  assert.equal(live.list[0].ScriptFile, null);
+  assert.deepEqual(live.raw, fixture.raw);
+  const offline = createCatalog({ ...options, fetch: async () => { throw new Error('offline'); } });
+  const cached = await offline.lookup(fixture.query);
+  assert.equal(cached.source, 'cache');
+  assert.equal(cached.stale, false);
+  assert.deepEqual(cached.raw, fixture.raw);
+  current += 11;
+  const stale = await offline.lookup(fixture.query);
+  assert.equal(stale.stale, true);
+  assert.deepEqual(stale.raw, fixture.raw);
+});
+test('captured edition, name, and empty level responses retain their query and raw fields', async t => {
+  for (const file of ['origin-12784-level-1.json', 'wujie-12784-level-1.json', 'std-12784-level-2.json', 'std-deserter-level-1.json', 'std-zhenchuan-level-1.json']) {
+    const fixture = JSON.parse(await fs.readFile(path.join(__dirname, 'fixtures/jx3box', file), 'utf8'));
+    const options = await setup(t);
+    const catalog = createCatalog({ ...options, fetch: async url => {
+      assert.equal(url, fixture.sourceUrl);
+      return response(fixture.raw);
+    } });
+    const result = await catalog.lookup(fixture.query);
+    assert.equal(result.client, fixture.query.client);
+    assert.equal(result.query.level, fixture.query.level);
+    assert.deepEqual(result.raw, fixture.raw);
+    assert.equal(result.total, fixture.raw.total);
+    const cached = await catalog.lookup(fixture.query);
+    assert.equal(cached.source, 'cache');
+    assert.deepEqual(cached.list, fixture.raw.list);
+  }
+});
 test('looks up an official client and preserves the complete response', async t => {
   const raw = { list: [{ BuffID: 42, Level: '1', Name: '测试', Extra: { unchanged: true } }], metadata: 'kept' };
   let requested;
