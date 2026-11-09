@@ -3,8 +3,8 @@
 A tool for creating and editing data consumed by the existing MY and JX game addons.
 
 The existing addons are the reference. The project aims to make their data authoring easier, while leaving the
-addons themselves unchanged. This initial commit contains the baseline and its verification tool. An editor has
-not been implemented yet.
+addons themselves unchanged. The repository contains the addon baseline, user-created sample data and a
+verification tool. An editor has not been implemented yet.
 
 ## Original addon baseline
 
@@ -25,6 +25,12 @@ Treat `vendor/interface/` as an unchanged reference. Future editor code and gene
 Some packaged Lua files may be encrypted or compiled; their original bytes are preserved, without decrypting or
 rewriting them. Bundled license notices remain in their original locations. No blanket license is assigned to
 the upstream packages by this repository.
+
+## Sample data
+
+[The sample-data folder](samples/README.md) contains the user's `【丝路风雨】真传插件数据包`, under `真传模式`.
+The 14 original exports, instructions and screenshots are retained unchanged. `samples/SAMPLES.json` records
+their hashes. These explicit sample exports are separate from the original addon baseline and live account stores.
 
 ## Verify
 

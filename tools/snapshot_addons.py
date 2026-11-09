@@ -119,6 +119,29 @@ def verify(interface=None):
         print("%s: %d files, %d bytes" % (pack, len(rows), sum(r["size"] for r in rows)))
 
 
+def verify_samples():
+    root = ROOT / "samples"
+    index = root / "SAMPLES.json"
+    if not index.exists():
+        return
+    record = json.loads(index.read_text(encoding="utf-8"))
+    expected = record["files"]
+    metadata = {index, root / "README.md"}
+    actual = {p.relative_to(root).as_posix() for p in root.rglob("*")
+              if p.is_file() and p not in metadata}
+    if actual != set(expected):
+        raise ValueError("Sample file set differs: missing=%d, extra=%d" %
+                         (len(set(expected) - actual), len(actual - set(expected))))
+    for name, row in expected.items():
+        path = root.joinpath(*parts(name))
+        if not path.resolve().is_relative_to(root.resolve()):
+            raise ValueError("Sample path escapes its folder: " + name)
+        data = path.read_bytes()
+        if len(data) != row["size"] or digest(data) != row["sha256"]:
+            raise ValueError("Sample bytes differ: " + name)
+    print("PASS: %d sample files; all sample SHA-256 hashes match" % len(expected))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group()
@@ -129,5 +152,6 @@ if __name__ == "__main__":
         if args.import_from:
             import_baseline(args.import_from)
         verify(args.import_from or args.compare_source)
+        verify_samples()
     except (OSError, ValueError, KeyError) as error:
         raise SystemExit("FAIL: " + str(error))
