@@ -8,6 +8,7 @@ if ($env:OS -ne 'Windows_NT' -or $env:GITHUB_ACTIONS -ne 'true' -or -not $env:RU
 }
 if ($PreviousVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'PreviousVersion must be a stable numeric version.' }
 $currentVersion = (Get-Content (Join-Path $PSScriptRoot '../package.json') -Raw | ConvertFrom-Json).version
+$expectedVersion = [version]$currentVersion
 if ([version]$PreviousVersion -ge [version]$currentVersion) { throw 'Fixture version must be older than the current package.' }
 $feed = (Resolve-Path $FeedDirectory).Path
 if (-not (Test-Path (Join-Path $feed 'latest.yml'))) { throw 'Build the current NSIS release before the upgrade smoke test.' }
@@ -49,13 +50,17 @@ try {
     $deadline = (Get-Date).AddSeconds(120)
     do {
         Start-Sleep -Milliseconds 500
-        try { $installedVersion = (Get-Item $installedExe -ErrorAction Stop).VersionInfo.ProductVersion }
-        catch { $installedVersion = '' }
+        try {
+            $versionInfo = (Get-Item $installedExe -ErrorAction Stop).VersionInfo
+            $installedVersion = $versionInfo.ProductVersion
+            $versionMatches = $versionInfo.ProductMajorPart -eq $expectedVersion.Major -and $versionInfo.ProductMinorPart -eq $expectedVersion.Minor -and $versionInfo.ProductBuildPart -eq $expectedVersion.Build
+        }
+        catch { $installedVersion = ''; $versionMatches = $false }
         $updaterInstallers = @(Get-Process -ErrorAction SilentlyContinue | Where-Object {
             $_.Path -and $_.Path.StartsWith((Join-Path $root 'updater-cache') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
         })
-    } while (($installedVersion -ne $currentVersion -or $updaterInstallers.Count -ne 0) -and (Get-Date) -lt $deadline)
-    if ($installedVersion -ne $currentVersion -or $updaterInstallers.Count -ne 0) { throw "Updater did not finish replacing the installed application with $currentVersion within 120 seconds." }
+    } while ((-not $versionMatches -or $updaterInstallers.Count -ne 0) -and (Get-Date) -lt $deadline)
+    if (-not $versionMatches -or $updaterInstallers.Count -ne 0) { throw "Updater did not finish replacing the installed application with $currentVersion within 120 seconds. PE version: $installedVersion; active installers: $($updaterInstallers.Count)." }
     $env:ZPS_UPDATER_PHASE = 'verify'
     Invoke-Bounded $node 'tools/smoke-updater.mjs' 180
     $state = Get-Content (Join-Path $root 'state.json') -Raw | ConvertFrom-Json
