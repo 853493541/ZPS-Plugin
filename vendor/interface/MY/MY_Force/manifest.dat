@@ -1,0 +1,26 @@
+{
+   "files" : [
+      {
+         "name" : "info.ini",
+         "value" : "F6952FBD22D49F7B4462B5D658F1A5DE144D230E"
+      },
+      {
+         "name" : "info.ini.zh_TW",
+         "value" : "989C6F7661FA7F4BE99F99D78215AEDB0F27CF84"
+      },
+      {
+         "name" : "publisher.key",
+         "value" : "57E799B1881CC24ACAED98D2F581A363B6FC32F4"
+      },
+      {
+         "name" : "src.20260723063831-9f7011225.lua",
+         "value" : "0B217D0F3F9180CE0EEBF17D4DEA2E84D1BADD84"
+      },
+      {
+         "name" : "ui/Playerbar.ini",
+         "value" : "22C482C7AD49B0CAAB3A3A354998AF959C40DB4F"
+      }
+   ],
+   "id" : "MY_Force",
+   "version" : 63
+}

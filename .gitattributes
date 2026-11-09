@@ -1,0 +1,8 @@
+* text=auto
+/vendor/interface/** -text
+/vendor/BASELINE.json text eol=lf
+/tools/*.py text eol=lf
+/README.md text eol=lf
+/samples/** -text
+/samples/README.md text eol=lf
+/samples/SAMPLES.json text eol=lf

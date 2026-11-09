@@ -1,0 +1,2301 @@
+{
+  "format": 1,
+  "source": "Frozen client interface/MY and interface/JX",
+  "selection": "manifest-declared files plus manifest/signature metadata",
+  "addons": [
+    {
+      "pack": "MY",
+      "addon": "MY_!Base",
+      "id": "MY_!Base",
+      "version": 364
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_BagEx",
+      "id": "MY_BagEx",
+      "version": 117
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Cataclysm",
+      "id": "MY_Cataclysm",
+      "version": 166
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Chat",
+      "id": "MY_Chat",
+      "version": 125
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_ChatLog",
+      "id": "MY_ChatLog",
+      "version": 124
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_CombatText",
+      "id": "MY_CombatText",
+      "version": 100
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Farbnamen",
+      "id": "MY_Farbnamen",
+      "version": 115
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Focus",
+      "id": "MY_Focus",
+      "version": 169
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Font",
+      "id": "MY_Font",
+      "version": 83
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_FontResource",
+      "id": "MY_FontResource",
+      "version": 30
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Force",
+      "id": "MY_Force",
+      "version": 63
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_GKP",
+      "id": "MY_GKP",
+      "version": 148
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_LifeBar",
+      "id": "MY_LifeBar",
+      "version": 124
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Logoff",
+      "id": "MY_Logoff",
+      "version": 80
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_MiddleMapMark",
+      "id": "MY_MiddleMapMark",
+      "version": 124
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Recount",
+      "id": "MY_Recount",
+      "version": 164
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Resource",
+      "id": "MY_Resource",
+      "version": 72
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_RoleStatistics",
+      "id": "MY_RoleStatistics",
+      "version": 116
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_RollMonitor",
+      "id": "MY_RollMonitor",
+      "version": 82
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_ScreenShot",
+      "id": "MY_ScreenShot",
+      "version": 83
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Target",
+      "id": "MY_Target",
+      "version": 78
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_TargetMon",
+      "id": "MY_TargetMon",
+      "version": 151
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_TeamMon",
+      "id": "MY_TeamMon",
+      "version": 152
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_TeamTools",
+      "id": "MY_TeamTools",
+      "version": 169
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_ThreatRank",
+      "id": "MY_ThreatRank",
+      "version": 89
+    },
+    {
+      "pack": "MY",
+      "addon": "MY_Toolbox",
+      "id": "MY_Toolbox",
+      "version": 204
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_0Base",
+      "id": "JX_0Base",
+      "version": 180
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_Activity",
+      "id": "JX_Activity",
+      "version": 143
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_Battle",
+      "id": "JX_Battle",
+      "version": 59
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_Buff",
+      "id": "JX_Buff",
+      "version": 106
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_DoodadPlus",
+      "id": "JX_DoodadPlus",
+      "version": 65
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_Homeland",
+      "id": "JX_Homeland",
+      "version": 61
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_Notice",
+      "id": "JX_Notice",
+      "version": 164
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_SchoolAssist",
+      "id": "JX_SchoolAssist",
+      "version": 173
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_Target",
+      "id": "JX_Target",
+      "version": 151
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_TargetList",
+      "id": "JX_TargetList",
+      "version": 171
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_Team",
+      "id": "JX_Team",
+      "version": 161
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_TeamCD",
+      "id": "JX_TeamCD",
+      "version": 152
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_ToolBox",
+      "id": "JX_ToolBox",
+      "version": 168
+    },
+    {
+      "pack": "JX",
+      "addon": "JX_Wiki",
+      "id": "JX_Wiki",
+      "version": 147
+    }
+  ],
+  "unlisted_files_omitted": {
+    "MY": 335,
+    "JX": 14
+  },
+  "files": {
+    "JX/JX_0Base/JX.Debug.lua": {
+      "size": 304,
+      "sha256": "3297917ed44badd8124fef3705016d3e7ae2accd72a6cb1026e648c0d5f314ec"
+    },
+    "JX/JX_0Base/JX.UI.lua": {
+      "size": 10384,
+      "sha256": "2accb5cbaef41c2bdb27ac9467d7a9fe49dfb63f050bc349a1d9b97704456592"
+    },
+    "JX/JX_0Base/JX.XGUI.lua": {
+      "size": 7904,
+      "sha256": "0a00b95dba3d1901ead44b9b92e72770e9fd1b2401a8934ce355f053f8316828"
+    },
+    "JX/JX_0Base/JX.ini": {
+      "size": 355184,
+      "sha256": "617f6d473f2640ed2b963895f9d001a4a2f47a909646831b4d7945ade84622ac"
+    },
+    "JX/JX_0Base/JX.lua": {
+      "size": 70528,
+      "sha256": "586152c83930c4385eaa4300156c4103c48587302a7283a0976440634df527a4"
+    },
+    "JX/JX_0Base/__XGUI.ini": {
+      "size": 392,
+      "sha256": "26ee70b1875c2c48c7dc9f28ea9fe87cca1051301b4905523e1c66c4b5be4ec5"
+    },
+    "JX/JX_0Base/info.ini": {
+      "size": 154,
+      "sha256": "f66381f83f9efa034ea3cd81f7050a163eb0ce9586679f8e4052533042521f98"
+    },
+    "JX/JX_0Base/info.ini.zh_TW": {
+      "size": 173,
+      "sha256": "b0933430823c60cf47da61c83172ea07d995791e47979529fd24a30ae1536eb7"
+    },
+    "JX/JX_0Base/lang/default.lang": {
+      "size": 43399,
+      "sha256": "fadb795a0e6a829b21c4d15b2e9a054a0b2a539bb200b98a674a767ef089a3ab"
+    },
+    "JX/JX_0Base/lang/zhcn.lang": {
+      "size": 43399,
+      "sha256": "fadb795a0e6a829b21c4d15b2e9a054a0b2a539bb200b98a674a767ef089a3ab"
+    },
+    "JX/JX_0Base/lang/zhtw.lang": {
+      "size": 48941,
+      "sha256": "d496d13ec15bd63c0c27b308d659e6ba54dc16442fa6b358ffc8c76a6b5c7915"
+    },
+    "JX/JX_0Base/manifest.dat": {
+      "size": 2374,
+      "sha256": "88f9bdf82e82821d2454132002f275f907909001f29f7a25465e9c71d0e77850"
+    },
+    "JX/JX_0Base/manifest.key": {
+      "size": 256,
+      "sha256": "dc475268dd0749b22f7c584f893821b0a87f7ae6c26cddc3ef2c0c9cf0e5527b"
+    },
+    "JX/JX_0Base/publisher.key": {
+      "size": 256,
+      "sha256": "2e90ff38b7fb56927dc7cbac08fb3b75240bd9a1f0585c478dc15bd82c9c5677"
+    },
+    "JX/JX_0Base/ui/FullScreen.ini": {
+      "size": 395,
+      "sha256": "979b58cb3ae5351aade87238fe6b04bca2575a7370af024c677100b06b7ded61"
+    },
+    "JX/JX_0Base/ui/ObjectList.ini": {
+      "size": 6280,
+      "sha256": "0d3c26e45a640a5f55a01be6dd8c8e9ad41b2614a984c4247aa737e0e4e0bb30"
+    },
+    "JX/JX_0Base/ui/ProgressBar.ini": {
+      "size": 10443,
+      "sha256": "ab55261973ef61819ebe4aeea1447f927285367b0975aff75bb489577480577e"
+    },
+    "JX/JX_0Base/ui/ProgressBarSimple.ini": {
+      "size": 3052,
+      "sha256": "f2fae640a16b19091006771ce57a6916c3c43a890a2695e4e71ff084df5bae3c"
+    },
+    "JX/JX_0Base/ui/WndBubblePanel.ini": {
+      "size": 2464,
+      "sha256": "a7a11b7f029a8e37974083c8962479d67634b70b288eca4a4fa868fc09c152fb"
+    },
+    "JX/JX_0Base/ui/WndCheckBox.ini": {
+      "size": 1148,
+      "sha256": "5a8f0c33a0a4c96590b67e23db6c645d04283937664dd22c6ee6a86376a8f01f"
+    },
+    "JX/JX_0Base/ui/WndContainer.ini": {
+      "size": 447,
+      "sha256": "b528bf65d55103eff75ec2978dbcc9bbc9b4bd0080dcaef4d76ff7075b3ce197"
+    },
+    "JX/JX_0Base/ui/WndScrollPanel.ini": {
+      "size": 2563,
+      "sha256": "3d5a92c457ee4d81d7f55a516970f03b0e27f2e87d57f72535fc219fdd37a5a0"
+    },
+    "JX/JX_Activity/ChickenPack.ini": {
+      "size": 9079,
+      "sha256": "93cf9110ddf7484beb0cce950868f98faab6d95af35904b2f41b09dd5f8bdc07"
+    },
+    "JX/JX_Activity/JX_KillRush.lua": {
+      "size": 17568,
+      "sha256": "7ff31a6e4f1a49d3889c90dd321398a745adecc52996bd1c50927b989ae831e6"
+    },
+    "JX/JX_Activity/JX_LootPlus.lua": {
+      "size": 13952,
+      "sha256": "e9fcc2bfafc5d83d935ef21d87df1c95dd9d6697f6b6c8b8012b41576460d4d3"
+    },
+    "JX/JX_Activity/JX_Moba.lua": {
+      "size": 8864,
+      "sha256": "edc3276df1e89fd76424abadfcb696a5a8720a7eac6c4a79212f51bf872b1864"
+    },
+    "JX/JX_Activity/LootPlus.ini": {
+      "size": 4115,
+      "sha256": "7ee976e9197e4da49a901d743af1fb3d51be0404fd4fc624648e267e34002e2e"
+    },
+    "JX/JX_Activity/info.ini": {
+      "size": 174,
+      "sha256": "490170e56e762f0ebc727fbaacdd8691f429e22ee13041d33674d422e8629438"
+    },
+    "JX/JX_Activity/info.ini.zh_TW": {
+      "size": 196,
+      "sha256": "404db1b902378bd6c3fe2355d2a042855d5a73fbe2f73e0afb8cc1863c8e3ec2"
+    },
+    "JX/JX_Activity/manifest.dat": {
+      "size": 979,
+      "sha256": "1cf501e3a60d5bb9079d8f47c729242bb3c78574497ac1653c28a03e15ab4d55"
+    },
+    "JX/JX_Activity/manifest.key": {
+      "size": 256,
+      "sha256": "bb99649b0f38c98cc624ce01dd651e1eaffed1685642b3250f453cffe616f991"
+    },
+    "JX/JX_Activity/publisher.key": {
+      "size": 256,
+      "sha256": "2e90ff38b7fb56927dc7cbac08fb3b75240bd9a1f0585c478dc15bd82c9c5677"
+    },
+    "JX/JX_Battle/JX_Command.lua": {
+      "size": 2624,
+      "sha256": "6dc331784fa224c33f1b8b5a801b2876d459fb41615537f612cfef55368c7ccc"
+    },
+    "JX/JX_Battle/JX_CrossGateBoss.ini": {
+      "size": 10895,
+      "sha256": "e74a06a21623e510a21a20426762ef0a6f6aa3907fb92162f5de13c5deb36484"
+    },
+    "JX/JX_Battle/JX_CrossGateBoss.lua": {
+      "size": 12416,
+      "sha256": "a04c983687fa566131e54317a3e75cac47cd1dcd93740e54bba4a5bef2502f4e"
+    },
+    "JX/JX_Battle/JX_KillCombo.ini": {
+      "size": 2831,
+      "sha256": "dc62ba503e72b5b2e062daadde4d24f72553413d94c111336b3eb9358d35fae5"
+    },
+    "JX/JX_Battle/JX_KillCombo.lua": {
+      "size": 6288,
+      "sha256": "6a93f23c1782cc0cff4661bfb7ed03a17c63e7aebe0e1340a887d13c2cdf4f3a"
+    },
+    "JX/JX_Battle/JX_KillCombo_Ani.ini": {
+      "size": 865,
+      "sha256": "f4d48e984de7a0c148a20ae921533bef63cb22053ff4642d25080dca1aa7ed5d"
+    },
+    "JX/JX_Battle/JX_TongWar.lua": {
+      "size": 4752,
+      "sha256": "e7980b8d39d55502018864eeab082ab4b2eaf451a94001487b29ff8ebc01cc64"
+    },
+    "JX/JX_Battle/JX_TongWarMark.ini": {
+      "size": 781,
+      "sha256": "b500950d73120b3f2b222c982117aa46973b590219bef418cd398247cfb098f3"
+    },
+    "JX/JX_Battle/JX_TongWhisper.lua": {
+      "size": 9712,
+      "sha256": "c48238c1dbddba06b84b11d874a99625536397a57aa8ae17c55656bb54bb5856"
+    },
+    "JX/JX_Battle/info.ini": {
+      "size": 231,
+      "sha256": "091e16e404f9a0f2e63006df407b29ddb7cb51f29de290b8c8e8eeb90e23d623"
+    },
+    "JX/JX_Battle/info.ini.zh_TW": {
+      "size": 254,
+      "sha256": "78d9ff0fc3591de3f93e948cfedd5f2fbee8b910a74ba601036f06e2d51a65bb"
+    },
+    "JX/JX_Battle/manifest.dat": {
+      "size": 1468,
+      "sha256": "109f7a06a107228f9fdd4ccf3c9a5945be6da271153bfe52a5ee54cee3baa89d"
+    },
+    "JX/JX_Battle/manifest.key": {
+      "size": 256,
+      "sha256": "3b2dc9f9634b64dca07a0ee9d0644293e247adcb200197fba5600e3dceb089fd"
+    },
+    "JX/JX_Battle/publisher.key": {
+      "size": 256,
+      "sha256": "202aa4d091e695260994f9fa4ad71339a0c1210b9a1f1a449f3860ba1c7ee264"
+    },
+    "JX/JX_Buff/JX_Buff.lua": {
+      "size": 34496,
+      "sha256": "f93765e6addae06eb432e27d5656fb61650762fd4913d852540785e55bb8f6a7"
+    },
+    "JX/JX_Buff/JX_BuffList.lua": {
+      "size": 7456,
+      "sha256": "f0538bc5799477db7e56eafb448b806d4eafa6cdb80ed10319126a8b846c7219"
+    },
+    "JX/JX_Buff/JX_Buff_Data.lua": {
+      "size": 1968,
+      "sha256": "81d550b84828c44aa5f65fc244feb03d144a1346ba9059d10bf8110899eabe0a"
+    },
+    "JX/JX_Buff/data/buff_info.db": {
+      "size": 204800,
+      "sha256": "bd92735dd8fa617999e1f0816abf39d40eae6eef0448cf4dc755748dd666fb97"
+    },
+    "JX/JX_Buff/info.ini": {
+      "size": 170,
+      "sha256": "d0ac22bcbd588073aa351531fe653a7a3bce06248eca08eae47e77a642ed1dae"
+    },
+    "JX/JX_Buff/info.ini.zh_TW": {
+      "size": 187,
+      "sha256": "da8e04d99da9b125e69bfa0fe7a6b7409d438ddabb720b03e29444e0f0b7477d"
+    },
+    "JX/JX_Buff/manifest.dat": {
+      "size": 1347,
+      "sha256": "a5d0aadd94100b50671cb43dbc15435295d73780a0d794a395f95f12e6000340"
+    },
+    "JX/JX_Buff/manifest.key": {
+      "size": 256,
+      "sha256": "0e64228d9ae2eb23ff67bf473c2d8ab6418d0ae14ea0500a1a0a7c00f1d2d522"
+    },
+    "JX/JX_Buff/publisher.key": {
+      "size": 256,
+      "sha256": "23daf986b24fddf057ba447aa64e9bb29c38a11d3a25daccaaad61a91ad99e91"
+    },
+    "JX/JX_Buff/ui/BuffList.ini": {
+      "size": 1658,
+      "sha256": "8663278e3d72800a998cedb2dd7aa2255e59f997042735dfbbb37b8c3adfcb59"
+    },
+    "JX/JX_Buff/ui/JX_BuffList.ini": {
+      "size": 3623,
+      "sha256": "d8dede0d50b510b4cd466ce07a4106417322c6c12ddfe7219f1b9ed98a68b7d0"
+    },
+    "JX/JX_Buff/ui/JX_CustomBuffListTemp.ini": {
+      "size": 9237,
+      "sha256": "e70248d9d397e6ffd389d92e2c48eecaf81b0730ac25330f73faaee4fff87fde"
+    },
+    "JX/JX_Buff/ui/JX_NewBuff.ini": {
+      "size": 8830,
+      "sha256": "40d05b2e0e74de9e2b227e22de11c6738dd3a2f18baf051f699f3e25d5d88535"
+    },
+    "JX/JX_DoodadPlus/JX_CraftPlus.lua": {
+      "size": 672,
+      "sha256": "49b58fdcc94d9f1e8bcb2b1235f15deb50144f513401f17da1bc4afba71979df"
+    },
+    "JX/JX_DoodadPlus/JX_DoodadTopName.ini": {
+      "size": 876,
+      "sha256": "d95f7d9c3a3f93331c594bad0cdec1a9f7383b6e6199e147e0094945c267535d"
+    },
+    "JX/JX_DoodadPlus/JX_Doodad_Custom.lua": {
+      "size": 2176,
+      "sha256": "f41267496c3bf8313bde4709a6f756e95a044bb259a17e42684972c5facbdb74"
+    },
+    "JX/JX_DoodadPlus/JX_Doodad_Data.lua": {
+      "size": 8544,
+      "sha256": "cb1085217e9584203523ecb71c0c1537513c3d7dc117e086464179a5022bb20c"
+    },
+    "JX/JX_DoodadPlus/info.ini": {
+      "size": 173,
+      "sha256": "b8aa95e04bbff3ed970b7e2142e69c3edb53b81d0245778e0e79be116c450adb"
+    },
+    "JX/JX_DoodadPlus/info.ini.zh_TW": {
+      "size": 187,
+      "sha256": "021c69630009de726b5ada780ec5ecca98c343b860b0e108c2d35bb547e57adb"
+    },
+    "JX/JX_DoodadPlus/manifest.dat": {
+      "size": 885,
+      "sha256": "be3b7cfeb31c7a83d25a8b090cfc1be482ff0789a6206f11195b1c3b177c385c"
+    },
+    "JX/JX_DoodadPlus/manifest.key": {
+      "size": 256,
+      "sha256": "951c799aa1390d96eed9db2d142fc3178059c4b70c9e213e7f428223b02b0ac7"
+    },
+    "JX/JX_DoodadPlus/publisher.key": {
+      "size": 256,
+      "sha256": "eaa0f722ac8949fbc02cd9f1dbec5e5893d4a140644201de581798849136a39c"
+    },
+    "JX/JX_Homeland/FlowerInfoPanel.ini": {
+      "size": 23767,
+      "sha256": "8f68a0a84d104ff91fede1f3ddf4f20967c3e21e41573ff4771cae98d0c7846b"
+    },
+    "JX/JX_Homeland/JX_FlowerPrice.lua": {
+      "size": 13808,
+      "sha256": "7b8bed976f6349994f6e0f35f683866f2a5fb154fa057d78ac9ab63204dcab5e"
+    },
+    "JX/JX_Homeland/JX_StorageBox.lua": {
+      "size": 2352,
+      "sha256": "c0dd64bbbdb97d787367b5675465f73d1beb3d2e0c56eb1e4f093e64bde1e9d7"
+    },
+    "JX/JX_Homeland/Wnd_JXFlowerPrice.ini": {
+      "size": 1050,
+      "sha256": "5f0c6d2510f9236b05346e246804e242137dafc30127cd12aa7745e1f08b6666"
+    },
+    "JX/JX_Homeland/Wnd_JXHomelandTemp.ini": {
+      "size": 1268,
+      "sha256": "8bfac153dffb3ae4786979f276dc5a480397d26211da882972bea97508617106"
+    },
+    "JX/JX_Homeland/info.ini": {
+      "size": 145,
+      "sha256": "4fcfea71995edd089fb2b2024c66ab451a24ab3f952175f60c67712c515e8500"
+    },
+    "JX/JX_Homeland/info.ini.zh_TW": {
+      "size": 161,
+      "sha256": "9989d49b846d2848056fc41513f508291a15d2550cf62124d9340bc59762382f"
+    },
+    "JX/JX_Homeland/manifest.dat": {
+      "size": 1007,
+      "sha256": "b0c984a3be58bd4326ff6b334c2d46ab60bfcccfd48610c0e8d8f530413a9b4d"
+    },
+    "JX/JX_Homeland/manifest.key": {
+      "size": 256,
+      "sha256": "0aa29a08759a2c7999da4000b7ee9da456d3fac5ab4d55a215db2a85a88c9811"
+    },
+    "JX/JX_Homeland/publisher.key": {
+      "size": 256,
+      "sha256": "46489e0d05402abc96cd3e00f4d88742364ce49f10aac4066a1a78963a76b533"
+    },
+    "JX/JX_Notice/JX_KillNotice.lua": {
+      "size": 15088,
+      "sha256": "adece1197a3d5628088486fd6706fb9af7720038759be0831d7019527c42b755"
+    },
+    "JX/JX_Notice/JX_MsgFilter.lua": {
+      "size": 7520,
+      "sha256": "a5ff987bc71389d5fba5b35d8027b6fa7901fb0cf43cfd177c2a386089166e3f"
+    },
+    "JX/JX_Notice/JX_OtherNotice.lua": {
+      "size": 8096,
+      "sha256": "1afc7a671138bebd09fe71195e784d7c31d223d91ba6d3bd1fa9363dbc686cfc"
+    },
+    "JX/JX_Notice/JX_SkillNotice.lua": {
+      "size": 15136,
+      "sha256": "78b91f30548558031a6924fade872bfbb90dfcbc10a7262db019f3e7705cc92a"
+    },
+    "JX/JX_Notice/KillShoutSet.ini": {
+      "size": 9714,
+      "sha256": "526b447c75c304cc845c060eb33ecd64c263ccb7807bad86acdc996a19d95c98"
+    },
+    "JX/JX_Notice/OtherShoutSet.ini": {
+      "size": 12031,
+      "sha256": "069bcee48ba8da2f5eddf32c2c7cf929649771f82389998339b2234ac2e0a5da"
+    },
+    "JX/JX_Notice/SkillShout.ini": {
+      "size": 16159,
+      "sha256": "75cb6c0602a473f7308039969e4836c2d35c1a817b0d21ccc5d5552ec182c430"
+    },
+    "JX/JX_Notice/info.ini": {
+      "size": 212,
+      "sha256": "fdf0c87e93f7c86974a5fd412656aaa0e41c74e6084a2e5313e5e434472d5833"
+    },
+    "JX/JX_Notice/info.ini.zh_TW": {
+      "size": 235,
+      "sha256": "06a502317928c37c8acc9fb55e24d56d1d57605cb510a735ea426b998e4c710e"
+    },
+    "JX/JX_Notice/manifest.dat": {
+      "size": 1227,
+      "sha256": "78372785aeedd420317f9b0d1c1986e64f17feadabaf3b4e66065726c425a526"
+    },
+    "JX/JX_Notice/manifest.key": {
+      "size": 256,
+      "sha256": "cd4066bcd00638ffa39c191dd570d7f3e77adfeefb4682071b4e59be8078fb72"
+    },
+    "JX/JX_Notice/publisher.key": {
+      "size": 256,
+      "sha256": "20e116960c5b1704cd255ec89e013becbb987750a6848504a9c46d62e13d42eb"
+    },
+    "JX/JX_SchoolAssist/JX_CastModeTemp.ini": {
+      "size": 5454,
+      "sha256": "cb436d95a873995563ff15a8026b163ba9708e604b808899545719ef9906c4a2"
+    },
+    "JX/JX_SchoolAssist/JX_ClearlyBar.ini": {
+      "size": 2225,
+      "sha256": "5fb9afba28a3499210b4d57aa16765c876e4a224b06722bd4bc26aef1ce93a86"
+    },
+    "JX/JX_SchoolAssist/JX_ClearlyBar.lua": {
+      "size": 4688,
+      "sha256": "56641b58d1c8eb00c41677b8cc3316eaad63f9667d1971d6caa8d153df71b3eb"
+    },
+    "JX/JX_SchoolAssist/JX_PLFuYouCD.ini": {
+      "size": 1394,
+      "sha256": "17ff5c41e433f13e60ae10d5846da6cfc2590c1fca32316637a3364b28bb3a1e"
+    },
+    "JX/JX_SchoolAssist/JX_SKillTopName.ini": {
+      "size": 13622,
+      "sha256": "1ad2b89b58ca20d9ebbfac10a16f99bbecfac480013fb14a43f7826333fd6ebd"
+    },
+    "JX/JX_SchoolAssist/JX_SchoolAssist.ini": {
+      "size": 470,
+      "sha256": "006c3bca25232479711373781b00eb0bc80452c835891740bbfe852341c368fa"
+    },
+    "JX/JX_SchoolAssist/JX_SchoolAssist.lua": {
+      "size": 17648,
+      "sha256": "0f58a48af9eb01281d8c3e93244373f180a6a6376733d6115aed7f517c1ba255"
+    },
+    "JX/JX_SchoolAssist/JX_Shadows.ini": {
+      "size": 451,
+      "sha256": "10b4742864c7f2e482c97cf379e321ac68fde6aaacee9caf1f1a95007e3ce80c"
+    },
+    "JX/JX_SchoolAssist/JX_Shadows.lua": {
+      "size": 21408,
+      "sha256": "c3f72b23258d9257f076d6ed08265d5c35101017e0f64a9ea89f9327d6ff8cd0"
+    },
+    "JX/JX_SchoolAssist/info.ini": {
+      "size": 185,
+      "sha256": "9410d44c040be75cc24355ad7bc81fff6497298fb5cb40c0912c142dc829c4e0"
+    },
+    "JX/JX_SchoolAssist/info.ini.zh_TW": {
+      "size": 191,
+      "sha256": "c0faa28a46007827a43057e8fdadcb3a9607155a74f25dd29d42c2410dd0686c"
+    },
+    "JX/JX_SchoolAssist/manifest.dat": {
+      "size": 1473,
+      "sha256": "e85a6795f24583796a191dc1130f45c666c5bb5baf1f43e0d4092d425f0ce94c"
+    },
+    "JX/JX_SchoolAssist/manifest.key": {
+      "size": 256,
+      "sha256": "1067312761e8da66510509316b51d062a5d8bfe77bf4fd5a66ae64857b1d25a8"
+    },
+    "JX/JX_SchoolAssist/publisher.key": {
+      "size": 256,
+      "sha256": "46489e0d05402abc96cd3e00f4d88742364ce49f10aac4066a1a78963a76b533"
+    },
+    "JX/JX_Target/JX_HeightMeter.ini": {
+      "size": 7154,
+      "sha256": "d2325b97a40c7ca8e49492cd4f62e4c451f8da43b9688b88c1b37435dafdc129"
+    },
+    "JX/JX_Target/JX_HeightMeter.lua": {
+      "size": 7648,
+      "sha256": "35404d854c7eefca85c7eb9afec388cfe0fd9352858e1682527b51e3ca3591bf"
+    },
+    "JX/JX_Target/JX_Target.ini": {
+      "size": 4733,
+      "sha256": "c1d6577fde6dab68e3fd24c7f5ce4e352d966cb1200e0a8ba7c5b317c56bccc2"
+    },
+    "JX/JX_Target/JX_Target.lua": {
+      "size": 24672,
+      "sha256": "9e6edc4fd43fd76095ba6f344160c1cc8b510c3b59da18067f16343765729d84"
+    },
+    "JX/JX_Target/JX_TargetHeight.ini": {
+      "size": 2060,
+      "sha256": "a734da1897af0a62eb897af9b804c9a358e2d5efc095684ac779a2470c1d1134"
+    },
+    "JX/JX_Target/JX_TargetHeight.lua": {
+      "size": 4624,
+      "sha256": "3e31a5e1eb7ba735ea92bf9d54d47c9d3dfedd097b419003fcdc6755af51cea5"
+    },
+    "JX/JX_Target/JX_TargetLink.lua": {
+      "size": 6480,
+      "sha256": "c43a658226f6619e88ec4a5cf79c279d33007bef9c0929bd4eec1154cc4a0c81"
+    },
+    "JX/JX_Target/JX_Target_Old.ini": {
+      "size": 5352,
+      "sha256": "77bdb5ff616fc94b6dac7f5523cb5f04119652cce33e2daf5e6d8c29aa24b5b5"
+    },
+    "JX/JX_Target/info.ini": {
+      "size": 215,
+      "sha256": "6ecbebc0c1c2321abe87046537254c91f137e5461d91448ac04015b945a7bf42"
+    },
+    "JX/JX_Target/info.ini.zh_TW": {
+      "size": 241,
+      "sha256": "96e9437eefb029762c9654eb1ddcf5b686ff8f98cccb0e7c93e076cda871762d"
+    },
+    "JX/JX_Target/manifest.dat": {
+      "size": 1346,
+      "sha256": "ca52717cbd8581564ad578270eb238a4b1b944d79cd995382048fbb66042fdde"
+    },
+    "JX/JX_Target/manifest.key": {
+      "size": 256,
+      "sha256": "9abeb219b72225f5da5e5c74d9cd37f7ebffdec321007d8a7f5346aef75f5a4e"
+    },
+    "JX/JX_Target/publisher.key": {
+      "size": 256,
+      "sha256": "fc666c5a20ae01c07242b2eaeed85b9a72ece6841599a407fb7f13b09f8cc9c6"
+    },
+    "JX/JX_TargetList/JX_NearbyInfo.ini": {
+      "size": 7585,
+      "sha256": "adaee9569bc81c629f6cf045c9cab7b7df3753d1cb2a797353aa9626cf1b5934"
+    },
+    "JX/JX_TargetList/JX_NearbyInfo.lua": {
+      "size": 7056,
+      "sha256": "45e9811188d50fd407a6579dc9ce52829af62f5f1f5e1ee19b41e1a30081aa20"
+    },
+    "JX/JX_TargetList/JX_TargetList.ini": {
+      "size": 20383,
+      "sha256": "af5177f30a86a7e468f2487874f51843d908f8c0b866b42dee48ad1ed68238e4"
+    },
+    "JX/JX_TargetList/JX_TargetList.lua": {
+      "size": 81200,
+      "sha256": "61c1e759a94f2d7acd353947ec8e303203c8566e4d6275238b8f25e5df94a766"
+    },
+    "JX/JX_TargetList/data/JX_CampData.lua": {
+      "size": 6240,
+      "sha256": "8e42cf610b74fdca0fbd68a74cf98d7df5058d6de49dfbaf1bd7459b7593f42b"
+    },
+    "JX/JX_TargetList/info.ini": {
+      "size": 219,
+      "sha256": "775aac03431407cd25bdc4677bd0efb5c6af6cdddfa395bc6e1c735674c6a962"
+    },
+    "JX/JX_TargetList/info.ini.zh_TW": {
+      "size": 245,
+      "sha256": "bce5f81f56d37ebc0921c15b5b18ac6f94df4271b96d11871192c86e9dabea61"
+    },
+    "JX/JX_TargetList/manifest.dat": {
+      "size": 1001,
+      "sha256": "40bdc1c8646ff22cb0ec23748941d1ba1728be88b44030c593446ff6938a01b5"
+    },
+    "JX/JX_TargetList/manifest.key": {
+      "size": 256,
+      "sha256": "d75b6ef1f59d8b56eeb78153f6f25db1a25d62ec7a2ea2da67370d3a92268770"
+    },
+    "JX/JX_TargetList/publisher.key": {
+      "size": 256,
+      "sha256": "66c134eab979b406a4005f3062d86b95e43929a3fe6f9bab3b9bab99d23b0e3e"
+    },
+    "JX/JX_Team/JX_Team.lua": {
+      "size": 13664,
+      "sha256": "f69e1c0a807db4e0b1608cd711dd09dc1dee3e67ab2d922ef81f7edb69de9512"
+    },
+    "JX/JX_Team/JX_TeamTopName.ini": {
+      "size": 862,
+      "sha256": "76d549853ca874c028f3b2bba365a1209f7f25444e30032682bf62f1cef1de37"
+    },
+    "JX/JX_Team/info.ini": {
+      "size": 121,
+      "sha256": "99b638525c0fe1cb2425d68ab12f475ccda2648e9c855daa6dc9c7ad8884f24c"
+    },
+    "JX/JX_Team/info.ini.zh_TW": {
+      "size": 141,
+      "sha256": "3e3d2e1a53dc15c012de28ac3342978f33178c18cb8ee4fc67509c329e891815"
+    },
+    "JX/JX_Team/manifest.dat": {
+      "size": 633,
+      "sha256": "9a24d8be1a2d703fa14c03d325b76a79e6742b201d52540f965bcec99e1b53df"
+    },
+    "JX/JX_Team/manifest.key": {
+      "size": 256,
+      "sha256": "2601b29547b930fc43e768dc8764b27c2111d9dd435ec215dc692af4320079b1"
+    },
+    "JX/JX_Team/publisher.key": {
+      "size": 256,
+      "sha256": "355350be3f2ec1d0780a7e1941e4f3361763f946d7e09d4ab496dbe34208081b"
+    },
+    "JX/JX_TeamCD/JX_TeamCD.lua": {
+      "size": 30288,
+      "sha256": "506dd8029a51b90685c318b851cc639f69a7e6a13482b78da6643ba974c42270"
+    },
+    "JX/JX_TeamCD/TeamCDAdd.ini": {
+      "size": 7900,
+      "sha256": "382e2dcf1dd075d5bcb09f0d74ddd205c00ce358f10c370afa2205633025992c"
+    },
+    "JX/JX_TeamCD/TeamCDTemp.ini": {
+      "size": 1577,
+      "sha256": "2b8371544053e0cb311ad8f91fa0259aebf6ad13e4bad65899fae57cc7730d8a"
+    },
+    "JX/JX_TeamCD/TeamCoolDown.ini": {
+      "size": 7726,
+      "sha256": "9372dcca5af6db810a47711cb491842c1ca6dac6726de3bdf36b174ef204acc3"
+    },
+    "JX/JX_TeamCD/info.ini": {
+      "size": 126,
+      "sha256": "c4cf6cb648ff27f913502cccac929a50f7b683c8b93a1678a53df8695ffc7a12"
+    },
+    "JX/JX_TeamCD/info.ini.zh_TW": {
+      "size": 147,
+      "sha256": "319fd0603f3521bd7f5b3639be5d7b7ecf55407c35c310f0015720ab98a2a8ad"
+    },
+    "JX/JX_TeamCD/manifest.dat": {
+      "size": 864,
+      "sha256": "50ee3723af3630d27ca74fd3bb03a8fe6e829d34cf1598362ebeb311f6d4f7a7"
+    },
+    "JX/JX_TeamCD/manifest.key": {
+      "size": 256,
+      "sha256": "36f6d5d942c6fe94988ecb517711de9a12fbf31212cfdf6f6164cc4150d798b6"
+    },
+    "JX/JX_TeamCD/publisher.key": {
+      "size": 256,
+      "sha256": "c828e923ab1aeb27edab7c32d566bbf093553db9054befb3ee310929883e4b7e"
+    },
+    "JX/JX_ToolBox/ComboWinEffect.ini": {
+      "size": 1238,
+      "sha256": "f3877334b3bb3feeb8cb6ba92ace0b43ba7762b99d2301bba1d298e41a2ff222"
+    },
+    "JX/JX_ToolBox/JX_AutoConfirm.lua": {
+      "size": 4160,
+      "sha256": "4c9501443031a460df3d560af253b21d68de7cbef2010749cc22d4c544e6c14f"
+    },
+    "JX/JX_ToolBox/JX_Equip.ini": {
+      "size": 1915,
+      "sha256": "abb052d3887ceb463da28e46acb23b96d113fd26d4a77c6bc18f626494b8a3b6"
+    },
+    "JX/JX_ToolBox/JX_Equip.lua": {
+      "size": 8496,
+      "sha256": "37167a9c4e3ce85fd64ad76067efbc8e6016efde55cdfe42cca04a786027f68b"
+    },
+    "JX/JX_ToolBox/JX_FlashTaskBar.lua": {
+      "size": 4544,
+      "sha256": "89d3c37959543e678c577d211f4dc1e5ea54892981f8c78efcd20db6211ac5ed"
+    },
+    "JX/JX_ToolBox/JX_HideRepresent.lua": {
+      "size": 4048,
+      "sha256": "f8a17fa1fe74fb9af97686b84131611fd0b3db839ddb3f87f939bfeab0addef8"
+    },
+    "JX/JX_ToolBox/JX_HorseFeed.lua": {
+      "size": 6240,
+      "sha256": "99e203e3de53f8e00264e5f2499c93dc795d9218ef698b770d812526252f4689"
+    },
+    "JX/JX_ToolBox/JX_MiddleMapMark.lua": {
+      "size": 192,
+      "sha256": "36beb715a952e3d04047c8f16e5e14a3cda3a7fb9d1431aaf44da1fb3c411446"
+    },
+    "JX/JX_ToolBox/JX_RefineDiamond.lua": {
+      "size": 8880,
+      "sha256": "6429222c17b39a9d05717396bb126813ef6d04ce3eedb0467edf76f6750eb9ab"
+    },
+    "JX/JX_ToolBox/JX_ToolBox.lua": {
+      "size": 7456,
+      "sha256": "eab24822cdc9bb5d1209dec48dd11153050b0c7e4e5dbfa0cd13a07622799356"
+    },
+    "JX/JX_ToolBox/MessageBoxPlus.ini": {
+      "size": 1901,
+      "sha256": "04ef51675ff5d6e287681f2a7d19fd7cd423ae52fff200d67e46b51bbc25b32b"
+    },
+    "JX/JX_ToolBox/WorldMapSearch.ini": {
+      "size": 2363,
+      "sha256": "8d6a1b3d9e28d925efba0bce6c74394ceb44feccbf70c18793df1914280a3a8b"
+    },
+    "JX/JX_ToolBox/info.ini": {
+      "size": 302,
+      "sha256": "44d763bc01e99bbee440a6cfbba746c48f3b42b95984d4a4ce4c25ca1ce17653"
+    },
+    "JX/JX_ToolBox/info.ini.zh_TW": {
+      "size": 331,
+      "sha256": "661001993111e0a917186bac524a221e85fa9d46f0c39f52f5ee6987417e2fe6"
+    },
+    "JX/JX_ToolBox/manifest.dat": {
+      "size": 1822,
+      "sha256": "027b963d94cd4f899314feb311ec1cbdac04cb7f18bc5da87ec023c0d73c981a"
+    },
+    "JX/JX_ToolBox/manifest.key": {
+      "size": 256,
+      "sha256": "5083d86e2235cfe88f19dfc418e562be1dafe36e9361bb708d48fb2edadfc542"
+    },
+    "JX/JX_ToolBox/publisher.key": {
+      "size": 256,
+      "sha256": "66c134eab979b406a4005f3062d86b95e43929a3fe6f9bab3b9bab99d23b0e3e"
+    },
+    "JX/JX_Wiki/JX_Achievement.lua": {
+      "size": 3744,
+      "sha256": "48c1f048685bd149e98ed6bd4901ba4ae1299f442a59c792165b48e667aafa2d"
+    },
+    "JX/JX_Wiki/JX_AchievementWeb.ini": {
+      "size": 3209,
+      "sha256": "7acc534128041c2826f088f5878d3164256ab3defd0d6ec5905b0fb8ae48ee9a"
+    },
+    "JX/JX_Wiki/JX_AllForceSkill.lua": {
+      "size": 30224,
+      "sha256": "76ee2be0aa90d92ec0a3113c529b839b9f640a99d0a22b98c151901cbea8415e"
+    },
+    "JX/JX_Wiki/JX_AllForceSkillRecipe.ini": {
+      "size": 5748,
+      "sha256": "9005365a3bf00b475053a699c0a45bd15741b9592b3433df3f2f713c38d76d05"
+    },
+    "JX/JX_Wiki/JX_ItemSearch.lua": {
+      "size": 13184,
+      "sha256": "606a4c90d9ec2464a9b4ad4d2d9876561fd08b252929218239c000b30870a0d0"
+    },
+    "JX/JX_Wiki/JX_MeiRenTu.lua": {
+      "size": 8320,
+      "sha256": "3b09e81aaaf15313d23b409b8fc66e6934cb8844f40330cfce3d9c0c4f3cef25"
+    },
+    "JX/JX_Wiki/JX_Wiki.lua": {
+      "size": 1536,
+      "sha256": "a8a4da2a12b38460ae3d27384f927b0d416475ea39d5728773aacb11800ad908"
+    },
+    "JX/JX_Wiki/QuestResultTemp.ini": {
+      "size": 2048,
+      "sha256": "1184295eba9b2cb55f516eb0ef7ab0384cf4fb3640f4da280bcfed2472611150"
+    },
+    "JX/JX_Wiki/QuestState.lua": {
+      "size": 6720,
+      "sha256": "35953603c71269e34609bde847d0fd4edd6568461f13b727dd3b4b2631457893"
+    },
+    "JX/JX_Wiki/info.ini": {
+      "size": 251,
+      "sha256": "be3f9ca083fc5caf1297c976caaa5e53f2abdf9eb2862150c600d1d599d22d84"
+    },
+    "JX/JX_Wiki/info.ini.zh_TW": {
+      "size": 274,
+      "sha256": "9102cfa6458f8406d08effa850e7aecbe173496e7c431b807ea3cfb72b73c9f4"
+    },
+    "JX/JX_Wiki/manifest.dat": {
+      "size": 1472,
+      "sha256": "ccbb428aa000fc2f255beaeaaa17c431d50cd8d95f75cdd128788b63b0d1a8e9"
+    },
+    "JX/JX_Wiki/manifest.key": {
+      "size": 256,
+      "sha256": "8839016d0fd87e5a2cb1620de8d2c426ff6102ec3218dcf91cf2234a6c918d9a"
+    },
+    "JX/JX_Wiki/publisher.key": {
+      "size": 256,
+      "sha256": "7d9a1135e0e32a2b72df0afcb19f3022c19d982831e1edb78fc6ba77e3cd5172"
+    },
+    "MY/MY_!Base/audio/Bing.ogg": {
+      "size": 19126,
+      "sha256": "3829b3191fee879078686e6b651f2dda39275554303d59c8d22038580c8fdc82"
+    },
+    "MY/MY_!Base/audio/Notify.ogg": {
+      "size": 18025,
+      "sha256": "e652f88e09a47a30f81894070cb171fe4762a6e1f51eb0277879ad4315af8a51"
+    },
+    "MY/MY_!Base/img/Logo.Tga": {
+      "size": 121618,
+      "sha256": "51241cd94d02f4421f4352ecb1bd402233a336fd5791346745b37440dbf2e769"
+    },
+    "MY/MY_!Base/img/Logo.UITex": {
+      "size": 152,
+      "sha256": "e7e98c44ea82a84462f530a815c3290cc8eca56a9c46ee1d11b5561ac2798ab6"
+    },
+    "MY/MY_!Base/img/Logo.txt": {
+      "size": 185,
+      "sha256": "ab7ebdd41e9e82bd656d9d38f07e22cb3dbc26e50176e2acab2b48a45eaac613"
+    },
+    "MY/MY_!Base/img/PS.Tga": {
+      "size": 175634,
+      "sha256": "222399906f526306beb22eb8b9cfe3925c7297f4fc3b725ec122e2b4720b37cf"
+    },
+    "MY/MY_!Base/img/PS.UITex": {
+      "size": 152,
+      "sha256": "d843109ac01fb5b21d9039a81c74c6348e9acc1b241bc59cb9e3edb76db39da8"
+    },
+    "MY/MY_!Base/img/PS.txt": {
+      "size": 173,
+      "sha256": "c6e6567fd01d2f02c0730e74723bc078d606596ae3bbf486fe8ca29f9e8a3ab8"
+    },
+    "MY/MY_!Base/img/UIComponents.Tga": {
+      "size": 23954,
+      "sha256": "1a7d28e0c9f76a236acacfb73adfdd1bc0d8663cd0058911356f6e90911f4f38"
+    },
+    "MY/MY_!Base/img/UIComponents.UITex": {
+      "size": 192,
+      "sha256": "fd7e1277755241b34e16ab427a55804fcdfd4e37b8069698afdcd8250836c280"
+    },
+    "MY/MY_!Base/img/UIComponents.txt": {
+      "size": 294,
+      "sha256": "9bbbddde6ba531a8f42c5c67d8296015da8317ee37587630083cf830bdc1a924"
+    },
+    "MY/MY_!Base/info.ini": {
+      "size": 131,
+      "sha256": "eeb1b4dda32add3f2004ae6b66527bbb7f08fcec53b2498d1f636b5489660244"
+    },
+    "MY/MY_!Base/info.ini.zh_TW": {
+      "size": 149,
+      "sha256": "e87b074a0ea3ef41ffee4a0c20858d8dc5d4badcdd7f2551ad021dc06ceb5af3"
+    },
+    "MY/MY_!Base/licenses/LICENSE.txt": {
+      "size": 1531,
+      "sha256": "0c8b467a6fd81992370bcf376b32378ce50dd3ec9a9c6671dea75266b93bc984"
+    },
+    "MY/MY_!Base/licenses/LibDeflate-zlib.txt": {
+      "size": 859,
+      "sha256": "07f118887f364847a7389185c703a1b0abf5a7f353d5cdc9da6a48c7f142bb16"
+    },
+    "MY/MY_!Base/licenses/basexx-MIT.txt": {
+      "size": 1070,
+      "sha256": "a1826a43c9e04f9e9b2e5d26d636c656812483bcd513618eec9d72cee69d446b"
+    },
+    "MY/MY_!Base/licenses/lua-schema-MIT.txt": {
+      "size": 1085,
+      "sha256": "64b26ecd6c5fdfcda375a2317228f29f9ed6a22f88e7a55c68981db0e4cbd4fb"
+    },
+    "MY/MY_!Base/licenses/semver.lua-MIT.txt": {
+      "size": 1064,
+      "sha256": "85274d582e9376bbd69158f28d47017253567ded21fdfa2c7b7adf63a9a41a41"
+    },
+    "MY/MY_!Base/licenses/uuid-MIT.txt": {
+      "size": 1070,
+      "sha256": "08f103a7739703c1e08c5fe4a9f4bea702465b91cfb106874454a2516aedb2b2"
+    },
+    "MY/MY_!Base/manifest.dat": {
+      "size": 7332,
+      "sha256": "a3d57a56a1ace237f5ef44aacdaa69555c0dbad6f81984125044f9fef2179171"
+    },
+    "MY/MY_!Base/manifest.key": {
+      "size": 256,
+      "sha256": "80581caf564234b6ddb68b9f51bfa805046d7f99a21eb026e74eef554e507e04"
+    },
+    "MY/MY_!Base/publisher.key": {
+      "size": 256,
+      "sha256": "2e90ff38b7fb56927dc7cbac08fb3b75240bd9a1f0585c478dc15bd82c9c5677"
+    },
+    "MY/MY_!Base/src.20260903085927-5fb116f86.lua": {
+      "size": 1018512,
+      "sha256": "849b25f9dbf48838e20c2323305140c3b18a81306661648cb9d5a4bf5086a0d0"
+    },
+    "MY/MY_!Base/ui/Browser.ini": {
+      "size": 3282,
+      "sha256": "57d8b86b55e72ef5617047212ba88c8d0caf0f4ed704ae14a4cce53fb8a82adb"
+    },
+    "MY/MY_!Base/ui/Dev_UIEditor.ini": {
+      "size": 6880,
+      "sha256": "a91a2d340e445767c82515d0c5904641968df2571ce4f10d895a298654c07f77"
+    },
+    "MY/MY_!Base/ui/DragDrop.ini": {
+      "size": 803,
+      "sha256": "ac1b752052d8a8d4efb3bc8dbc0086d33a8937cf7c19b87d7ef43e1b4d0a397b"
+    },
+    "MY/MY_!Base/ui/FloatBar.ini": {
+      "size": 2028,
+      "sha256": "7cf147a733833b36964f4457c9023ea6cd4f68c155714e609cf72971049eaac4"
+    },
+    "MY/MY_!Base/ui/MY_Bidding.ini": {
+      "size": 25500,
+      "sha256": "824f9cba8ff27efcb8d07731e27e8e30bd5823ce6cc577ec224f10379dc9003a"
+    },
+    "MY/MY_!Base/ui/MY_NotifyIcon.ini": {
+      "size": 1779,
+      "sha256": "9c705414e7837e182eb70c8852f1a08cc706bf7a31cc836b6c3e37cf1be3a570"
+    },
+    "MY/MY_!Base/ui/Notify.ini": {
+      "size": 4730,
+      "sha256": "5f10ae9571edbe15a7d947f6530484926df99b3b4ed09a7444d830bba39589d6"
+    },
+    "MY/MY_!Base/ui/NotifyFloatBar.ini": {
+      "size": 1157,
+      "sha256": "6c828ffcccfbdd8992515b0234f835743a5a195a170d11c88d64d0c83d30f8be"
+    },
+    "MY/MY_!Base/ui/OutputTableTip.ini": {
+      "size": 1470,
+      "sha256": "697b5ef4e79de261b984455aabfc3fb5ecc2b61d3c79d95b41ac91acf7e70d84"
+    },
+    "MY/MY_!Base/ui/PageSetModule.ini": {
+      "size": 1499,
+      "sha256": "b1fd2100b1cd0d362e34ce9c6bb65ce07aa8d678d129b679262a63535b454b1b"
+    },
+    "MY/MY_!Base/ui/PopupMenu.ini": {
+      "size": 457,
+      "sha256": "9be74142eede823f6a9d7ac858659ac55d29c187ec363723fb5f3b24fb9f59f3"
+    },
+    "MY/MY_!Base/ui/PopupMenu.tpl.ini": {
+      "size": 6544,
+      "sha256": "baf92e03c7428e082e46b2ca0a59d5f05d6596bd36f743624f3fcd7cb188a924"
+    },
+    "MY/MY_!Base/ui/Request.ini": {
+      "size": 2375,
+      "sha256": "0658662297149d9dd139bf9990b06dbea893d14fedd6f6beaf6a520801ca7ca3"
+    },
+    "MY/MY_!Base/ui/Shadows.ini": {
+      "size": 1670,
+      "sha256": "26928ef33a6c84d66f0fbff72bcfbda0672c28575b89454d4824a4e795e2b979"
+    },
+    "MY/MY_!Base/ui/components/Shadow.ini": {
+      "size": 458,
+      "sha256": "13fe4bb7c6cd9b6c75a832faafd2735fd1e56d8e09527a680c3c975847227c50"
+    },
+    "MY/MY_!Base/ui/components/WndAutocomplete.ini": {
+      "size": 1822,
+      "sha256": "1a325c1556af3c7e805706eb01d930779a69da44d63989b8cfde04b81e7b2495"
+    },
+    "MY/MY_!Base/ui/components/WndButton.ini": {
+      "size": 793,
+      "sha256": "c816e9310ac76372181fd167e9992c06289993552786023649a2c2ffc747a17d"
+    },
+    "MY/MY_!Base/ui/components/WndButtonBox.ini": {
+      "size": 1114,
+      "sha256": "f281fdd4a0b1f45b83f795683d7413173619b2cb13362dd599c23e04709640f1"
+    },
+    "MY/MY_!Base/ui/components/WndCheckBox.ini": {
+      "size": 1101,
+      "sha256": "14b6ad66c13e3aba57f6db9889fab6062732efcdd4ddbc45daaa12725c601542"
+    },
+    "MY/MY_!Base/ui/components/WndComboBox.ini": {
+      "size": 1525,
+      "sha256": "14bfc1cad2b985f0f9880923943afcecc27b357b65d8b1f91ccbdee88ed3a659"
+    },
+    "MY/MY_!Base/ui/components/WndContainer.ini": {
+      "size": 367,
+      "sha256": "4b7a8a3cfcf669f76b9f4f32c59f64bb92b37e2e87705deb0530e4568d494d9b"
+    },
+    "MY/MY_!Base/ui/components/WndDummyWrapper.ini": {
+      "size": 514,
+      "sha256": "df67ed3404415b65d389af65a624d7bff79fbee860327e36acce89cff3f814de"
+    },
+    "MY/MY_!Base/ui/components/WndEditBox.ini": {
+      "size": 1281,
+      "sha256": "ede7d6c8cf66ea411dcb81eb2075598cf727fa460b410fe0204699c20eef375f"
+    },
+    "MY/MY_!Base/ui/components/WndEditComboBox.ini": {
+      "size": 1738,
+      "sha256": "b7fb306f67c7c95fd315ceb20b11c58bc8eb5990a2271381e82c05db67710b55"
+    },
+    "MY/MY_!Base/ui/components/WndFrame.ini": {
+      "size": 10188,
+      "sha256": "dec31272bf1d0e714b3cd35cd292ec04cc0b46910091e08b81300025300c38c9"
+    },
+    "MY/MY_!Base/ui/components/WndFrameEmpty.ini": {
+      "size": 1375,
+      "sha256": "0bf1dbaabb7e3361ad200a97b7bf64a4dea6d27f582ba3e6f0ecb4429810bd32"
+    },
+    "MY/MY_!Base/ui/components/WndListBox.ini": {
+      "size": 2278,
+      "sha256": "eef0e3e96df12e5cff82db9b2ec83ad93efbacac1e259cb2df944edfb2c81d97"
+    },
+    "MY/MY_!Base/ui/components/WndPageSet.ini": {
+      "size": 822,
+      "sha256": "30dc4b841ab78cb7bea66f71bd883a0887db30ba1d10b41019dcad25dd5ed5f2"
+    },
+    "MY/MY_!Base/ui/components/WndRadioBox.ini": {
+      "size": 1079,
+      "sha256": "8bf9a27e2a2569d5eb2ecfd7691c81c5a6dd0aeb6c2a6442852f46946cf8eb0c"
+    },
+    "MY/MY_!Base/ui/components/WndScrollHandleBox.ini": {
+      "size": 2602,
+      "sha256": "6313318adcee81cf866ea0678caa73ea6cc403195527d0d484bbbda30b149d9f"
+    },
+    "MY/MY_!Base/ui/components/WndScrollWindowBox.ini": {
+      "size": 2530,
+      "sha256": "1b3c7b53ab2abccd6137b701bbbb7a2502db13c053952ceaa1780ed9f182d220"
+    },
+    "MY/MY_!Base/ui/components/WndSlider.ini": {
+      "size": 1594,
+      "sha256": "8ee2bf24ecd25da9f67edbee69c8d9c0acd88e172b38554cbb4633fce5b2767e"
+    },
+    "MY/MY_!Base/ui/components/WndTab.ini": {
+      "size": 1399,
+      "sha256": "941cdd63f9f5a401cd3a4829f01bdaa7754f2db56b2fc87a51b769e9e7b48cf0"
+    },
+    "MY/MY_!Base/ui/components/WndTable.ini": {
+      "size": 7202,
+      "sha256": "1500308bff154860d786ae8b8fe1ea27731ca8739d99711c41a3a931688b00be"
+    },
+    "MY/MY_!Base/ui/components/WndTabs.ini": {
+      "size": 1160,
+      "sha256": "97ca414512f5895a3b497ac136fc6d5fcbbd1b6d0b2ca1ace63aeddfe596dbd2"
+    },
+    "MY/MY_!Base/ui/components/WndWebCef.ini": {
+      "size": 473,
+      "sha256": "e0a7e8ff3377dc1756747df990627ff83e9e0abc682e31908ad7ca3fd133e992"
+    },
+    "MY/MY_!Base/ui/components/WndWebPage.ini": {
+      "size": 480,
+      "sha256": "5542e6e6d21b7c6bd919dea6c3ea9896742f1c6527aca6a7ae8cd124f3db756c"
+    },
+    "MY/MY_!Base/ui/components/WndWindow.ini": {
+      "size": 483,
+      "sha256": "4c02958312f6d46da23df857d084a02126617bcbc876ebe4296271420bf8a288"
+    },
+    "MY/MY_BagEx/info.ini": {
+      "size": 145,
+      "sha256": "80da13941f5a1c2c220495756ae97c67e42d94be1e530de49931a4b0fa0a12b2"
+    },
+    "MY/MY_BagEx/info.ini.zh_TW": {
+      "size": 160,
+      "sha256": "1725a13bdabc9d36fa3e90b3a1ae7ac765924ab19f0ee7f49e22d7ed2047bc33"
+    },
+    "MY/MY_BagEx/manifest.dat": {
+      "size": 536,
+      "sha256": "2eac347036d29e97558d6f3b60bc53f00a056679e1dc0944c686a4c7fb2caf67"
+    },
+    "MY/MY_BagEx/manifest.key": {
+      "size": 256,
+      "sha256": "d4dfa16be576b603d7f90c08766cc4472d4f255f5fbd1e5039788662f382f97a"
+    },
+    "MY/MY_BagEx/publisher.key": {
+      "size": 256,
+      "sha256": "202aa4d091e695260994f9fa4ad71339a0c1210b9a1f1a449f3860ba1c7ee264"
+    },
+    "MY/MY_BagEx/src.20260127084231-edb5b68c6.lua": {
+      "size": 84704,
+      "sha256": "4d054f7d61c43cbbc41ec636fcfd930a4bb5fe5dab4af404f816dff5e66827ec"
+    },
+    "MY/MY_Cataclysm/images/Cataclysm.Tga": {
+      "size": 16428,
+      "sha256": "b25c09696da7e9942236a3af2b06f208b06fc111c74c47ddf71566b3c777bba9"
+    },
+    "MY/MY_Cataclysm/images/Cataclysm.UITex": {
+      "size": 248,
+      "sha256": "38750f664327b4227a7309c3a4d2e5f69d9cc83952c9417d5ddb3d90c0b9a9aa"
+    },
+    "MY/MY_Cataclysm/images/Cataclysm.txt": {
+      "size": 421,
+      "sha256": "c144cef1e84b3a365c7636a672bedff72adda7642a3c8e88e120300f033008d0"
+    },
+    "MY/MY_Cataclysm/images/ForceColorBox.Tga": {
+      "size": 38418,
+      "sha256": "b5759920291ecb8833d95d73c1ed9259fe73170897b62b429f65b854b6a6ae93"
+    },
+    "MY/MY_Cataclysm/images/ForceColorBox.UITex": {
+      "size": 168,
+      "sha256": "533e8351f23a0e228d5c2a70d138a397fef6377541f31a5287fb0c555861e383"
+    },
+    "MY/MY_Cataclysm/images/border.Tga": {
+      "size": 4194322,
+      "sha256": "d01fb9755e5472625cfddfcd7a6865d5f3f58056e4d8b6f91ce1eed658d25f9e"
+    },
+    "MY/MY_Cataclysm/images/border.UITex": {
+      "size": 188,
+      "sha256": "82769864cae91dd99afd88e3ef0b0359b163c970739c8c1704128856e0ecfb8c"
+    },
+    "MY/MY_Cataclysm/images/border.txt": {
+      "size": 337,
+      "sha256": "41a02004fb6332da34b53e2bb23e61d4616ac8cf5cf453f94a6a33f5cf006d8d"
+    },
+    "MY/MY_Cataclysm/info.ini": {
+      "size": 153,
+      "sha256": "d93b24035341b7eb82aa1d0db6da8922d38d153b633f4918375a172f8e9ffae7"
+    },
+    "MY/MY_Cataclysm/info.ini.zh_TW": {
+      "size": 170,
+      "sha256": "abc8894fff1e8883b7951cbc6d813e33f00db81eb4000c1b80e6109ac4f1668e"
+    },
+    "MY/MY_Cataclysm/manifest.dat": {
+      "size": 2316,
+      "sha256": "4f7e6d8c3b9808e38bf762c8bc3a19d40d2b01c25b19cf68f73093b500ca52a3"
+    },
+    "MY/MY_Cataclysm/manifest.key": {
+      "size": 256,
+      "sha256": "2affac9d003bb8628a243cae7d9a446140f57d0487a88f814295e17b64e914e6"
+    },
+    "MY/MY_Cataclysm/publisher.key": {
+      "size": 256,
+      "sha256": "202aa4d091e695260994f9fa4ad71339a0c1210b9a1f1a449f3860ba1c7ee264"
+    },
+    "MY/MY_Cataclysm/src.20260723063831-9f7011225.lua": {
+      "size": 167760,
+      "sha256": "0691647926c0dc6bba6b22edcbbae8e5d6068a331b09fc4fb70c28b8b42b553a"
+    },
+    "MY/MY_Cataclysm/ui/MY_CataclysmMain.ini": {
+      "size": 3156,
+      "sha256": "eb1876e458ba5438a4bf69fae51c196fb5c5dbdc851930ed4985e353f774b1e5"
+    },
+    "MY/MY_Cataclysm/ui/MY_CataclysmMain_Button.ini": {
+      "size": 10708,
+      "sha256": "3f77a8186f506763054748a130fe066259da7bf5366ca6897f038ed111c9b44c"
+    },
+    "MY/MY_Cataclysm/ui/MY_CataclysmParty.CATACLYSM.ini": {
+      "size": 2663,
+      "sha256": "9056e7b65bb44c525050b2ff511943e4be0f8b978b9b2af7ddfe0fab052a7b50"
+    },
+    "MY/MY_Cataclysm/ui/MY_CataclysmParty.OFFICIAL.ini": {
+      "size": 2842,
+      "sha256": "989617215a29e31973fa7e280391c70bb7538ada7d3241b5f2101416a1690c8d"
+    },
+    "MY/MY_Cataclysm/ui/MY_CataclysmParty_Item.CATACLYSM.ini": {
+      "size": 17466,
+      "sha256": "a1a893686458d31b8831f72ab523d24c94ffd8741adf03b76bfad9afd9c01c93"
+    },
+    "MY/MY_Cataclysm/ui/MY_CataclysmParty_Item.OFFICIAL.ini": {
+      "size": 17350,
+      "sha256": "2c4cff5dbd7bf3f70fc56eae3eafe8fa68a413a8bcb7a3322e526a00ee9f52ac"
+    },
+    "MY/MY_Chat/audio/MsgArrive.ogg": {
+      "size": 18025,
+      "sha256": "e652f88e09a47a30f81894070cb171fe4762a6e1f51eb0277879ad4315af8a51"
+    },
+    "MY/MY_Chat/audio/如何自定义声音.txt": {
+      "size": 348,
+      "sha256": "99123a764877fe89837424b9da89a0bc289373bbcae344742935420d217394c3"
+    },
+    "MY/MY_Chat/img/MY_ChatSwitch.Tga": {
+      "size": 26130,
+      "sha256": "ced224e301aabc403b323194fd9c9b36345e84ef1630d9bd7cc0cc617c77db00"
+    },
+    "MY/MY_Chat/img/MY_ChatSwitch.UITex": {
+      "size": 108,
+      "sha256": "4404717813d1fd79a1d65fd5f50bed917ea9a4506eee7ad66f0b1700f9465a51"
+    },
+    "MY/MY_Chat/img/MY_ChatSwitch.txt": {
+      "size": 79,
+      "sha256": "a606fba200dcb05810d47fc7f7349b054ccac843fde1dad943e7011376fd8211"
+    },
+    "MY/MY_Chat/info.ini": {
+      "size": 162,
+      "sha256": "9204c5620f213aeb33e18971b390072178f2071db5a26ed316c2dff03054061b"
+    },
+    "MY/MY_Chat/info.ini.zh_TW": {
+      "size": 186,
+      "sha256": "567371099372fe1618e138c9dcabebaff9c8d5fa0938b7eeb0cde4f7733fa94c"
+    },
+    "MY/MY_Chat/manifest.dat": {
+      "size": 1391,
+      "sha256": "0d43b4c2b1803123ae15c0afc9fe32ea63486de2d3724d6323b9852cabd27e50"
+    },
+    "MY/MY_Chat/manifest.key": {
+      "size": 256,
+      "sha256": "5e7c22d875d91f00aa4d4865597b23c0837dfd9603f6bb82a8d16764b4955237"
+    },
+    "MY/MY_Chat/publisher.key": {
+      "size": 256,
+      "sha256": "eaa0f722ac8949fbc02cd9f1dbec5e5893d4a140644201de581798849136a39c"
+    },
+    "MY/MY_Chat/src.20260127084231-edb5b68c6.lua": {
+      "size": 106928,
+      "sha256": "6a7c84cf6b775e3ff77a47f9c815890c686f6590d617b014dcc3338b21d4830a"
+    },
+    "MY/MY_Chat/ui/MY_ChatSwitch.ini": {
+      "size": 3733,
+      "sha256": "4afdec59c82bde0c8f92d141204ff3a51aa8f3821fac6cd9578b51c876c2d519"
+    },
+    "MY/MY_Chat/ui/MY_TeamBalloon.ini": {
+      "size": 1040,
+      "sha256": "5b623d0da30e7045c77a4af045e8e8e58c60f965366a51b101b3dfc411fed1c7"
+    },
+    "MY/MY_ChatLog/info.ini": {
+      "size": 153,
+      "sha256": "7168015635900c062733c0c8686a22b903d82f5eafd3e7addc014dfb5b545bcc"
+    },
+    "MY/MY_ChatLog/info.ini.zh_TW": {
+      "size": 171,
+      "sha256": "ed355de87ceb71e30257c24bfd334924620e97d473d386b0c42daedf6747d6df"
+    },
+    "MY/MY_ChatLog/manifest.dat": {
+      "size": 659,
+      "sha256": "ae7e6a7125724c31e2b81bcf056667658c35674a76688499f4aadfe307a243b8"
+    },
+    "MY/MY_ChatLog/manifest.key": {
+      "size": 256,
+      "sha256": "ab8cc0f838def582dd4256ee8f7cd8f15d1145d7515d83d1b6cb7badae1d0fa0"
+    },
+    "MY/MY_ChatLog/publisher.key": {
+      "size": 256,
+      "sha256": "20e116960c5b1704cd255ec89e013becbb987750a6848504a9c46d62e13d42eb"
+    },
+    "MY/MY_ChatLog/src.20260127084231-edb5b68c6.lua": {
+      "size": 90624,
+      "sha256": "3f1008f87b6b998c81d7bd63c12fd88b94f054f46786460c1dcbb19d12a8e2a4"
+    },
+    "MY/MY_ChatLog/ui/MY_ChatLog_UI.ini": {
+      "size": 12610,
+      "sha256": "6d6b92ee14ea692c9c68a341b3f3c43aa85eefa8f8d76b394a1835c558e0eedc"
+    },
+    "MY/MY_CombatText/info.ini": {
+      "size": 146,
+      "sha256": "d8b50890ac4c07a29dd01b4337122a0f527b820606a9bd73e34c284894a2137f"
+    },
+    "MY/MY_CombatText/info.ini.zh_TW": {
+      "size": 159,
+      "sha256": "ebc38b71f66c7478a508cc12830c3b11486a29b884353d30cf371e0e6b59a01b"
+    },
+    "MY/MY_CombatText/manifest.dat": {
+      "size": 790,
+      "sha256": "b65d5d4a5caf41f3d7df6dbc7216ab80167a3462d52c159e5917714dbd9d1012"
+    },
+    "MY/MY_CombatText/manifest.key": {
+      "size": 256,
+      "sha256": "e84bffb9f88004de59584ad2c79e227d7b55a1f9212ff88af1beef22fb9ea43a"
+    },
+    "MY/MY_CombatText/publisher.key": {
+      "size": 256,
+      "sha256": "23daf986b24fddf057ba447aa64e9bb29c38a11d3a25daccaaad61a91ad99e91"
+    },
+    "MY/MY_CombatText/src.20260723063831-9f7011225.lua": {
+      "size": 39808,
+      "sha256": "585278393abf823feb295f107374eadf647ab5a0641a6cf3fb67c5765836855b"
+    },
+    "MY/MY_CombatText/ui/MY_CombatText.ini": {
+      "size": 686,
+      "sha256": "e3d07953fea1b4bb65acf092636a76c8d3fa71e65f1c123866ebbb3ff2b92824"
+    },
+    "MY/MY_CombatText/ui/MY_CombatText_Render.ini": {
+      "size": 714,
+      "sha256": "3898723f26cd9ffbc3a5435e5ac44d9ef91f1b17d697f7be1eb3145e2e110ab3"
+    },
+    "MY/MY_Farbnamen/info.ini": {
+      "size": 159,
+      "sha256": "68ad600529fdcdfe1b7937a3736b4866f3a081c0f04e2ca6a1436245feda6990"
+    },
+    "MY/MY_Farbnamen/info.ini.zh_TW": {
+      "size": 179,
+      "sha256": "4791d2f8e800daf815519aa93d3ce88e082e7675e99b21fa7de30408e90270b7"
+    },
+    "MY/MY_Farbnamen/manifest.dat": {
+      "size": 540,
+      "sha256": "6308376435e7d184ed6471f7be3db55c797498088388dc065dd5699d3da01083"
+    },
+    "MY/MY_Farbnamen/manifest.key": {
+      "size": 256,
+      "sha256": "6388d5bae1e072b23bfd4ddb613665ee96d44a7f3aaf715eef192580206d6b0d"
+    },
+    "MY/MY_Farbnamen/publisher.key": {
+      "size": 256,
+      "sha256": "fc666c5a20ae01c07242b2eaeed85b9a72ece6841599a407fb7f13b09f8cc9c6"
+    },
+    "MY/MY_Farbnamen/src.20260127084231-edb5b68c6.lua": {
+      "size": 42608,
+      "sha256": "31b9a7b1eb30b8df1f2dc315dab4808644f700bfbb0ee1d6fe76c6939def3ba6"
+    },
+    "MY/MY_Focus/info.ini": {
+      "size": 145,
+      "sha256": "783da6b68b7cdb80500a5865696d0be050afab13b18bddee2f2609614be36831"
+    },
+    "MY/MY_Focus/info.ini.zh_TW": {
+      "size": 160,
+      "sha256": "f5217abf4b6c4465432c941b5256729d27d7142924dac30141f2a4b37922cf14"
+    },
+    "MY/MY_Focus/manifest.dat": {
+      "size": 652,
+      "sha256": "babca9cf98631b37d003ce3a328a9bf00521a56c72b89cf144006c736a4308d5"
+    },
+    "MY/MY_Focus/manifest.key": {
+      "size": 256,
+      "sha256": "0daa738ee0b4f996275c9f494473190bd534d3c615e406a8172989c5f0f9ce6d"
+    },
+    "MY/MY_Focus/publisher.key": {
+      "size": 256,
+      "sha256": "355350be3f2ec1d0780a7e1941e4f3361763f946d7e09d4ab496dbe34208081b"
+    },
+    "MY/MY_Focus/src.20260127084231-edb5b68c6.lua": {
+      "size": 63440,
+      "sha256": "dd1bdda41f0c11ca5e8d2d88ec1a1c2604b83b149aecd894e3c44cd3257fcdc9"
+    },
+    "MY/MY_Focus/ui/MY_Focus.ini": {
+      "size": 12676,
+      "sha256": "39bd37ca6cd0d3b8f2fc5c6bab26cadc529535a7ccb4559245e2f01d397b7cf3"
+    },
+    "MY/MY_Font/info.ini": {
+      "size": 144,
+      "sha256": "e688481bdb3c22baa4449aaf8a6393cb34e1033e0b723418d460b63cbbe1ade8"
+    },
+    "MY/MY_Font/info.ini.zh_TW": {
+      "size": 159,
+      "sha256": "e2c6f39b8efe1803d85338caf6788e8337ddf9f9f9886da54da301510967f34b"
+    },
+    "MY/MY_Font/manifest.dat": {
+      "size": 534,
+      "sha256": "4678dca751f3e6635b319d57acd268aeb8a1c252ee657c1f7294c7d6168bfc24"
+    },
+    "MY/MY_Font/manifest.key": {
+      "size": 256,
+      "sha256": "00bd1307081f75ad591ed072034f6714c4c6dba5741c259306fefac9c065e625"
+    },
+    "MY/MY_Font/publisher.key": {
+      "size": 256,
+      "sha256": "c828e923ab1aeb27edab7c32d566bbf093553db9054befb3ee310929883e4b7e"
+    },
+    "MY/MY_Font/src.20260127084231-edb5b68c6.lua": {
+      "size": 8528,
+      "sha256": "a62e24320b31a792c8341c5c279cadb0eb894e48c81c65d9b29e8cd67c9d79c3"
+    },
+    "MY/MY_FontResource/info.ini": {
+      "size": 150,
+      "sha256": "e7fc92aba2882ccde7165ffa7ca4a047485634ff41ebf3556cff7f4928f13d66"
+    },
+    "MY/MY_FontResource/info.ini.zh_TW": {
+      "size": 164,
+      "sha256": "9c47c5371a572c39bd562cc4df5f47b158374d015948fea8da425b7a75293b9b"
+    },
+    "MY/MY_FontResource/manifest.dat": {
+      "size": 542,
+      "sha256": "26d6aee8f4cf6730ca4a91bf1d141148723290c9de388a8873ae30e5a8d0c1fb"
+    },
+    "MY/MY_FontResource/manifest.key": {
+      "size": 256,
+      "sha256": "dc3789fa6b7f54600da19c028b8a8cb7ac04144b71b8f2b33b175450bdf0f2bc"
+    },
+    "MY/MY_FontResource/publisher.key": {
+      "size": 256,
+      "sha256": "66c134eab979b406a4005f3062d86b95e43929a3fe6f9bab3b9bab99d23b0e3e"
+    },
+    "MY/MY_FontResource/src.20260127084231-edb5b68c6.lua": {
+      "size": 544,
+      "sha256": "ad3fe7b4e5c16717e147d32ae5f10189b58e7ec29cd3a9b4d986a03b158bd9e7"
+    },
+    "MY/MY_Force/info.ini": {
+      "size": 167,
+      "sha256": "72e93a05f70c3988dd17e5a98877ff7635a3ba10d510b8547d17e8a0c9476c23"
+    },
+    "MY/MY_Force/info.ini.zh_TW": {
+      "size": 193,
+      "sha256": "0648aa1b26a4fca372fe39c30d4e05cb41b4d9eb5371936b6d068c6aef15f342"
+    },
+    "MY/MY_Force/manifest.dat": {
+      "size": 652,
+      "sha256": "e40a7cb6c2e471a704024aeb595c610effdcb9d090b94fdd3d5e65479005fce6"
+    },
+    "MY/MY_Force/manifest.key": {
+      "size": 256,
+      "sha256": "3d091e150554857d11f14995f49d45995000ee66f96c03a1e9736f346ea4a3f5"
+    },
+    "MY/MY_Force/publisher.key": {
+      "size": 256,
+      "sha256": "eaa0f722ac8949fbc02cd9f1dbec5e5893d4a140644201de581798849136a39c"
+    },
+    "MY/MY_Force/src.20260723063831-9f7011225.lua": {
+      "size": 26368,
+      "sha256": "0421482a72463bb8bd8e14be5a913ac96a03eabaa59508d6854e0f67b90df004"
+    },
+    "MY/MY_Force/ui/Playerbar.ini": {
+      "size": 47375,
+      "sha256": "a523c19f302ac9124cb25193f9abb60717b2730f05649afebbc0bfb424089644"
+    },
+    "MY/MY_GKP/img/GKPLoot.Tga": {
+      "size": 4818,
+      "sha256": "672469043ac715b1d0fa22559b19e61f3881736c15490aa70af13bdf8fd8e918"
+    },
+    "MY/MY_GKP/img/GKPLoot.UITex": {
+      "size": 128,
+      "sha256": "6c95a5e72b56cdc7a4bbf7a57578b84b06788dde72731f954a9d57d2083ca90a"
+    },
+    "MY/MY_GKP/img/GKPLoot.txt": {
+      "size": 134,
+      "sha256": "3dd77253421222d2645861ac273f0fc3b852be257a66b915e74c9724ac3dd856"
+    },
+    "MY/MY_GKP/img/GKPSeal.Tga": {
+      "size": 2097170,
+      "sha256": "b2d72a5f8d7af8fa011202b52b87a0d5100e36288c2d9c67cd6500684cb2c9ec"
+    },
+    "MY/MY_GKP/img/GKPSeal.UITex": {
+      "size": 228,
+      "sha256": "8ed9bdaa361e9b7e5b85abc2bdb259805a7dca6f8ccc34eb3578ad1f7b6074b9"
+    },
+    "MY/MY_GKP/img/GKPSeal.txt": {
+      "size": 284,
+      "sha256": "e3eaa1bc884058fab96b490cf649b93d30a7a73a065b1ccd28fd138bc98080f1"
+    },
+    "MY/MY_GKP/info.ini": {
+      "size": 145,
+      "sha256": "a837f5c4a96568bb6c7e56d5bd963ba2e4ca01eba8d8f969e140f0865878b5d3"
+    },
+    "MY/MY_GKP/info.ini.zh_TW": {
+      "size": 161,
+      "sha256": "df40eb577fc32249566a3275df38b07a30bd04540a40e111b81ad2289c0c52eb"
+    },
+    "MY/MY_GKP/manifest.dat": {
+      "size": 1838,
+      "sha256": "617283231702ada165918010909a937db8a584f0c4f9f04e66d96b5e8a0646b0"
+    },
+    "MY/MY_GKP/manifest.key": {
+      "size": 256,
+      "sha256": "58a6ca5e7237c80d05b638d965ea2dd5a542e81607e797d212b3c3e1356cb5f2"
+    },
+    "MY/MY_GKP/publisher.key": {
+      "size": 256,
+      "sha256": "f45c06b063c10ec6913ff89496a0fdeeebf388f16df1d4a5f89510508d2db556"
+    },
+    "MY/MY_GKP/src.20260127084231-edb5b68c6.lua": {
+      "size": 184544,
+      "sha256": "a64487b1f950c3aedf7d66c06a61a1105af23d6e134c5ef8db23032e568ea96c"
+    },
+    "MY/MY_GKP/ui/MY_GKP.ini": {
+      "size": 10009,
+      "sha256": "8466b6bbdd640cb19700bb99e1e06509609d6547e2a401bd53b296328ef207b2"
+    },
+    "MY/MY_GKP/ui/MY_GKPLoot.ini": {
+      "size": 7561,
+      "sha256": "e2bc71fb74230e43c39918984e4a83a004702470a5ffdf3bf784e02224e92aee"
+    },
+    "MY/MY_GKP/ui/MY_GKP_Account_Item.ini": {
+      "size": 2222,
+      "sha256": "aa46bda2204e2d316471f791ad8357641ca26130e0622059a8e114c3a22e4401"
+    },
+    "MY/MY_GKP/ui/MY_GKP_Chat.ini": {
+      "size": 2318,
+      "sha256": "35ed1823e434a2562642ac24e32461dace0ea3887e5e795a361b49817e1de575"
+    },
+    "MY/MY_GKP/ui/MY_GKP_Record_Item.ini": {
+      "size": 2310,
+      "sha256": "1594ff42d61ca1a881769f47f2a22b544f0516f170a91d61042de9048bd40338"
+    },
+    "MY/MY_LifeBar/info.ini": {
+      "size": 155,
+      "sha256": "8212ab3a5636de7766ec5f5d0777a00ee551e91ce64b83d31061c1bc1073b915"
+    },
+    "MY/MY_LifeBar/info.ini.zh_TW": {
+      "size": 174,
+      "sha256": "78afb8f203ee9107a5d4092212fe57a25081059d68de42622173d0eddf06e39b"
+    },
+    "MY/MY_LifeBar/manifest.dat": {
+      "size": 538,
+      "sha256": "0ed67bcf27e2307f0705f37a3b3c6b0e7decd27eb46ca09d8e9baa5329beefcc"
+    },
+    "MY/MY_LifeBar/manifest.key": {
+      "size": 256,
+      "sha256": "2b50d1fdc03823e4fa58809d03142fd55ce888a9046811047bf9ea3fd299591f"
+    },
+    "MY/MY_LifeBar/publisher.key": {
+      "size": 256,
+      "sha256": "3f3ef6b3da229961347bf8e65dce54210466603c4bc25bfa64e1cbce0ebee256"
+    },
+    "MY/MY_LifeBar/src.20260127084231-edb5b68c6.lua": {
+      "size": 131776,
+      "sha256": "78bddeb87a3f7e6c259fc17259e98de40343269bc24e15eaadb509c862fe4bb0"
+    },
+    "MY/MY_Logoff/info.ini": {
+      "size": 156,
+      "sha256": "2aacfd16b17168c48089cbc183e58fed268d5a60fc690399e870a66ec6697c5b"
+    },
+    "MY/MY_Logoff/info.ini.zh_TW": {
+      "size": 176,
+      "sha256": "b98f593f70e0e346f3bc81017c2ae083fd5e633a977587a024470758ed9f6d13"
+    },
+    "MY/MY_Logoff/manifest.dat": {
+      "size": 536,
+      "sha256": "d873409a48849097d87e7c7717d416f4df022407a752e84135def32eb450172f"
+    },
+    "MY/MY_Logoff/manifest.key": {
+      "size": 256,
+      "sha256": "1e63dea40c970711027645ba3c3b82c1dcb4eac2f03c8e90b86480175ef5b6be"
+    },
+    "MY/MY_Logoff/publisher.key": {
+      "size": 256,
+      "sha256": "ccc36f1f5367fd67f03451071b467c3048b0d01c051e8b9701191557a8dface4"
+    },
+    "MY/MY_Logoff/src.20260127084231-edb5b68c6.lua": {
+      "size": 6784,
+      "sha256": "044cd1f87fcc33b34ab075973e68f98e78c57750699c8454b528e88311591f5a"
+    },
+    "MY/MY_MiddleMapMark/info.ini": {
+      "size": 163,
+      "sha256": "2487262d5f2d816b4cb803fd4ca22be28fa392daa1fb7de5a8f92df72bc80513"
+    },
+    "MY/MY_MiddleMapMark/info.ini.zh_TW": {
+      "size": 183,
+      "sha256": "9d096336399c5b27b20a96502e71e9a13600526cbb2ec72687f1f0cd90e177ec"
+    },
+    "MY/MY_MiddleMapMark/manifest.dat": {
+      "size": 544,
+      "sha256": "9a3e708d118632c9034ee7fa500b527347a4b75e0d3ae227bcb4345e0f86db1b"
+    },
+    "MY/MY_MiddleMapMark/manifest.key": {
+      "size": 256,
+      "sha256": "d33479a8f5a0e03d6dfb876968e0e7ae84802f2587d06bbdba931d40b7e4e81b"
+    },
+    "MY/MY_MiddleMapMark/publisher.key": {
+      "size": 256,
+      "sha256": "35428d5fadbc1bcd9ab6ee6ed2a5066ecc87c6d9c04fc3f2983690801f7e81e2"
+    },
+    "MY/MY_MiddleMapMark/src.20260127084231-edb5b68c6.lua": {
+      "size": 22576,
+      "sha256": "f98bdb8edb4efc6854fe10d5a56e5c8f2c0abc6259c2ae5a3a8ec922400313cd"
+    },
+    "MY/MY_Recount/info.ini": {
+      "size": 153,
+      "sha256": "9dce0a61aaa5717e11861a1b5fdc666f5de8c8059dacf8eda7e1e642a3b767b2"
+    },
+    "MY/MY_Recount/info.ini.zh_TW": {
+      "size": 171,
+      "sha256": "7b6b924fb7366227369eb2a32af89e72739d87692da9818456b7ec78e88ff71a"
+    },
+    "MY/MY_Recount/manifest.dat": {
+      "size": 780,
+      "sha256": "bbfa63d10a4862d6f733227530cfb59b202964987f425171c6b83d724d8665e2"
+    },
+    "MY/MY_Recount/manifest.key": {
+      "size": 256,
+      "sha256": "091a22fdfaf7f2550605e60d24c5f51efb9785888f9d0a7a3d69bcf3f4c5aa11"
+    },
+    "MY/MY_Recount/publisher.key": {
+      "size": 256,
+      "sha256": "20e116960c5b1704cd255ec89e013becbb987750a6848504a9c46d62e13d42eb"
+    },
+    "MY/MY_Recount/src.20260723063831-9f7011225.lua": {
+      "size": 97120,
+      "sha256": "2ff89f1219326ff050ec805405ef20a3d883ebf5392f11efdaec8b80031570ee"
+    },
+    "MY/MY_Recount/ui/MY_Recount_DT.ini": {
+      "size": 20218,
+      "sha256": "5b34add85085f9276d709c85189c326aa828b858649709468c8b13aa24abda3e"
+    },
+    "MY/MY_Recount/ui/MY_Recount_UI.ini": {
+      "size": 9051,
+      "sha256": "ce5039375cbdf6111e1ac82f22cde94331e5fb46bee70100da78be706a256532"
+    },
+    "MY/MY_Resource/img/Poster_2013.Tga": {
+      "size": 1159862,
+      "sha256": "be895c34bef5197d39cc6f8a815202ff8bc7213b379bf9e708f995d6d399c5c6"
+    },
+    "MY/MY_Resource/img/Poster_2013.UITex": {
+      "size": 112,
+      "sha256": "c572eb1a5ec007989be366110f5847caf2557253da27204774405a253213e419"
+    },
+    "MY/MY_Resource/img/Poster_2013.txt": {
+      "size": 130,
+      "sha256": "234eec8739c35b04e6093d4d70ba54f80b01cdac6187c5a143436d19d3f756a7"
+    },
+    "MY/MY_Resource/img/Poster_2020.Tga": {
+      "size": 1187954,
+      "sha256": "3582248a24076c506eb5ffebbdca148964936f81f04b77b7de1d36d846250712"
+    },
+    "MY/MY_Resource/img/Poster_2020.UITex": {
+      "size": 112,
+      "sha256": "39ccf3bdc2346123a6e5bf02cebe8b796d68c670a2448302e992c3caa1eb01d3"
+    },
+    "MY/MY_Resource/img/Poster_2020.txt": {
+      "size": 130,
+      "sha256": "3db0f4190d3bdde219f0fc0afa2e5984db7f0e3ac9656e4ffb00cd234dd6f46f"
+    },
+    "MY/MY_Resource/img/Poster_2024_1.Tga": {
+      "size": 1429158,
+      "sha256": "fdbaf45d0dfef4b4c8773ccb1a4fffcdd5db0fa8dbec3411b2cb2257407ac3c7"
+    },
+    "MY/MY_Resource/img/Poster_2024_1.UITex": {
+      "size": 132,
+      "sha256": "7e480571bbe26502071cb5b7c098ec3119143aec6e909e7c8ace7edbef9b757b"
+    },
+    "MY/MY_Resource/img/Poster_2024_1.txt": {
+      "size": 132,
+      "sha256": "5a336f55e7f58f26742b39f5c8ba4a51ff7ca0a9dad073ffa944c5f4d13de808"
+    },
+    "MY/MY_Resource/img/Poster_2024_2.Tga": {
+      "size": 1350482,
+      "sha256": "a02a1270f35226ee84b8579cc89d473312f5342f560cea35bac8f496cd9fe6ea"
+    },
+    "MY/MY_Resource/img/Poster_2024_2.UITex": {
+      "size": 124,
+      "sha256": "2ec086598666a145bc6be87d74ff9e8c5723e6bdff02d028e5ab76a7ba12458b"
+    },
+    "MY/MY_Resource/img/Poster_2024_2.txt": {
+      "size": 132,
+      "sha256": "410c87df56fd4f34ea1317ed9839876853fc533c46efabf1badf625ed16712fa"
+    },
+    "MY/MY_Resource/img/Poster_2024_3.Tga": {
+      "size": 1489934,
+      "sha256": "51f2f2086513024d6f5a3811f2c8b74a7d49890106342809dcbc88291850e510"
+    },
+    "MY/MY_Resource/img/Poster_2024_3.UITex": {
+      "size": 124,
+      "sha256": "69c81e68251b24f7a533c2867321a359a32d7b8124db23f4639ac80de1956bf8"
+    },
+    "MY/MY_Resource/img/Poster_2024_3.txt": {
+      "size": 130,
+      "sha256": "0ce23bc3fee9837393a1d401575d9d67a09e22c4bb0065b5ed8c1074993b3a61"
+    },
+    "MY/MY_Resource/img/WndButton.Tga": {
+      "size": 547602,
+      "sha256": "68825a6d7d66e08f0b65a21c69b0e71d2f037e912be50b86b0ca58a3168266ba"
+    },
+    "MY/MY_Resource/img/WndButton.UITex": {
+      "size": 860,
+      "sha256": "59f66d1e12e5be38917f85a5c0f8ca4119dd86f5a7af0f3cf89ded9af3aee926"
+    },
+    "MY/MY_Resource/img/WndButton.txt": {
+      "size": 1443,
+      "sha256": "29c028da4b528961ca36f2fbf4e942c3f53708bd9e478686ff83da27a23100f1"
+    },
+    "MY/MY_Resource/info.ini": {
+      "size": 148,
+      "sha256": "0d2aff37b6b457faba9663014bd1d7da5d9680233e79f13c22577ae89551cba7"
+    },
+    "MY/MY_Resource/info.ini.zh_TW": {
+      "size": 163,
+      "sha256": "5320e685e8e4fba0486b577a63e37f4ed666f0489ac0be37441a3fbf541f9c9c"
+    },
+    "MY/MY_Resource/manifest.dat": {
+      "size": 2722,
+      "sha256": "49dcac0ed24fd597d9574e490ebfc9425cea17a34efeaad304584f4b7edd2062"
+    },
+    "MY/MY_Resource/manifest.key": {
+      "size": 256,
+      "sha256": "87d73d9952af5bc3177161d0c7450210e200753b4f5aee6a32af5555d2f607da"
+    },
+    "MY/MY_Resource/publisher.key": {
+      "size": 256,
+      "sha256": "cae9b72e2d7d9be471551be14181445df7baa3d95261bb7b29a44393f1ff90eb"
+    },
+    "MY/MY_Resource/src.20260127084231-edb5b68c6.lua": {
+      "size": 2880,
+      "sha256": "e9012c06d922de0146bb37a7b2b3fc2255ce4fd1e2a5f775bcdd37f31e4e73e5"
+    },
+    "MY/MY_RoleStatistics/img/MY_RoleStatistics.Tga": {
+      "size": 1362,
+      "sha256": "0ea78a37deba88965bd76fd5a58422e87623c0810e498886bb443dfa6f72d1f8"
+    },
+    "MY/MY_RoleStatistics/img/MY_RoleStatistics.UITex": {
+      "size": 132,
+      "sha256": "e3df2416c5556867dec7eb461e2b2c0988e54b804e5233154edfe7f0c284d706"
+    },
+    "MY/MY_RoleStatistics/img/MY_RoleStatistics.txt": {
+      "size": 118,
+      "sha256": "e1f6b108fde788e5e8bd1d3c54b282abe3b8a26cb0352efeebec0d23fe6a4b08"
+    },
+    "MY/MY_RoleStatistics/img/MY_RoleStatistics_BagStat.Tga": {
+      "size": 12562,
+      "sha256": "7aba6c3b8421160851fee726447d00bf7106a9c9733113bac4c8f73c09d00c18"
+    },
+    "MY/MY_RoleStatistics/img/MY_RoleStatistics_BagStat.UITex": {
+      "size": 220,
+      "sha256": "2c7bcaceca111f4f2ff9c39b2cd505913727efd5e9df82de5bd38c9db3131137"
+    },
+    "MY/MY_RoleStatistics/img/MY_RoleStatistics_BagStat.txt": {
+      "size": 215,
+      "sha256": "3e803c1b3c5b39daa2140f506ac1a8e365f4d85e9330b3a6bf6b61cf15500069"
+    },
+    "MY/MY_RoleStatistics/info.ini": {
+      "size": 158,
+      "sha256": "b195c159d0fb46e21130aac18c9998508469d77d1f6d03aee0456bc5b1a1ebd5"
+    },
+    "MY/MY_RoleStatistics/info.ini.zh_TW": {
+      "size": 175,
+      "sha256": "9f1d63ff2959f66edfbff96753aeef91e09dbf272d18d80c0c5c7d34ab3bc583"
+    },
+    "MY/MY_RoleStatistics/manifest.dat": {
+      "size": 2409,
+      "sha256": "98f1817108069b31fb8e650e010bb3891cd10e162e608b76916f34acc0888007"
+    },
+    "MY/MY_RoleStatistics/manifest.key": {
+      "size": 256,
+      "sha256": "31338b624b54376cd9c46a61d604042fd19f0701b193ba272773150b077ef04d"
+    },
+    "MY/MY_RoleStatistics/publisher.key": {
+      "size": 256,
+      "sha256": "69cf45f2f62ccad8ecd4498400a8784803f862ac458997c97acc973c1b4f711e"
+    },
+    "MY/MY_RoleStatistics/src.20260127084231-edb5b68c6.lua": {
+      "size": 165824,
+      "sha256": "685a00beb46684f07d222989644abea6e7699f0762b381790cca5a45ae807c13"
+    },
+    "MY/MY_RoleStatistics/ui/MY_RoleStatistics_BagEntry.ini": {
+      "size": 887,
+      "sha256": "98b8940e8140b7124a17298aa730bf27f84c21830024fb2b097af666b7f7c938"
+    },
+    "MY/MY_RoleStatistics/ui/MY_RoleStatistics_BagStat.ini": {
+      "size": 16016,
+      "sha256": "b04fab386f14f3bdb4e7b2887b29bc2f16ba611ed70f9cbe468c832439e1fa83"
+    },
+    "MY/MY_RoleStatistics/ui/MY_RoleStatistics_DungeonEntry.ini": {
+      "size": 711,
+      "sha256": "83b84c2ced04d43e01ae9dbc02ce0755fa8cedc18ffa8b2016694968838b7620"
+    },
+    "MY/MY_RoleStatistics/ui/MY_RoleStatistics_EquipEntry.ini": {
+      "size": 863,
+      "sha256": "b2d3c97324a2dc532448dcbc487d98b75cd1d3864ddafd81c5caecc4f5a2cafd"
+    },
+    "MY/MY_RoleStatistics/ui/MY_RoleStatistics_EquipStat.ini": {
+      "size": 26566,
+      "sha256": "352823e46bdbd3158032e53239f45cddfd459bdbe0bc14c756d49424ee2f829b"
+    },
+    "MY/MY_RoleStatistics/ui/MY_RoleStatistics_RoleEntry.ini": {
+      "size": 702,
+      "sha256": "36a333c218f0a1ee2d1948cdc05f259ea26f8a74745f13af156dee1247a15cc2"
+    },
+    "MY/MY_RoleStatistics/ui/MY_RoleStatistics_TaskEntry.ini": {
+      "size": 702,
+      "sha256": "9a03afadfb6e449a03161cc9587b09e5e8c3ab41635f7509dd12acc94c83f98b"
+    },
+    "MY/MY_RoleStatistics/ui/MY_RoleStatistics_TaskStat.ini": {
+      "size": 1423,
+      "sha256": "c5936f729c65ce5e870abb4b9c82821f0edfacfdcc0f23f4ec3877eb6446cf57"
+    },
+    "MY/MY_RollMonitor/info.ini": {
+      "size": 163,
+      "sha256": "e3de938e47686aff89e00a9aaf8ec52583930e11c7b0084626bc3ce3a5ac05fd"
+    },
+    "MY/MY_RollMonitor/info.ini.zh_TW": {
+      "size": 184,
+      "sha256": "cd60c3ea1cb1e7ed3d47086e98ac80d5cdaa990145b82488f456eecf806ff004"
+    },
+    "MY/MY_RollMonitor/manifest.dat": {
+      "size": 541,
+      "sha256": "d5b6d19421a4c5a75adf0930258bf3eb0a41ba6d9e00f42cc7b0c3a55902ec84"
+    },
+    "MY/MY_RollMonitor/manifest.key": {
+      "size": 256,
+      "sha256": "2e907b5f74896a533f4bc087d807b834683ebdbd680c1f6cf0e059eea3981042"
+    },
+    "MY/MY_RollMonitor/publisher.key": {
+      "size": 256,
+      "sha256": "51b55c0c6e5e08dd6db61aed2efbdf041c77a34725eac8ebcae81316130bab61"
+    },
+    "MY/MY_RollMonitor/src.20260127084231-edb5b68c6.lua": {
+      "size": 12352,
+      "sha256": "3b558a30133130c82cc2aa927405b35f692d482a737ff0066ce74075daf7870d"
+    },
+    "MY/MY_ScreenShot/info.ini": {
+      "size": 156,
+      "sha256": "b171a3551f8615e63873014104b0e64d1a44c57acb187237d59df6f9ef79d629"
+    },
+    "MY/MY_ScreenShot/info.ini.zh_TW": {
+      "size": 174,
+      "sha256": "b4c9e9522fc7f60ed745b7eb71d838dc96c89551a171f3d106744c288e26823e"
+    },
+    "MY/MY_ScreenShot/manifest.dat": {
+      "size": 540,
+      "sha256": "7e215f245bd2e133f0daceb53ad36592828f4df5cb3c9d4668cf9bf66bf246c0"
+    },
+    "MY/MY_ScreenShot/manifest.key": {
+      "size": 256,
+      "sha256": "939b8a80f046d846d1dc3d8a7df81d347857cc0e508ac268d4ab40e964511f4b"
+    },
+    "MY/MY_ScreenShot/publisher.key": {
+      "size": 256,
+      "sha256": "36f34297b37463969bf27680159a92b711bfb1a5a7eda2683bc6958939427bd0"
+    },
+    "MY/MY_ScreenShot/src.20260127084231-edb5b68c6.lua": {
+      "size": 8880,
+      "sha256": "55d72fc64b6eb05f8c10b6d3947d2b947562596fa6627160f9bc3ed242df93d1"
+    },
+    "MY/MY_Target/img/MY_TargetDirection.Tga": {
+      "size": 627282,
+      "sha256": "00ca2cf2abe7627c2984ea87746c21432cc1af2fcae07ca601ebe1dc76d85136"
+    },
+    "MY/MY_Target/img/MY_TargetDirection.UITex": {
+      "size": 188,
+      "sha256": "172c6c971642e9f1a73bfea220bc9389a0475f9b21234ace4bedf60e4dadd3de"
+    },
+    "MY/MY_Target/img/MY_TargetDirection.txt": {
+      "size": 282,
+      "sha256": "64fa789be534ed3a6c79f306e13bdd81441fce2165fc471f607dcbdffd92aba6"
+    },
+    "MY/MY_Target/info.ini": {
+      "size": 158,
+      "sha256": "c59a5f00138a0ad2b035f01226fca993ddb456807ae866aea594d432ac43735f"
+    },
+    "MY/MY_Target/info.ini.zh_TW": {
+      "size": 179,
+      "sha256": "223cf24efb7c9182a24e306d3aa45e7470aea6bf318352dc3fbda737d8d931e6"
+    },
+    "MY/MY_Target/manifest.dat": {
+      "size": 1045,
+      "sha256": "2ee80ad36bdeaec24a0c88f6ded040e759722e78fc714670abef6964549fc9d1"
+    },
+    "MY/MY_Target/manifest.key": {
+      "size": 256,
+      "sha256": "6e2e1dde610efafb232c7da6c52c11288b70a8f87d98031e1834cfa1bdeec55c"
+    },
+    "MY/MY_Target/publisher.key": {
+      "size": 256,
+      "sha256": "8a4136d97ec920aa802a1b262fa9517df25a82184a510a847a5a447d01611afe"
+    },
+    "MY/MY_Target/src.20260127084231-edb5b68c6.lua": {
+      "size": 33792,
+      "sha256": "6acd34f51600659201d2367b0fa95b2fb2324b0f90eaabd7e8e5733794721a15"
+    },
+    "MY/MY_Target/ui/MY_TargetDirection.ini": {
+      "size": 2194,
+      "sha256": "90a45eb9a4ebc974b1bd11a44003c497a4fcbb071fc706e7c11bb6524e8575bb"
+    },
+    "MY/MY_TargetMon/img/ST.Tga": {
+      "size": 331794,
+      "sha256": "d9c0bf1b685bf8c48e87611bcf4e4bb4b7de81c9a29d67a128b71759ec598133"
+    },
+    "MY/MY_TargetMon/img/ST.UITex": {
+      "size": 272,
+      "sha256": "a51b2a13a2eef37b94cf05c573c96b0d9b28791bc31a8cbae4c1c534652eaa99"
+    },
+    "MY/MY_TargetMon/img/ST.txt": {
+      "size": 451,
+      "sha256": "3481008648e9488eae398748c9107a9cc1b18dd1185de4768cac2b9fb5019a94"
+    },
+    "MY/MY_TargetMon/info.ini": {
+      "size": 149,
+      "sha256": "1af347c77c2b2870ad538b7231538abde25d41d0f8c02f29740b7fe3fae7684e"
+    },
+    "MY/MY_TargetMon/info.ini.zh_TW": {
+      "size": 164,
+      "sha256": "b7ee8b060a197f484419455600049ce9db4a636df99779c9fac6abd2e0581a73"
+    },
+    "MY/MY_TargetMon/manifest.dat": {
+      "size": 1396,
+      "sha256": "27c1b5e27d47211a6391b0974ee4ab3e22769b0adcc1bf79ff1b598c9d6a0092"
+    },
+    "MY/MY_TargetMon/manifest.key": {
+      "size": 256,
+      "sha256": "956a049768891d65b0b1d54b2a5701dc4400110f68be2c63cd716ef67f88f715"
+    },
+    "MY/MY_TargetMon/publisher.key": {
+      "size": 256,
+      "sha256": "202aa4d091e695260994f9fa4ad71339a0c1210b9a1f1a449f3860ba1c7ee264"
+    },
+    "MY/MY_TargetMon/src.20260903085927-5fb116f86.lua": {
+      "size": 150016,
+      "sha256": "2dc79d48cde862e48c27abad3e6488665632e6389f5c4608feea7c26c3712ee6"
+    },
+    "MY/MY_TargetMon/ui/MY_TargetMon.ini": {
+      "size": 3845,
+      "sha256": "c82c536ac87e43ab0d1694e023ff27a093b20a3a5863f8629adf84c2d3ebb52e"
+    },
+    "MY/MY_TargetMon/ui/MY_TargetMon_PS.ini": {
+      "size": 11164,
+      "sha256": "8acc9c203bb5c7d7546dc695643913a283cca9b1e021abd4b7af94fc23f3b08b"
+    },
+    "MY/MY_TargetMon/ui/MY_TargetMon_Subscribe_Data.ini": {
+      "size": 9012,
+      "sha256": "dae1898045e2a929efac92915e1cf30c503f416c81aba9ec63135b3a366fbc1e"
+    },
+    "MY/MY_TargetMon/ui/MY_TargetMon_Subscribe_FavoriteData.ini": {
+      "size": 9583,
+      "sha256": "e02aaa834aa8972b48249cd66276bef012b112dce1339228e9b1aa61e1bf547a"
+    },
+    "MY/MY_TeamMon/img/ST.Tga": {
+      "size": 331794,
+      "sha256": "d9c0bf1b685bf8c48e87611bcf4e4bb4b7de81c9a29d67a128b71759ec598133"
+    },
+    "MY/MY_TeamMon/img/ST.UITex": {
+      "size": 272,
+      "sha256": "a51b2a13a2eef37b94cf05c573c96b0d9b28791bc31a8cbae4c1c534652eaa99"
+    },
+    "MY/MY_TeamMon/img/ST.txt": {
+      "size": 451,
+      "sha256": "3481008648e9488eae398748c9107a9cc1b18dd1185de4768cac2b9fb5019a94"
+    },
+    "MY/MY_TeamMon/img/Tree.Tga": {
+      "size": 687122,
+      "sha256": "174341b23dbe2b3e99ebb26c5fad2c3cd5e10ec470c4f05161a4e3a1906ba0a3"
+    },
+    "MY/MY_TeamMon/img/Tree.UITex": {
+      "size": 432,
+      "sha256": "c9e702a65b1f2b14987c9bcbfe414e8a0516df66c724924451ced1fc39d8b835"
+    },
+    "MY/MY_TeamMon/img/Tree.txt": {
+      "size": 567,
+      "sha256": "33c716b753108052170660754d06e4ab74a802170138fb061f5ba03758d57ccc"
+    },
+    "MY/MY_TeamMon/info.ini": {
+      "size": 155,
+      "sha256": "ae47fe6710efb67ba5e36ce73f2fbff7e69382dfeb8b4b97006e257aeaf06b83"
+    },
+    "MY/MY_TeamMon/info.ini.zh_TW": {
+      "size": 174,
+      "sha256": "16a42bb6d515b7650ee1e10df76bc3a9684026426a9122c51438544921b7149b"
+    },
+    "MY/MY_TeamMon/manifest.dat": {
+      "size": 3446,
+      "sha256": "55c92d3ebced49a1f3dd4d62b1bd8b847b03b5792e96715fe700fa004af548ff"
+    },
+    "MY/MY_TeamMon/manifest.key": {
+      "size": 256,
+      "sha256": "5ff3317f084f8376e6f215f9fc916fadcab4f49f07c5d763cdde998760e1f1e1"
+    },
+    "MY/MY_TeamMon/publisher.key": {
+      "size": 256,
+      "sha256": "202aa4d091e695260994f9fa4ad71339a0c1210b9a1f1a449f3860ba1c7ee264"
+    },
+    "MY/MY_TeamMon/src.20260831084339-9df6b36de.lua": {
+      "size": 314224,
+      "sha256": "5167ef18e798d6c45d9829bcd8bd092a84bf907d7344d1ca9cdc076c338264cc"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon.ini": {
+      "size": 212,
+      "sha256": "8fdf5291b75832ea9dad074b18ffe91ac8c6e5f4a63a99ccd3851a1aad50b9b3"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_BuffList.ini": {
+      "size": 1898,
+      "sha256": "1b4200d4a4bd97932a29e96f7643b874fd5cf7a71b9ef96f4fdc6b81d189ec4f"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_CenterAlarm.ini": {
+      "size": 1374,
+      "sha256": "f2653cb1958cbe88624c7c0ea947f56e82031b411627fcb0e5888eda317a559d"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_FullScreenAlarm.ini": {
+      "size": 427,
+      "sha256": "4ed4f79e236bb8565d895991fa3103cc791ba49b1a9e3d56b1fb99a5bb13bc5e"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_LargeTextAlarm.ini": {
+      "size": 1227,
+      "sha256": "dd1b1677879f3df57e08bb526b4b25284963599aedec4149810dad7ac8efae06"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_PartyBuffList.ini": {
+      "size": 3094,
+      "sha256": "2c2088fc6ae1a6d7049d973ac1b8643d5c0c0954c74cb9c4e12ff388346eee61"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_SpellTimer.ini": {
+      "size": 2422,
+      "sha256": "58ab656e7e64da91e8b2abda0d5069c2a9baaef2c39828266b30fc7f243a1953"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_Subscribe_Data.ini": {
+      "size": 9008,
+      "sha256": "86ada4fa010d380f733089df7b4d38796c6bf6333bca8a535c29515024b94db9"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_Subscribe_FavoriteData.ini": {
+      "size": 9579,
+      "sha256": "dfc5ca3a945fecc91f8772b9f04324f5f13f8d24a039c47f6ad0c6c5e1b554e9"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_Subscribe_VoicePacket_Custom.ini": {
+      "size": 9029,
+      "sha256": "bddd6b9a860b73d04138921fb43c64c11bb35016fde82e6c353107d9e352c54d"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_Subscribe_VoicePacket_Official.ini": {
+      "size": 8429,
+      "sha256": "8d3256893ba0c272d8e58c59e6f5cd372e1b10f061d52b328799e27aded68b95"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_UI.ini": {
+      "size": 45634,
+      "sha256": "2ba7b46847d61d43573f3826d62b91a72e838404a4515201860262b29fa49512"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_UI_DRAG.ini": {
+      "size": 642,
+      "sha256": "d9d5e2dbdd2651481b8ee1264cab69e014504c7b6c7fc84292992ddb6498c25d"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_UI_ITEM_L.ini": {
+      "size": 955,
+      "sha256": "966d74a86d1b7e5424b56c964f4ae968508770910252a3f65579e1ce21298052"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_UI_ITEM_R.ini": {
+      "size": 953,
+      "sha256": "797c6671a2e38d3023d7a9e5436978c14c0db520915dac4be3ac8d46f6323f68"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_UI_TALK_L.ini": {
+      "size": 1040,
+      "sha256": "07f806caaffdab44d6c581216f7a138ed407be93de1df862e484c39dd2e9934d"
+    },
+    "MY/MY_TeamMon/ui/MY_TeamMon_UI_TALK_R.ini": {
+      "size": 1045,
+      "sha256": "6e76af22d971792e4f0682e586b4df73526406be005bd42a4a773c52fe24c24d"
+    },
+    "MY/MY_TeamTools/info.ini": {
+      "size": 183,
+      "sha256": "7152ebe401a6075793578cbcbf24c3953a1fdd255834e668b6342ef0576236d0"
+    },
+    "MY/MY_TeamTools/info.ini.zh_TW": {
+      "size": 215,
+      "sha256": "3bdba77f8b8f7f392abef26b05447a8228d1e177342f5eb5de266466a51e607d"
+    },
+    "MY/MY_TeamTools/manifest.dat": {
+      "size": 2045,
+      "sha256": "31c43c64338573ec2ad04bb607ea62f099c42adca2177484562870893ac25c01"
+    },
+    "MY/MY_TeamTools/manifest.key": {
+      "size": 256,
+      "sha256": "8b84f10e1b38448ae7f2809fcc8aba90570e62df030a4dabcab6b95a4e87833f"
+    },
+    "MY/MY_TeamTools/publisher.key": {
+      "size": 256,
+      "sha256": "355350be3f2ec1d0780a7e1941e4f3361763f946d7e09d4ab496dbe34208081b"
+    },
+    "MY/MY_TeamTools/src.20260723063831-9f7011225.lua": {
+      "size": 312176,
+      "sha256": "198ba7443657a1cfd5917d7cf72ed8b85d3dafbc17bd6a6e0fa200630ce892e7"
+    },
+    "MY/MY_TeamTools/ui/MY_EvokeRequest.ini": {
+      "size": 682,
+      "sha256": "ba78c011b333c238e8d4165dc2fd06489d5bc3e8386abcf9d243c3d3f2ecb85d"
+    },
+    "MY/MY_TeamTools/ui/MY_JBEventVote.ini": {
+      "size": 4608,
+      "sha256": "85a2b4011676c23eef4e666e584f909119aa2ad67fdce0c77e507e993e3e3189"
+    },
+    "MY/MY_TeamTools/ui/MY_JBEventVote__Mod.ini": {
+      "size": 15196,
+      "sha256": "5e8876dca4b78bbe4c749e86f941d954ea1168f8f731d49859cd6c9ca28a209b"
+    },
+    "MY/MY_TeamTools/ui/MY_PartyRequest.ini": {
+      "size": 2045,
+      "sha256": "70fc6ea3885154aae3298507296ba479d09836a2e2ec7936b12e0889a1359ea8"
+    },
+    "MY/MY_TeamTools/ui/MY_RideRequest.ini": {
+      "size": 678,
+      "sha256": "d8ef19cae376710f0a881c5806b936bb8d7cb2125947841534b663b6ab591212"
+    },
+    "MY/MY_TeamTools/ui/MY_RoomRequest.ini": {
+      "size": 1743,
+      "sha256": "ab1ab3684cff4c7fdf4d071717582e34aaf1fda9878e2ca44909837557212185"
+    },
+    "MY/MY_TeamTools/ui/MY_SocialRequest.ini": {
+      "size": 674,
+      "sha256": "42b0762e911648da6d0b7d113c597b23077926335e39a99028ce7acf4e6615d7"
+    },
+    "MY/MY_TeamTools/ui/MY_TeamTools.Mod.ini": {
+      "size": 1491,
+      "sha256": "ce6322adb3e13ed4a56b88ebc61ae527a4723beed0022b79a3f98d53d0c116c3"
+    },
+    "MY/MY_TeamTools/ui/MY_TeamTools_Achievement.ini": {
+      "size": 4581,
+      "sha256": "a343e41e9fa2f10587261720a2d13df458f06e5330ee1208e8dc59da223da562"
+    },
+    "MY/MY_TeamTools/ui/MY_TeamTools_DeathLog.ini": {
+      "size": 7913,
+      "sha256": "bcac8adabd3cc4118f235fe833ae27d149caa72ef9383b4b0977fed5ba8db68f"
+    },
+    "MY/MY_TeamTools/ui/MY_TeamTools_EnterMap.ini": {
+      "size": 7922,
+      "sha256": "4d530e4f8f61a5b81d02efbe9ad2e078cbd4871dd20ba9c026a880b0b11091d4"
+    },
+    "MY/MY_TeamTools/ui/MY_TeamTools_Summary.ini": {
+      "size": 13849,
+      "sha256": "7322f78474302486037e21c016401add4af439826fa516f888332208591f74fc"
+    },
+    "MY/MY_ThreatRank/info.ini": {
+      "size": 150,
+      "sha256": "6b71baafd9d035cbba1b844317af0e52088c57ee05d3c69263efad6764c0975c"
+    },
+    "MY/MY_ThreatRank/info.ini.zh_TW": {
+      "size": 165,
+      "sha256": "3f2be6ac15a5206df51dd87c41bc102579e0547965c7643756d8771ebd60de9d"
+    },
+    "MY/MY_ThreatRank/manifest.dat": {
+      "size": 785,
+      "sha256": "c88dac2b897839aa0d8faa3eea61f5f76ec2fc25e2b7665171598bd468a7d33b"
+    },
+    "MY/MY_ThreatRank/manifest.key": {
+      "size": 256,
+      "sha256": "f0eeeed6c6cdd4e2ee6fcf1adcf0e79dec4ff000df8602e4c12a9b496fc9c6c3"
+    },
+    "MY/MY_ThreatRank/publisher.key": {
+      "size": 256,
+      "sha256": "178d0eca85dea61d1a44be5aa94ced39a802ba1479474bb18212637abb90bb0f"
+    },
+    "MY/MY_ThreatRank/src.20260127084231-edb5b68c6.lua": {
+      "size": 17824,
+      "sha256": "e4e46a753902db3831a472e2be4834ebd89c4b428a867cbd22f9e8353db86101"
+    },
+    "MY/MY_ThreatRank/ui/Handle_ThreatBar.ini": {
+      "size": 1233,
+      "sha256": "66236ce94c3a35a091eae82a34e4b3adcb416a1f62ebae47320a1e2bf86e7f82"
+    },
+    "MY/MY_ThreatRank/ui/MY_ThreatRank.ini": {
+      "size": 2482,
+      "sha256": "ea594ff4a94528cff1adba73b64a522188d9e779bcf3c087a4795242581f8245"
+    },
+    "MY/MY_Toolbox/img/MY_VisualSkill.Tga": {
+      "size": 39122,
+      "sha256": "49175e7ae7b4019ae83876d251981cec6f410dd907ad8d336acaa17abfa9c4ef"
+    },
+    "MY/MY_Toolbox/img/MY_VisualSkill.UITex": {
+      "size": 152,
+      "sha256": "7032218f62bb2acf379c7d091335c293d05aaedbd5d0351a73f277398d1536d9"
+    },
+    "MY/MY_Toolbox/img/MY_VisualSkill.txt": {
+      "size": 161,
+      "sha256": "9c1c6a70fbbbb6a56ae41c1add32af35d0fa13a57d3d7731db3b0178dd903d63"
+    },
+    "MY/MY_Toolbox/info.ini": {
+      "size": 153,
+      "sha256": "bd8aed883395f9f7bba4704018a3fd0143aeb0a0b83652b9924b4b7eccd07858"
+    },
+    "MY/MY_Toolbox/info.ini.zh_TW": {
+      "size": 171,
+      "sha256": "d4106fdac66d78db04b74fe7bcff54e50adebdd003297849ddd5b4296a4312d4"
+    },
+    "MY/MY_Toolbox/manifest.dat": {
+      "size": 1516,
+      "sha256": "6f80de1f6246d11fe980e137d775568bd27b738b7683d72c578baba7e7cbea30"
+    },
+    "MY/MY_Toolbox/manifest.key": {
+      "size": 256,
+      "sha256": "3e7a907ab36d54f444ac7b240a373179ba024d1d1d9745e2da08b9dec03fdb30"
+    },
+    "MY/MY_Toolbox/publisher.key": {
+      "size": 256,
+      "sha256": "202aa4d091e695260994f9fa4ad71339a0c1210b9a1f1a449f3860ba1c7ee264"
+    },
+    "MY/MY_Toolbox/src.20260225063502-0787d8f6b.lua": {
+      "size": 306368,
+      "sha256": "a8798e362f71b2b1409a18763807724ca1093c09929634a14be8a1354846a18c"
+    },
+    "MY/MY_Toolbox/ui/Btn_MagnifierDown.ini": {
+      "size": 562,
+      "sha256": "b34f468a1f715cfd6f7eab42001b7f79602b991110345c10a01c5ae3914af238"
+    },
+    "MY/MY_Toolbox/ui/Btn_MagnifierUp.ini": {
+      "size": 542,
+      "sha256": "aea6a9181914af4367176fbba3dfd56ea6a2ebf947f840efef22514e84acaab6"
+    },
+    "MY/MY_Toolbox/ui/MY_DynamicItem.ini": {
+      "size": 3370,
+      "sha256": "abddbd2bcfa217763c4f7f9b1699bc6ecc8a2b6f4572ff156e9b3a93f3eb637c"
+    },
+    "MY/MY_Toolbox/ui/MY_Love.ini": {
+      "size": 5698,
+      "sha256": "ae75a5c519a0d6ef0dcb877f170f9c9fc184faa88004a5d12b06202d5fd082b0"
+    },
+    "MY/MY_Toolbox/ui/MY_VisualSkill.ini": {
+      "size": 2726,
+      "sha256": "60cbc8699a053d81d61fbfa38131c5b2530e73832333a2c305ae581b40a90dcd"
+    }
+  }
+}
