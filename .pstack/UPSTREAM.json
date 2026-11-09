@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/cursor/plugins",
+  "path": "pstack",
+  "commit": "6b0300214a09fd6029cfb7077043125758cd1fd2",
+  "local_changes": "None. Cloud adapter is in AGENTS.md and .pstack/cloud-models.md."
+}
