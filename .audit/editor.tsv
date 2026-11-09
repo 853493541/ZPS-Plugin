@@ -12,3 +12,4 @@ ts	phase	decision	why	evidence	result
 2026-11-09T11:00:13Z	windows	Verify installed NSIS lifecycle and unchanged retained files	Check the real installed package instead of an unpackaged proxy	https://github.com/853493541/ZPS-Plugin/actions/runs/42605018666	VERIFIED
 2026-11-09T19:11:55Z	network	Confirm live policy difference and prepare accessible-session API probe	Another session homepage access does not establish this instance or API access	docs/SESSION_HANDOFF.md	current proxy denies both hosts
 2026-11-09T19:21:25Z	jx3box	Verify actual API and reuse existing catalog in browser preview	177 of 177 supplied JX IDs match std level 1; no historical-version equivalence claimed	docs/JX3BOX_COVERAGE.json	VERIFIED
+2026-11-09T19:36:14Z	ui	Display automatic buff names and official icons without changing preset bytes	Renderer overlay preserves edit focus;17 internal names explicitly labeled and missing icons fall back	tools/smoke-buff-icons-live.mjs	VERIFIED

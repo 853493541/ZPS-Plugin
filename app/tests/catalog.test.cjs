@@ -38,7 +38,7 @@ test('the captured public buff response survives lookup, disk cache, and offline
   assert.deepEqual(stale.raw, fixture.raw);
 });
 test('captured edition, name, and empty level responses retain their query and raw fields', async t => {
-  for (const file of ['origin-12784-level-1.json', 'wujie-12784-level-1.json', 'std-12784-level-2.json', 'std-deserter-level-1.json', 'std-zhenchuan-level-1.json']) {
+  for (const file of ['origin-12784-level-1.json', 'wujie-12784-level-1.json', 'std-12784-level-2.json', 'std-deserter-level-1.json', 'std-zhenchuan-level-1.json', 'std-12724-level-1.json']) {
     const fixture = JSON.parse(await fs.readFile(path.join(__dirname, 'fixtures/jx3box', file), 'utf8'));
     const options = await setup(t);
     const catalog = createCatalog({ ...options, fetch: async url => {

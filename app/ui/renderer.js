@@ -21,6 +21,165 @@ let toastTimer;
 let modalAction;
 let updateTimer;
 let lookupSequence = 0;
+const metadata = new Map();
+const attemptedMetadata = new Set();
+const failedIcons = new Set();
+let documentGeneration = 0;
+let catalogQueue = Promise.resolve();
+let enrichment = null;
+let enrichmentStopped = false;
+
+function buffQuery(record, level) {
+  if (!record || record.key.startsWith('class:') || !['jx-buff', 'my-team'].includes(state.document?.kind)) return null;
+  const reference = referenceQuery(record);
+  const query = { client: state.lookupClient, level: Number(level ?? reference.level ?? 1) };
+  if (!Number.isSafeInteger(query.level) || query.level < 1 || query.level > 99999) return null;
+  if (reference.id !== undefined) {
+    if (!/^\d{1,12}$/.test(String(reference.id))) return null;
+    query.id = String(Number(reference.id));
+  } else {
+    if (!reference.name || reference.name.length > 200) return null;
+    query.name = reference.name;
+  }
+  return query;
+}
+
+function metadataKey(query) {
+  return JSON.stringify([query.client, query.id !== undefined ? 'id' : 'name', query.id ?? query.name, query.level]);
+}
+
+function metadataDisplayName(item) {
+  const name = typeof item?.Name === 'string' ? cleanMarkup(item.Name).trim() : '';
+  const internalName = typeof item?.BuffName === 'string' ? cleanMarkup(item.BuffName).trim() : '';
+  return { name: name || internalName, internal: !name && Boolean(internalName) };
+}
+
+function matchedMetadata(query, result) {
+  if (result?.client !== query.client || !Array.isArray(result?.list)) return null;
+  const matches = result.list.filter((item) => Number(item.Level) === query.level &&
+    (query.id !== undefined ? String(item.BuffID) === query.id : item.Name === query.name));
+  if (matches.length !== 1) return null;
+  const displayName = metadataDisplayName(matches[0]);
+  if (!displayName.name || query.name !== undefined && displayName.internal) return null;
+  if (query.name !== undefined && (result.total ?? result.list.length) > result.list.length) return null;
+  return { item: matches[0], result, query };
+}
+
+function recordMetadata(record) {
+  const query = buffQuery(record);
+  return query ? metadata.get(metadataKey(query)) : null;
+}
+
+function recordName(record) {
+  const item = recordMetadata(record)?.item;
+  return item ? metadataDisplayName(item).name : record?.name || (record?.id !== undefined ? `#${record.id}` : record?.key || '条目详情');
+}
+
+function recordSubtitle(record) {
+  const item = recordMetadata(record)?.item;
+  return `${record.id !== undefined ? `ID ${record.id}` : record.key}${metadataDisplayName(item).internal ? ' · 内部名' : ''}`;
+}
+
+function recordGlyph(record, entry = recordMetadata(record), big = false) {
+  const glyph = record?.key.startsWith('class:') ? '▦' : state.document?.kind === 'chat' ? '☰' : state.document?.kind === 'opaque' ? '▧' : '✦';
+  const node = element('div', `record-glyph${big ? ' big' : ''}`, glyph);
+  const displayName = entry ? metadataDisplayName(entry.item) : { name: recordName(record) };
+  const label = `${displayName.name || '名称未提供'}${displayName.internal ? ' · 内部名' : ''}`;
+  const icon = entry?.item.IconID;
+  const iconID = typeof icon === 'number' || typeof icon === 'string' && /^\d+$/.test(icon) ? Number(icon) : NaN;
+  const url = Number.isSafeInteger(iconID) && iconID > 0 ? `https://icon.jx3box.com/${entry.query.client === 'origin' ? 'origin_icon' : 'icon'}/${iconID}.png` : null;
+  node.setAttribute('role', 'img');
+  node.title = `${label} · 图标未提供`;
+  node.setAttribute('aria-label', node.title);
+  if (url && !failedIcons.has(url)) {
+    const image = element('img', 'buff-icon');
+    image.loading = big ? 'eager' : 'lazy';
+    image.decoding = 'async';
+    image.alt = `${label} 图标`;
+    image.addEventListener('load', () => { node.classList.add('has-icon'); node.title = label; node.removeAttribute('role'); node.removeAttribute('aria-label'); });
+    image.addEventListener('error', () => { failedIcons.add(url); image.remove(); node.classList.remove('has-icon'); node.title = `${label} · 图标不可用`; node.setAttribute('role', 'img'); node.setAttribute('aria-label', node.title); }, { once: true });
+    image.src = url;
+    node.append(image);
+  }
+  return node;
+}
+
+function renderSelectionHeading() {
+  const record = selectedRecord();
+  const entry = recordMetadata(record);
+  $('selection-heading').replaceChildren(recordGlyph(record, entry, true), element('h3', '', recordName(record)), element('p', '', record ? record.id !== undefined ? `BUFF ID ${record.id}` : entry ? `BUFF ID ${entry.item.BuffID} · ${record.key}` : record.key : '从配置库中选择一个条目'));
+  if (entry) $('selection-heading').append(element('p', 'metadata-source', `JX3BOX · ${entry.query.client} · 等级 ${entry.query.level}${metadataDisplayName(entry.item).internal ? ' · 内部名' : ''}${entry.result.stale ? ' · 离线缓存' : entry.result.source === 'cache' ? ' · 缓存' : ''}`));
+}
+
+function refreshMetadata(changedKey) {
+  const focusedRow = document.activeElement.closest?.('.record-row');
+  const focusedKey = focusedRow?.dataset.key;
+  if (state.search) {
+    renderRecords();
+    if (focusedKey) Array.from($('records-body').children).find((row) => row.dataset.key === focusedKey)?.focus({ preventScroll: true });
+  } else {
+    for (const row of $('records-body').children) {
+      const record = state.document?.records.find((item) => item.key === row.dataset.key);
+      if (!record) continue;
+      const query = buffQuery(record);
+      if (changedKey && (!query || metadataKey(query) !== changedKey)) continue;
+      row.firstChild.replaceChildren(recordGlyph(record));
+      row.querySelector('.record-name').textContent = recordName(record);
+      row.querySelector('.record-id').textContent = recordSubtitle(record);
+    }
+  }
+  const selectedQuery = buffQuery(selectedRecord());
+  if (!changedKey || selectedQuery && metadataKey(selectedQuery) === changedKey) renderSelectionHeading();
+  renderEnrichmentProgress();
+  const details = $('lookup-results');
+  const detailsQuery = buffQuery(selectedRecord(), state.lookupLevel);
+  if (details && !state.lookup && (!changedKey || detailsQuery && metadataKey(detailsQuery) === changedKey)) renderLookupDetails(details, selectedRecord());
+}
+
+function renderEnrichmentProgress() {
+  let node = $('metadata-progress');
+  if (!node) { node = element('span', 'metadata-progress'); node.id = 'metadata-progress'; $('document-meta').append(node); }
+  node.hidden = !enrichment?.total;
+  node.textContent = enrichment?.total ? `JX3BOX ${enrichment.done}/${enrichment.total}${enrichment.stopped ? ' · 连接中断，可手动查询' : enrichment.done < enrichment.total ? ' · 读取中' : ' · 已检查'}` : '';
+}
+
+function requestCatalog(query, isCurrent) {
+  const pending = catalogQueue.then(() => isCurrent() ? bridge.lookup(query) : null);
+  catalogQueue = pending.catch(() => {});
+  return pending;
+}
+
+function startEnrichment() {
+  const generation = documentGeneration;
+  const queries = new Map();
+  for (const record of state.document?.records || []) {
+    const query = buffQuery(record);
+    if (query) queries.set(metadataKey(query), query);
+  }
+  const job = { total: queries.size, done: [...queries.keys()].filter((key) => attemptedMetadata.has(key) || metadata.has(key)).length, stopped: enrichmentStopped };
+  enrichment = job;
+  const isCurrent = () => generation === documentGeneration;
+  renderEnrichmentProgress();
+  if (job.stopped) return;
+  (async () => {
+    for (const [key, query] of queries) {
+      if (!isCurrent()) return;
+      if (attemptedMetadata.has(key) || metadata.has(key)) continue;
+      try {
+        const result = await requestCatalog(query, isCurrent);
+        if (!isCurrent()) return;
+        const entry = matchedMetadata(query, result);
+        if (entry) metadata.set(key, entry);
+        attemptedMetadata.add(key);
+        if (result?.stale) job.stopped = true;
+        job.done++;
+      } catch { if (!isCurrent()) return; attemptedMetadata.add(key); job.done++; job.stopped = true; }
+      enrichmentStopped = job.stopped;
+      refreshMetadata(key);
+      if (job.stopped) return;
+    }
+  })();
+}
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -48,6 +207,10 @@ async function run(action) {
 
 function receive(result, reset = false) {
   if (!result?.document) return false;
+  documentGeneration++;
+  lookupSequence++;
+  state.lookup = null;
+  if (reset) { metadata.clear(); attemptedMetadata.clear(); enrichmentStopped = false; }
   Object.assign(state, { document: result.document, filename: result.filename || '', dirty: Boolean(result.dirty), canUndo: Boolean(result.canUndo) });
   if (reset) Object.assign(state, { selected: null, category: null, search: '', lookup: null, tab: 'config' });
   if (!state.document.records.some((record) => record.key === state.selected)) {
@@ -56,6 +219,7 @@ function receive(result, reset = false) {
   }
   $('search').value = state.search;
   render();
+  startEnrichment();
   return true;
 }
 
@@ -69,7 +233,7 @@ function referenceQuery(record) {
 function fileName(path) { return String(path || '').split(/[\\/]/).pop() || '未命名配置'; }
 function textValue(value) { return value === null ? 'null' : typeof value === 'object' ? JSON.stringify(value) : String(value ?? ''); }
 function visibleRecords() {
-  return (state.document?.records || []).filter((record) => (!state.category || String(record.category || '未分类') === state.category) && (!state.search || `${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
+  return (state.document?.records || []).filter((record) => (!state.category || String(record.category || '未分类') === state.category) && (!state.search || `${recordName(record)} ${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
 }
 
 function render() {
@@ -145,12 +309,13 @@ function renderRecords() {
   }
   for (const record of records) {
     const row = element('tr', `record-row${record.key === state.selected ? ' selected' : ''}`);
+    row.dataset.key = record.key;
     row.tabIndex = 0;
     row.setAttribute('aria-selected', String(record.key === state.selected));
     const glyphCell = element('td');
-    glyphCell.append(element('div', 'record-glyph', record.key.startsWith('class:') ? '▦' : '✦'));
+    glyphCell.append(recordGlyph(record));
     const nameCell = element('td');
-    nameCell.append(element('div', 'record-name', record.name || (record.id ? `#${record.id}` : record.key)), element('div', 'record-id', record.id ? `ID ${record.id}` : record.key));
+    nameCell.append(element('div', 'record-name', recordName(record)), element('div', 'record-id', recordSubtitle(record)));
     const categoryCell = element('td');
     categoryCell.append(element('span', 'category-pill', record.category || (record.key.startsWith('class:') ? '分类配置' : '未分类')));
     const fieldsCell = element('td', 'field-preview', Object.keys(record.fields || {}).filter((key) => !key.startsWith('_')).slice(0, 2).join(' · ') || '原始值');
@@ -200,7 +365,7 @@ function renderInspector() {
   const record = selectedRecord();
   const content = $('inspector-content');
   content.replaceChildren();
-  $('selection-heading').replaceChildren(element('div', 'record-glyph big', record?.key.startsWith('class:') ? '▦' : '✦'), element('h3', '', record?.name || (record?.id ? `#${record.id}` : '条目详情')), element('p', '', record ? `${record.id ? `BUFF ID ${record.id}` : record.key}` : '从配置库中选择一个条目'));
+  renderSelectionHeading();
   $('inspector-status').textContent = state.document ? state.document.writable ? '本地配置' : '只读' : '未选择';
   for (const tab of ['config', 'box', 'source']) {
     $(`${tab}-tab`).classList.toggle('active', state.tab === tab);
@@ -259,7 +424,16 @@ function renderLookup(content, record) {
     select.append(option);
   }
   select.value = state.lookupClient;
-  select.addEventListener('change', () => { state.lookupClient = select.value; state.lookup = null; lookupSequence++; renderInspector(); });
+  select.addEventListener('change', () => {
+    documentGeneration++;
+    lookupSequence++;
+    state.lookupClient = select.value;
+    state.lookup = null;
+    enrichmentStopped = false;
+    refreshMetadata();
+    renderInspector();
+    startEnrichment();
+  });
   const level = element('input');
   level.type = 'number'; level.min = '1'; level.placeholder = '等级'; level.value = state.lookupLevel;
   level.setAttribute('aria-label', 'Buff 等级');
@@ -267,31 +441,45 @@ function renderLookup(content, record) {
     state.lookupLevel = level.value;
     state.lookup = null;
     lookupSequence++;
-    button.disabled = !record || record.key.startsWith('class:');
+    button.disabled = !buffQuery(record, state.lookupLevel);
     button.textContent = '查询 JX3BOX';
-    while (button.nextSibling) button.nextSibling.remove();
-    content.append(element('p', 'muted-text', '等级已修改。点击查询读取对应等级的数据。'));
+    renderLookupDetails($('lookup-results'), record);
   });
   level.addEventListener('change', () => renderInspector());
   controls.append(select, level);
   const button = element('button', 'button primary lookup-button', state.lookup?.loading ? '查询中…' : '查询 JX3BOX');
-  button.disabled = !record || state.lookup?.loading || record.key.startsWith('class:');
+  button.disabled = !buffQuery(record, state.lookupLevel) || state.lookup?.loading;
   button.addEventListener('click', () => lookup(record));
   content.append(controls, button);
-  if (!record || record.key.startsWith('class:')) { content.append(element('p', 'muted-text', '选择一个 Buff 条目后查询。分类配置没有独立的 Buff 数据。')); return; }
-  if (!state.lookup) {
+  const details = element('div');
+  details.id = 'lookup-results';
+  content.append(details);
+  renderLookupDetails(details, record);
+}
+
+function renderLookupDetails(content, record) {
+  content.replaceChildren();
+  const query = buffQuery(record, state.lookupLevel);
+  if (!query) { content.append(element('p', 'muted-text', '选择一个 Buff 条目并填写有效等级后查询。分类、聊天与原始配置没有独立的 Buff 数据。')); return; }
+  const entry = metadata.get(metadataKey(query));
+  const lookup = state.lookup || (entry ? { result: entry.result } : null);
+  if (!lookup) {
     const empty = element('div', 'lookup-empty');
     empty.append(element('div', 'empty-symbol', '⌕'), element('p', 'muted-text', '按 ID 或条目名称查询真实数据。\n查询结果不会改写本地配置。'));
     content.append(empty);
     return;
   }
-  if (state.lookup.loading) { content.append(element('p', 'muted-text', '正在读取 JX3BOX 数据…')); return; }
-  if (state.lookup.error) { content.append(element('div', 'warning-box', state.lookup.error)); return; }
-  const result = state.lookup.result;
+  if (lookup.loading) { content.append(element('p', 'muted-text', '正在读取 JX3BOX 数据…')); return; }
+  if (lookup.error) { content.append(element('div', 'warning-box', lookup.error)); return; }
+  const result = lookup.result;
   const list = Array.isArray(result?.list) ? result.list : [];
   if (!list.length) content.append(element('div', 'inspector-note', '未找到匹配记录。请检查 ID、客户端版本和等级。'));
   for (const item of list) {
-    content.append(element('h4', 'remote-name', cleanMarkup(item.Name ?? item.name ?? '名称未提供')), element('p', 'remote-description', cleanMarkup(item.Desc ?? item.desc ?? item.Description ?? '描述未提供')));
+    const heading = element('div', 'remote-heading');
+    const displayName = metadataDisplayName(item);
+    heading.append(recordGlyph(record, { item, query }), element('h4', 'remote-name', displayName.name || '名称未提供'));
+    if (displayName.internal) heading.append(element('span', 'metadata-source', '内部名'));
+    content.append(heading, element('p', 'remote-description', cleanMarkup(item.Desc ?? item.desc ?? item.Description ?? '描述未提供')));
     const grid = element('dl', 'remote-grid');
     for (const key of ['BuffID', 'Level', 'IconID', 'DetachType']) {
       const cell = element('div');
@@ -312,17 +500,28 @@ function renderLookup(content, record) {
 
 async function lookup(record) {
   const sequence = ++lookupSequence;
+  const generation = documentGeneration;
   const key = record.key;
+  const query = buffQuery(record, state.lookupLevel);
+  const isCurrent = () => generation === documentGeneration && sequence === lookupSequence && state.selected === key;
   state.lookup = { loading: true };
   renderInspector();
   try {
-    const level = Number(state.lookupLevel);
-    if (!Number.isInteger(level) || level < 1) throw new Error('等级需要为大于 0 的整数。');
-    const query = referenceQuery(record);
-    const result = await bridge.lookup({ ...(query.id !== undefined ? { id: query.id } : { name: query.name }), client: state.lookupClient, level });
-    if (sequence === lookupSequence && state.selected === key) state.lookup = { result };
-  } catch (error) { if (sequence === lookupSequence && state.selected === key) state.lookup = { error: error.message || String(error) }; }
-  if (sequence === lookupSequence && state.tab === 'box') renderInspector();
+    if (!query) throw new Error('请选择 Buff 条目，等级需要为 1 到 99999 的整数。');
+    const result = await requestCatalog(query, isCurrent);
+    if (isCurrent()) {
+      state.lookup = { result };
+      const entry = matchedMetadata(query, result);
+      if (entry) metadata.set(metadataKey(query), entry);
+      refreshMetadata(metadataKey(query));
+    }
+  } catch (error) { if (isCurrent()) state.lookup = { error: error.message || String(error) }; }
+  if (isCurrent() && state.tab === 'box') {
+    renderLookupDetails($('lookup-results'), record);
+    const button = $('inspector-content').querySelector('.lookup-button');
+    button.disabled = false;
+    button.textContent = '查询 JX3BOX';
+  }
 }
 
 function showModal(title, content, submitText, action) {

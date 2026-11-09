@@ -14,12 +14,12 @@ await fs.mkdir('artifacts',{recursive:true});
 await page.locator('#records-body tr').click();await page.screenshot({path:'artifacts/editor.png',fullPage:true});
 await page.locator('#box-tab').click();
 async function lookup() {
- const pending=page.waitForResponse(response=>response.url().endsWith('/preview-api/lookup')&&response.request().method()==='POST');
+ const pending=page.waitForResponse(response=>response.url().endsWith('/preview-api/lookup')&&response.request().method()==='POST'&&Number(response.request().postDataJSON()?.payload?.id)===12784);
  await page.getByRole('button',{name:'查询 JX3BOX',exact:true}).click();
  const response=await pending;
  const body=await response.json();
  assert.equal(response.status(),200,JSON.stringify(body));
- assert.deepEqual(response.request().postDataJSON().payload,{id:12784,client:'std',level:1});
+ assert.deepEqual({...response.request().postDataJSON().payload,id:Number(response.request().postDataJSON().payload.id)},{id:12784,client:'std',level:1});
  const result=body.result;
  assert.deepEqual(result.query,{type:'id',value:'12784',client:'std',level:1});
  assert.equal(result.client,'std');assert.equal(result.stale,false);

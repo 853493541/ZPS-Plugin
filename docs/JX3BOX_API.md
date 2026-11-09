@@ -52,9 +52,21 @@ The public regression fixtures in `app/tests/fixtures/jx3box/` retain the exact 
 
 `node --use-env-proxy tools/check_jx3box_coverage.mjs` queried all 177 buff IDs in the supplied JX 真传 preset at `std` level 1. Every response contained a matching ID and level, with no missing records, failures, or stale cache results. [The coverage snapshot](JX3BOX_COVERAGE.json) records the sample hash, capture interval, IDs, source URL template, and counts. The full public response report remains in ignored `artifacts/jx3box-coverage.json`. Repeated checks can use the catalog cache and report network, cached, and stale counts separately.
 
-This proves level 1 record availability for this sample. It does not prove historical 真传 semantics, coverage of all configured positive levels, or all MY name references. The preset's level zero is preserved as configuration and is not interpreted as an API level. The service's `std`, `origin`, and `wujie` values remain editions rather than historical patch versions. Duration units and icon downloads remain unverified.
+This proves level 1 record availability for this sample. It does not prove historical 真传 semantics, coverage of all configured positive levels, or all MY name references. The preset's level zero is preserved as configuration and is not interpreted as an API level. The service's `std`, `origin`, and `wujie` values remain editions rather than historical patch versions. Duration units remain unverified. Icon transport verification is recorded below.
 
 The browser preview now calls `createCatalog` instead of returning a hardcoded network-policy error. On Node 24 with environment-proxy support, start it with `node --use-env-proxy tools/preview.mjs`, then run `node tools/smoke-ui.mjs`. The Chromium smoke verified a network result followed by a cache result, the displayed 逃兵 name, the complete raw payload, and unchanged preset contents, dirty state, and undo history. Local editing, undo, MY creation, and read-only binary handling also passed without page errors. Preview caches stay under ignored `artifacts/`; `PREVIEW_CACHE_DIR` can select an isolated cache.
+
+## Automatic names and icons
+
+The record list, selected-record heading, and JX3BOX details show metadata automatically. A renderer-owned map keys records by edition, ID or exact name reference, and API level. Automatic JX display uses level 1. MY references use their explicit `|lvN` level when present, otherwise level 1. This display policy does not change preset `tLevel` settings or establish historical-version equivalence.
+
+Enrichment calls the existing catalog one request at a time. It reuses disk cache, checks exact ID and level, and stops automatic requests after a transport failure or stale fallback. Manual lookup permits retry. A MY name must match exactly and uniquely in a complete result set. Missing or ambiguous matches keep their original labels. Class, chat, and opaque records do not request buff metadata. Changing document or edition invalidates pending display updates.
+
+The 177-record sample contains 160 nonempty public `Name` values and 17 records with `Name: null`, a nonempty `BuffName`, and no `IconID`. Exact-ID records use `BuffName` only as an explicitly labeled 内部名 fallback. The public fixture for buff 12724 preserves this case. These internal names are not used to resolve MY name references.
+
+Valid positive integer `IconID` values use the official icon host and edition-specific path. Live requests for `/icon/340.png` and `/origin_icon/340.png` returned HTTP 200 with `image/png`. Chromium decoded a real 48px icon and rendered it in the list, selection heading, and details. Offscreen row images load lazily. Missing or failed images retain an accessible fallback rather than a broken image.
+
+`tools/smoke-buff-metadata.mjs` checks automatic naming, search, failed images, typed form values and focus, expanded API details and their focus, preset preservation, late document and edition responses, origin icon paths, and bounded offline requests with manual retry. It uses controlled browser bridge responses for deterministic failure and race cases. `tools/smoke-buff-icons-live.mjs` checks all 177 names against the accessible preview, confirms the real icon rendering and internal-name label, and saves `artifacts/buff-names-icons.png` and `artifacts/buff-icon-details.png`. The live check can use cached JSON and still downloads actual icon images. No preset data is enriched on disk.
 
 ## Windows release recommendation
 

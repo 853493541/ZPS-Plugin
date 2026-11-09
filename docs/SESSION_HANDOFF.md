@@ -23,3 +23,5 @@ Checkpoint verified work and update WORK_STATUS. Do not repeat passed Windows in
 ## Accessible-session result
 
 The continuation on 2026-11-09 verified homepage and buff API access through the inherited proxy using approved execution permission. All 177 supplied JX preset IDs matched `std` level 1 records. The browser preview now uses the production catalog and its smoke checks actual 逃兵 metadata, cache reuse, and an unchanged preset. Public fixtures and a coverage snapshot are committed alongside the rerunnable coverage tool. See `docs/WORK_STATUS.md` and `docs/JX3BOX_API.md` for verification and remaining limits. Historical 真传 equivalence and exhaustive level coverage are still open. Do not repeat the old network diagnosis unless fresh requests fail.
+
+The subsequent icons-and-names change adds automatic metadata display and official icon images. Read the latest WORK_STATUS section before continuing. The 177 sample IDs comprise 160 public names and 17 explicitly labeled internal-name fallbacks. Screenshot paths and deterministic/live browser checks are recorded in JX3BOX_API.md.
