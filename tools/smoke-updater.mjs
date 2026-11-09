@@ -78,6 +78,17 @@ const stateFile = path.join(root, 'state.json');
 await fs.mkdir(userData, {recursive: true});
 await fs.mkdir(cache, {recursive: true});
 let app;
+async function waitForUpdateState(page, expected) {
+  const expires = Date.now() + 90_000;
+  let state;
+  while (Date.now() < expires) {
+    state = await page.evaluate(() => window.studio.updates('status'));
+    if (expected === 'initialized' ? state.status !== 'idle' : state.status === expected) return state;
+    if (expected !== 'initialized' && ['error', 'unavailable'].includes(state.status)) throw new Error(JSON.stringify(state));
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw new Error(`Expected updater ${expected}; last state ${JSON.stringify(state)}`);
+}
 const deadline = setTimeout(() => {
   console.error(`FAIL updater ${phase} exceeded 150 seconds`);
   app?.process().kill();
@@ -89,7 +100,7 @@ try {
   const page = await app.firstWindow({timeout: 30_000});
   page.setDefaultTimeout(30_000);
   await page.waitForSelector('#records-body tr');
-  await page.waitForFunction(async () => (await window.studio.updates('status')).status !== 'idle');
+  await waitForUpdateState(page, 'initialized');
   await app.evaluate(async ({app, session}, config) => {
     const installedRequire = process.mainModule.require('node:module').createRequire(`${app.getAppPath()}/package.json`);
     const fs = installedRequire('node:fs');
@@ -119,14 +130,7 @@ try {
   assert.equal(identity.userData, userData, 'Application must use the isolated retained profile');
   assert.equal(identity.version, phase === 'upgrade' ? previousVersion : currentVersion);
   await page.evaluate(() => window.studio.updates('check'));
-  const waitForState = async status => {
-    await page.waitForFunction(async expected => {
-      const state = await window.studio.updates('status');
-      if (['error', 'unavailable'].includes(state.status)) throw new Error(JSON.stringify(state));
-      return state.status === expected;
-    }, status, {timeout: 90_000});
-    return page.evaluate(() => window.studio.updates('status'));
-  };
+  const waitForState = status => waitForUpdateState(page, status);
   if (phase === 'upgrade') {
     const sample = (await page.evaluate(() => window.studio.samples())).find(file => file.path.endsWith('BuffData.jx3dat'));
     assert.ok(sample, 'Packaged BuffData sample must exist');
