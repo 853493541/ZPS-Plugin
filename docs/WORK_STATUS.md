@@ -35,12 +35,14 @@ Independent GPT-6.1 Sol medium review found and prompted fixes for a new-MY file
 
 The Linux Electron binary downloaded successfully but headless execution exits with GPU/X-display initialization errors and SIGSEGV. The Windows native test provides the desktop integration evidence instead.
 
-## Current continuation
+## Installed Windows lifecycle verification
 
-No active development run was found on resume. Extended `tools/smoke-desktop.mjs` to verify Chinese export paths, exact backup content when overwriting, and reopening edited exports. `tools/smoke-installer.ps1` adds silent current-user NSIS installation to a disposable CI path, installed-app startup and restart, and uninstall with retained app data and exported files. The Windows workflow now executes this gate after packaging. Local syntax checks and the existing 22 behavior tests pass; installed lifecycle results are pending Windows CI. No release or deployment is authorized.
+[Windows run 42605018666](https://github.com/853493541/ZPS-Plugin/actions/runs/42605018666) built commit `56efc3a`. All 22 behavior tests, the expanded native smoke, NSIS packaging, and the installed application lifecycle step passed. The test silently installs the actual NSIS package into a Chinese/space-containing path on a disposable Windows runner, launches the packaged executable, exports and reopens edited data, verifies overwrite backups byte-for-byte, restarts the app, and uninstalls it. SHA-256 checks confirm that the user-data probe, JX/MY exports, diagnostic report, and export backup survive uninstall unchanged. No release was published or deployment performed.
+
+Same-model GPT-6.1 Sol medium review prompted the retained-backup and post-uninstall hash checks. The duplicate `savedBytes` property in session initialization was removed without changing behavior. Interactive installer screens and an actual player's game client are not covered by this silent CI test.
 
 ## Remaining work / blockers
-1. Download and run the CI installer on an end-user Windows environment. Verify installation, launch, Chinese paths, overwriting an export, uninstall behavior, and preserved user data. The CI smoke starts the unpackaged desktop; it does not execute the NSIS installer.
+1. Silent NSIS install, packaged launch/restart, Chinese paths, export backup, and uninstall retention are verified on Windows CI. Interactive installer screens and use on an end-user Windows machine remain manual acceptance checks. Do not repeat these passing CI checks without a relevant code change.
 2. Live JX3BOX is blocked by cloud network policy with HTTP 403 CONNECT. No actual remote response has been captured. Obtain approved network access to node.jx3box.com, and icon.jx3box.com if icons are displayed, then verify real payloads and 真传 coverage. std/origin/wujie are edition identifiers, not historical patch versions. Do not claim full game metadata coverage until proven.
 3. A live update feed and signing are not configured. Repository is private, so unauthenticated GitHub release updater cannot serve end users. Choose accessible hosting and signing, publish only after explicit authorization, then test installed-version upgrade and retained documents on Windows.
 4. Import edited outputs into MY and JX on an actual Windows game client. Encrypted/opaque addon readers prevent proving runtime semantics from current source. Never label exclamation flags or visual IDs with guessed meanings.
@@ -48,3 +50,7 @@ No active development run was found on resume. Extended `tools/smoke-desktop.mjs
 
 ## Resume safely
 Read AGENTS.md and this file, inspect git status and in-progress work before starting. Do not overlap an active run. Preserve concurrent edits. The app source lives in app/, immutable references in vendor/ and samples/. Keep decisions in .audit/editor.tsv. Check the remaining release and game/API gates before adding features. Do not tell the user the entire app is complete while the gates above remain open.
+
+## Continuation policy
+
+No active development run was present at the start of this continuation. The remaining substantive gates require approved JX3BOX network access, update hosting/signing decisions, a Windows game client, or a verified binary interchange format. If those inputs and code have not changed, do not repeat successful builds or claim additional work. Keep the hourly task enabled while the overall requested application remains incomplete; report new progress or changed blockers only.

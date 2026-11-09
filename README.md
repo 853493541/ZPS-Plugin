@@ -99,6 +99,6 @@ npm test
 npm run dist:win
 ```
 
-The Windows workflow builds an x64 NSIS installer, blockmap, and update metadata as downloadable CI artifacts. Production distribution requires signing and an installed-version upgrade test. It does not publish releases.
+The Windows workflow builds an x64 NSIS installer, blockmap, and update metadata as downloadable CI artifacts. It then installs the actual package in a disposable Windows runner and verifies packaged startup, Chinese paths, export backups, restart, uninstall, and retained user-data hashes. Production distribution still requires signing, interactive acceptance, and an installed-version upgrade test. It does not publish releases.
 
 The current evidence and next steps are in [WORK_STATUS](docs/WORK_STATUS.md). An hourly continuation task checks for unfinished work; scheduling cannot guarantee quota availability or an exact reset-time resume.
