@@ -1,41 +1,32 @@
-# Publish a Windows release
+# Deliver a verified Windows update
 
-The source, installers, and update files all use the existing public `853493541/ZPS-Plugin` repository. The owner approved and applied Public visibility, including source history and addon references. Version 0.1.0 is published, and anonymous installer, blockmap, and update-feed downloads have been verified against the tested hashes. No separate repository is required.
+Read the approved delivery scope in `AGENTS.md`. The existing public `853493541/ZPS-Plugin` repository hosts source and updater assets. No separate release repository or visibility change is needed.
 
-The first prepared version is `0.1.0`. It is unsigned because no publisher certificate is configured. Do not describe it as a signed or production-certified release. The editable JX, team-buff, and chat formats are supported; opaque target-monitor exports remain read-only. Real game-client import acceptance remains separate from installer tests.
+The current fresh-environment task is described in `CURSOR_HANDOFF.md`. A package version on a work branch is not a published release.
 
-## Build and verify
+## Verify the change
 
-1. Update the version in `package.json` and `package-lock.json` together for subsequent releases.
-2. Verify that `app/services/release.cjs` and `package.json` use the same ZPS-Plugin generic update URL.
-3. Commit and push the exact source state. Run the Windows workflow for that branch.
+1. Increment `package.json` and the lockfile together. Do not bump again when resuming an already-versioned work branch.
+2. Run the required unit and relevant interaction checks. Preserve vendor/sample hashes and dataset edit/draft protections.
+3. Commit and push the feature branch. Open a reviewed PR to main and require its Windows desktop acceptance to pass.
+4. Windows acceptance runs tests, native Electron smoke, NSIS packaging, installed lifecycle, asset verification and installed upgrade/retention.
 
-```sh
-gh workflow run windows.yml --repo 853493541/ZPS-Plugin --ref codex/jx3box-network-handoff
-```
+The installed-upgrade fixture is the current source built with version 0.0.9. Its loopback test proves replacement and retained data, not compatibility with every independently released historical build. Its normal-close mode is observed and forwarded unchanged; never force installer arguments in the harness to make a test pass. Describe separate explicit-restart test coverage honestly.
 
-4. Require the tests, native desktop smoke, installer lifecycle, and release-asset verification to pass. Download that run's `windows-desktop` artifact. Do not rebuild the installer during publication.
-5. Verify `release-manifest.json` records the expected source commit. Check the installer, blockmap, and `latest.yml` against its digests. `tools/verify-release.mjs` validates version, byte size, SHA-512, filenames, and feed consistency. On the Windows runner it also checks the application archive and sample-file selection.
+Installation/uninstallation scripts are restricted to disposable GitHub Actions Windows runners. Do not bypass their guards on a user's computer.
 
-The package excludes development tests, regression fixtures, the addon reference baseline, and reference screenshots. It includes the six sample configuration files and their manifest. Electron packages contain the application JavaScript required to run the editor; the public repository also exposes its source history as approved by the owner.
+## Publish through the approved workflow
 
-## Publish the tested bytes
+1. After review and PR acceptance, merge the exact expected PR head to main.
+2. Require the main push Windows run to pass. PR runs cannot publish.
+3. `publish-after-acceptance.yml` then checks out that exact accepted source, checks that it is still main, and invokes the immutable-asset publisher.
+4. Wait for publication before moving main with a delivery-receipt commit. A newer main head makes an older acceptance run ineligible.
+5. If publication fails, diagnose its logs and retry only the failed publication job when appropriate. Do not rebuild or replace already accepted/published assets just to upload again.
 
-1. Create a draft `v0.1.0` release in the existing ZPS-Plugin repository.
-2. Upload exactly these tested files from the successful build.
+The release must contain exactly the tested installer, blockmap, latest.yml, release-manifest.json and SHA256SUMS.txt. The manifest source, package version, tag, configured feed and asset hashes must agree. The publisher refuses asset replacement. Keep GitHub credentials out of the app.
 
-- `ZPS-Studio-Setup-0.1.0.exe`
-- `ZPS-Studio-Setup-0.1.0.exe.blockmap`
-- `latest.yml`
-- `release-manifest.json`
-- `SHA256SUMS.txt`
+Generic feed: https://github.com/853493541/ZPS-Plugin/releases/latest/download/latest.yml
 
-3. State the unsigned status, supported features, read-only target-monitor limitation, and source commit in the release notes.
-4. Publish the complete draft. Select it as the latest release only after all required assets exist.
-5. Verify the public installer and `releases/latest/download/latest.yml` can be downloaded without application account credentials. Compare the downloaded bytes with the tested digests.
+After publication, verify public release metadata and an anonymous HTTP200 feed response with the expected version and digest. Only then report delivery. Record acceptance/publication run IDs and verified hashes in WORK_STATUS. A docs-only receipt should use `[skip ci]` to avoid repeating passing application builds.
 
-Installed applications check the public feed automatically. Download and restart remain user actions. Future updates require a higher application version and a complete tested release at the same public host. Never embed a GitHub token in the application. Unapplied drafts block update installation, and applied unsaved documents must be exported before restart.
-
-An installer/updater check against a local disposable test feed is useful evidence, but it does not replace checking the final public feed after publication.
-
-The installed-upgrade test builds a fixture from the same source with version `0.0.9`, installs it, and upgrades it to the current version through a loopback HTTP feed. It verifies real NSIS replacement and retained user-data/export hashes. It establishes the update mechanism, not compatibility with an independently released historical version.
+The installer is unsigned. Existing game-client and opaque-format limits remain separate from release acceptance. Automatic discovery/download and the current install behavior are documented in the latest release notes and WORK_STATUS; do not use historical 0.1.0 manual-publishing instructions as the current workflow.

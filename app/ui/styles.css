@@ -306,3 +306,9 @@ dialog::backdrop { background: #142e3a66; backdrop-filter: blur(2px); }
 .workspace-help { display: none; }
 .dataset-info-list > p { grid-column: 1 / -1; margin-top: 8px; }
 .empty-add { margin: 12px 6px; }
+
+.update-banner { align-self: flex-start; margin: 0 28px 14px; padding: 10px 12px 10px 18px; gap: 24px; border: 1px solid #d3e3fa; border-radius: 12px; background: #eaf3ff; color: #2667b8; font-size: 16px; font-weight: 550; max-width: calc(100% - 56px); }
+.update-banner .button { border-radius: 999px; min-width: 94px; min-height: 40px; padding: 7px 18px; background: #196ad2; border-color: #196ad2; color: #fff; font-size: 16px; }
+.update-banner .button:not(:disabled):hover { background: #1158b4; }
+.update-banner .button:disabled { opacity: .7; }
+@media (max-width: 1200px) { .update-banner { margin-inline: 20px; max-width: calc(100% - 40px); } }
