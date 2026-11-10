@@ -1,4 +1,5 @@
 import { features, featureById, featureForKind, featureForSample } from './features.mjs';
+import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft } from './jx-workspace.mjs';
 
 const $ = (id) => document.getElementById(id);
 const formats = {
@@ -7,7 +8,7 @@ const formats = {
   chat: { add: { keyword: '' } },
   opaque: {},
 };
-const freshView = () => ({ document: null, filename: '', dirty: false, canUndo: false, selected: null, category: null, search: '', tab: 'config', lookup: null, lookupClient: 'std', lookupLevel: '1', drafts: new Map() });
+const freshView = () => ({ document: null, filename: '', dirty: false, canUndo: false, selected: null, selectedType: null, typeSearch: '', memberSearch: '', detailOpen: false, category: null, search: '', tab: 'config', lookup: null, lookupClient: 'std', lookupLevel: '1', drafts: new Map() });
 const state = { ...freshView(), featureId: features[0].id, samples: [], busy: false };
 const views = new Map();
 let activationQueue = Promise.resolve();
@@ -15,14 +16,16 @@ let activationSequence = 0;
 let switching = false;
 let draftNotifications = Promise.resolve();
 
+function draftIsDirty(key, draft = state.drafts.get(key)) {
+  const record = state.document?.records.find(item => item.key === key);
+  if (!record || !draft) return false;
+  const original = key.startsWith('class:') ? { name: record.name, ...record.fields } : record.fields;
+  return !draft.fields || Object.entries(draft.fields).some(([name, value]) => JSON.stringify(value) !== JSON.stringify(original[name]));
+}
+
 function syncDraftState() {
   if (typeof bridge.setDraftState !== 'function') return;
-  const dirty = [...state.drafts].some(([key, draft]) => {
-    const record = state.document?.records.find(item => item.key === key);
-    if (!record) return false;
-    const original = key.startsWith('class:') ? { name: record.name, ...record.fields } : record.fields;
-    return !draft.fields || Object.entries(draft.fields).some(([name, value]) => JSON.stringify(value) !== JSON.stringify(original[name]));
-  });
+  const dirty = [...state.drafts].some(([key, draft]) => draftIsDirty(key, draft));
   const payload = { featureId: state.featureId, dirty };
   draftNotifications = draftNotifications.catch(() => {}).then(() => bridge.setDraftState(payload));
   draftNotifications.catch(error => toast(error.message || String(error), true));
@@ -101,7 +104,7 @@ function initializeFeatures() {
     button.addEventListener('click', () => activateFeature(feature.id));
     button.addEventListener('keydown', event => {
       const index = features.findIndex(item => item.id === feature.id);
-      const next = { ArrowRight: (index + 1) % features.length, ArrowLeft: (index + features.length - 1) % features.length, Home: 0, End: features.length - 1 }[event.key];
+      const next = { ArrowDown: (index + 1) % features.length, ArrowUp: (index + features.length - 1) % features.length, ArrowRight: (index + 1) % features.length, ArrowLeft: (index + features.length - 1) % features.length, Home: 0, End: features.length - 1 }[event.key];
       if (next === undefined) return;
       event.preventDefault();
       if (state.busy && !switching) return;
@@ -159,6 +162,7 @@ const bridge = window.studio || new Proxy({}, {
 });
 let toastTimer;
 let modalAction;
+let modalMetadataRefresh;
 let updateTimer;
 let lookupSequence = 0;
 const metadata = new Map();
@@ -310,6 +314,17 @@ function renderSelectionHeading() {
 }
 
 function refreshMetadata(changedKey) {
+  if (state.document?.kind === 'jx-buff') {
+    renderTypeLists(changedKey);
+    modalMetadataRefresh?.();
+    const query = buffQuery(selectedRecord());
+    if (!changedKey || query && metadataKey(query) === changedKey) renderSelectionHeading();
+    renderEnrichmentProgress();
+    const details = $('lookup-results');
+    const detailsQuery = buffQuery(selectedRecord(), state.lookupLevel);
+    if (details && !state.lookup && (!changedKey || detailsQuery && metadataKey(detailsQuery) === changedKey)) renderLookupDetails(details, selectedRecord());
+    return;
+  }
   const focusedRow = document.activeElement.closest?.('.record-row');
   const focusedKey = focusedRow?.dataset.key;
   if (state.search) {
@@ -445,8 +460,14 @@ function receive(result, reset = false, restore = false) {
   lookupSequence++;
   state.lookup = null;
   if (reset) { clearMetadata(); state.drafts = new Map(); }
+  if (!reset && state.document?.kind === 'jx-buff' && result.document.kind === 'jx-buff') {
+    for (const previous of state.document.records.filter(record => record.key.startsWith('buff:'))) {
+      const next = result.document.records.find(record => record.key === previous.key);
+      if (next && state.drafts.has(previous.key)) state.drafts.set(previous.key, rebaseMembershipDraft(state.drafts.get(previous.key), previous, next));
+    }
+  }
   Object.assign(state, { document: result.document, filename: result.filename || '', dirty: Boolean(result.dirty), canUndo: Boolean(result.canUndo) });
-  if (reset) Object.assign(state, { selected: null, category: null, search: '', lookup: null, tab: 'config' });
+  if (reset) Object.assign(state, { selected: null, selectedType: null, typeSearch: '', memberSearch: '', detailOpen: false, category: null, search: '', lookup: null, tab: 'config' });
   if (!state.document.records.some((record) => record.key === state.selected)) {
     state.selected = state.document.records[0]?.key ?? null;
     if (!restore) state.lookupLevel = referenceQuery(selectedRecord()).level || '1';
@@ -468,6 +489,10 @@ function referenceQuery(record) {
 function fileName(path) { return String(path || '').split(/[\\/]/).pop() || '未命名配置'; }
 function textValue(value) { return value === null ? 'null' : typeof value === 'object' ? JSON.stringify(value) : String(value ?? ''); }
 function visibleRecords() {
+  if (state.document?.kind === 'jx-buff') {
+    const group = projectTypes(state.document.records).find(item => item.name === state.selectedType);
+    return group ? matchingMembers(group, state.typeSearch || state.search, recordName).filter(record => !state.memberSearch || `${recordName(record)} ${record.id}`.toLowerCase().includes(state.memberSearch.toLowerCase())) : [];
+  }
   return (state.document?.records || []).filter((record) => (!state.category || String(record.category || '未分类') === state.category) && (!state.search || `${recordName(record)} ${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
 }
 
@@ -490,6 +515,7 @@ function render() {
   }
   renderCategories();
   renderRecords();
+  renderTypeWorkspace();
   renderInspector();
   renderSamples();
   $('status-text').textContent = switching ? '正在切换工作区…' : state.dirty ? '有未导出的修改' : '准备就绪';
@@ -504,7 +530,218 @@ function renderAvailability() {
   $('add-button').hidden = feature.kind === 'opaque';
   $('add-button').disabled = state.busy || !state.document?.writable || !format.add;
   $('search').disabled = switching;
+  for (const node of document.querySelectorAll('#type-workspace button, #type-workspace input')) node.disabled = state.busy || !state.document;
+  const group = currentType();
+  if ($('add-type-button')) $('add-type-button').disabled = state.busy || !state.document?.writable;
+  if ($('assign-member-button')) $('assign-member-button').disabled = state.busy || !state.document?.writable || !group;
+  if ($('type-settings-button')) $('type-settings-button').disabled = state.busy || !state.document?.writable || !group || group.name === '' && !group.record;
   for (const button of document.querySelectorAll('#sample-list button, #feature-presets button')) button.disabled = state.busy;
+}
+
+function focusSearch() { (state.document?.kind === 'jx-buff' ? $('type-search') : $('search'))?.focus(); }
+
+function typeGroups() { return projectTypes(state.document?.records); }
+function currentType() { return typeGroups().find(group => group.name === state.selectedType); }
+
+function actionButton(label, id, action) {
+  const button = element('button', 'button', label);
+  if (id) button.id = id;
+  button.type = 'button';
+  button.addEventListener('click', action);
+  return button;
+}
+
+function renderTypeWorkspace() {
+  const workspace = $('type-workspace');
+  if (!workspace) return;
+  const active = state.document?.kind === 'jx-buff';
+  workspace.hidden = !active;
+  $('search').hidden = active;
+  if (!active) return;
+  if (!$('type-search')) {
+    const master = element('aside', 'type-master');
+    const heading = element('div', 'type-master-header');
+    heading.append(element('h3', '', '类型'), actionButton('添加类型', 'add-type-button', addType));
+    const search = element('input', 'type-search');
+    search.id = 'type-search'; search.type = 'search'; search.placeholder = '搜索类型、Buff 名称或 ID';
+    search.setAttribute('aria-label', '搜索类型、Buff 名称或 ID');
+    search.addEventListener('input', () => { state.typeSearch = search.value; state.search = ''; renderTypeLists(); });
+    const list = element('div', 'type-list'); list.id = 'type-list'; list.setAttribute('aria-label', '类型列表');
+    master.append(heading, search, list);
+    const detail = element('section', 'type-detail');
+    const header = element('header', 'type-detail-header'); header.id = 'type-detail-header';
+    const memberSearch = element('input', 'member-search');
+    memberSearch.id = 'member-search'; memberSearch.type = 'search'; memberSearch.placeholder = '在当前类型中搜索 Buff';
+    memberSearch.setAttribute('aria-label', '在当前类型中搜索 Buff');
+    memberSearch.addEventListener('input', () => { state.memberSearch = memberSearch.value; renderTypeLists(); });
+    const members = element('div', 'type-member-list'); members.id = 'type-members';
+    detail.append(header, memberSearch, members);
+    workspace.replaceChildren(master, detail);
+  }
+  const groups = typeGroups();
+  if (!groups.some(group => group.name === state.selectedType)) state.selectedType = groups[0]?.name ?? null;
+  $('type-search').value = state.typeSearch;
+  $('member-search').value = state.memberSearch;
+  renderTypeHeader();
+  renderTypeLists();
+  renderAvailability();
+}
+
+function renderTypeHeader() {
+  if (!$('type-detail-header')) return;
+  const group = currentType();
+  const heading = element('div');
+  heading.append(element('h2', '', group ? typeLabel(group.name) : '先添加一个类型'), element('p', 'muted-text', group ? `${group.members.length} 个 Buff${!group.record && group.name !== '' ? ' · 由 Buff 引用的类型，尚无样式配置' : ''}` : '类型用来组织 Buff，并管理共同的显示样式。'));
+  const actions = element('div', 'type-actions');
+  const settings = actionButton(group?.record ? '类型样式与名称' : '创建类型样式', 'type-settings-button', () => {
+    if (!group) return;
+    if (!group.record) { addType(group.name); return; }
+    openDetail(group.record);
+  });
+  settings.disabled = !group || group.name === '' && !group.record || !state.document?.writable;
+  const assign = actionButton('添加 Buff 到此类型', 'assign-member-button', assignMember);
+  assign.disabled = !group || !state.document?.writable;
+  actions.append(settings, assign);
+  $('type-detail-header').replaceChildren(heading, actions);
+  $('member-search').hidden = !group;
+}
+
+function renderTypeLists(changedKey) {
+  if (state.document?.kind !== 'jx-buff' || !$('type-list')) return;
+  const active = document.activeElement;
+  const focusedType = active.closest?.('.type-item')?.dataset.type;
+  const focusedMember = active.closest?.('.type-member-row')?.dataset.key;
+  const list = $('type-list');
+  const members = $('type-members');
+  const scroll = [list.scrollTop, members.scrollTop];
+  const groups = searchTypes(typeGroups(), state.typeSearch || state.search, recordName);
+  list.replaceChildren();
+  for (const group of groups) {
+    const button = element('button', `type-item${group.name === state.selectedType ? ' active' : ''}`);
+    button.type = 'button'; button.dataset.type = group.name;
+    button.setAttribute('aria-pressed', String(group.name === state.selectedType));
+    button.append(element('span', 'type-name', typeLabel(group.name)), element('span', 'type-count', group.members.length));
+    button.addEventListener('click', () => { state.selectedType = group.name; state.detailOpen = false; state.memberSearch = ''; $('member-search').value = ''; renderTypeHeader(); renderTypeLists(); renderInspector(); });
+    list.append(button);
+  }
+  if (!groups.length) list.append(element('p', 'type-empty', '没有匹配的类型或 Buff。'));
+  const records = visibleRecords();
+  const sameMembers = changedKey && records.length === members.children.length && records.every((record, index) => members.children[index].dataset.key === record.key);
+  if (sameMembers) {
+    for (const row of members.children) {
+      const record = records.find(item => item.key === row.dataset.key);
+      const query = buffQuery(record);
+      if (changedKey && (!query || metadataKey(query) !== changedKey)) continue;
+      row.querySelector('.record-glyph').replaceWith(recordGlyph(record));
+      row.querySelector('.record-name').textContent = recordName(record);
+      row.querySelector('.record-id').textContent = recordSubtitle(record);
+    }
+  } else {
+    members.replaceChildren();
+    for (const record of records) {
+      const row = element('div', `type-member-row${state.selected === record.key && state.detailOpen ? ' selected' : ''}`);
+      row.dataset.key = record.key;
+      const copy = element('span', 'type-member-copy');
+      copy.append(element('span', 'record-name', recordName(record)), element('span', 'record-id', recordSubtitle(record)));
+      const open = element('button', 'type-member-open');
+      open.type = 'button';
+      open.append(copy, element('span', 'member-arrow', '›'));
+      open.addEventListener('click', () => openDetail(record));
+      row.append(recordGlyph(record), open);
+      members.append(row);
+    }
+    if (!records.length) members.append(element('p', 'type-empty', !currentType() ? '添加类型后，就可以放入 Buff。' : state.memberSearch || state.typeSearch ? '当前类型中没有匹配的 Buff。' : '此类型还没有 Buff。点击“添加 Buff 到此类型”开始。'));
+  }
+  list.scrollTop = scroll[0]; members.scrollTop = scroll[1];
+  if (focusedType !== undefined) [...list.children].find(node => node.dataset.type === focusedType)?.focus({ preventScroll: true });
+  if (focusedMember) [...members.children].find(node => node.dataset.key === focusedMember)?.querySelector('.type-member-open')?.focus({ preventScroll: true });
+}
+
+function openDetail(record) {
+  state.selected = record.key;
+  state.detailOpen = true;
+  state.lookup = null;
+  state.tab = 'config';
+  state.lookupLevel = referenceQuery(record).level || '1';
+  lookupSequence++;
+  renderTypeLists();
+  renderInspector();
+  document.querySelector('.inspector-close')?.focus();
+}
+
+function membershipField(value) {
+  const field = element('label', 'field');
+  field.append(element('span', '', '所属类型'));
+  const select = element('select'); select.name = 'nClass'; select.dataset.valueType = 'string';
+  const names = new Set(['', ...typeGroups().map(group => group.name), value]);
+  for (const name of names) {
+    const option = element('option', '', name === '' ? '移出类型（保留 Buff）' : typeLabel(name));
+    option.value = name; select.append(option);
+  }
+  select.value = value; select.disabled = !state.document.writable;
+  field.append(select);
+  return field;
+}
+
+function addType(initial = '') {
+  if (!state.document?.writable) return;
+  const content = element('div');
+  content.append(element('p', 'modal-description', '创建一个类型。名称按原样保存；类型样式可在创建后编辑。'));
+  const field = fieldInput('name', typeof initial === 'string' ? initial : '');
+  content.append(field);
+  showModal('添加类型', content, '创建类型', async () => {
+    const name = field.querySelector('input').value;
+    if (!name) throw new Error('请输入类型名称。');
+    await draftNotifications;
+    const result = await bridge.add({ type: 'class', name });
+    if (result?.document) { state.selectedType = name; state.typeSearch = ''; state.search = ''; state.memberSearch = ''; }
+    if (receive(result)) { closeModal(); toast('类型已创建。'); }
+  });
+}
+
+function assignMember() {
+  if (!state.document?.writable) return;
+  const group = currentType();
+  if (!group) { addType(); return; }
+  const content = element('div');
+  content.append(element('p', 'modal-description', `将已有 Buff 移入“${typeLabel(group.name)}”，或输入新的数字 ID。已有 Buff 的其他配置保持原样。`));
+  const mode = element('select'); mode.setAttribute('aria-label', '添加方式');
+  for (const [value, label] of [['existing', '选择已有 Buff'], ['new', '输入 Buff ID']]) { const option = element('option', '', label); option.value = value; mode.append(option); }
+  const existing = element('select'); existing.setAttribute('aria-label', '选择已有 Buff');
+  const search = element('input'); search.type = 'search'; search.placeholder = '搜索已有 Buff 名称、ID 或类型'; search.setAttribute('aria-label', '搜索已有 Buff');
+  const populate = () => {
+    const value = existing.value;
+    const query = search.value.toLowerCase();
+    existing.replaceChildren();
+    for (const record of state.document.records.filter(record => record.key.startsWith('buff:') && record.fields.nClass !== group.name && `${recordName(record)} ${record.id} ${typeLabel(record.fields.nClass)}`.toLowerCase().includes(query))) {
+      const option = element('option', '', `${recordName(record)} · ID ${record.id} · ${typeLabel(record.fields.nClass)}`);
+      option.value = record.key; existing.append(option);
+    }
+    if ([...existing.options].some(option => option.value === value)) existing.value = value;
+  };
+  search.addEventListener('input', populate); populate();
+  const id = element('input'); id.type = 'text'; id.inputMode = 'numeric'; id.placeholder = '输入 Buff ID'; id.setAttribute('aria-label', '输入 Buff ID');
+  const update = () => { existing.hidden = mode.value !== 'existing'; search.hidden = existing.hidden; id.hidden = mode.value !== 'new'; };
+  mode.addEventListener('change', update);
+  if (!existing.children.length) mode.value = 'new';
+  update(); content.append(mode, search, existing, id);
+  showModal('添加 Buff 到此类型', content, '添加到类型', async () => {
+    await draftNotifications;
+    let result;
+    if (mode.value === 'existing') {
+      if (!existing.value) throw new Error('请选择已有 Buff，或改为输入 Buff ID。');
+      if (draftIsDirty(existing.value)) throw new Error('这个 Buff 有尚未应用的编辑，请先在详情中保存修改。');
+      result = await bridge.edit({ key: existing.value, fields: { nClass: group.name } });
+    } else {
+      if (!/^\d+$/.test(id.value) || !Number.isSafeInteger(Number(id.value))) throw new Error('Buff ID 需要为非负整数。');
+      const record = state.document.records.find(item => item.id === Number(id.value));
+      if (record && draftIsDirty(record.key)) throw new Error('这个 Buff 有尚未应用的编辑，请先在详情中保存修改。');
+      result = record ? await bridge.edit({ key: record.key, fields: { nClass: group.name } }) : await bridge.add({ id: Number(id.value), nClass: group.name });
+    }
+    if (result?.document) { state.typeSearch = ''; state.search = ''; state.memberSearch = ''; }
+    if (receive(result)) { closeModal(); toast('Buff 已放入当前类型。可使用撤销恢复。'); }
+  });
+  modalMetadataRefresh = populate;
 }
 
 function renderCategories() {
@@ -539,6 +776,7 @@ function renderSamples() {
 }
 
 function renderRecords() {
+  if (state.document?.kind === 'jx-buff') { renderTypeLists(); return; }
   const records = visibleRecords();
   $('records-body').replaceChildren();
   $('list-summary').replaceChildren(document.createTextNode(state.category || '全部条目'), element('b', '', records.length));
@@ -567,8 +805,7 @@ function renderRecords() {
     nameCell.append(element('div', 'record-name', recordName(record)), element('div', 'record-id', recordSubtitle(record)));
     const categoryCell = element('td');
     categoryCell.append(element('span', 'category-pill', record.category || (record.key.startsWith('class:') ? '分类配置' : '未分类')));
-    const fieldsCell = element('td', 'field-preview', Object.keys(record.fields || {}).filter((key) => !key.startsWith('_')).slice(0, 2).join(' · ') || '原始值');
-    row.append(glyphCell, nameCell, categoryCell, fieldsCell, element('td', '', '›'));
+    row.append(glyphCell, nameCell, categoryCell, element('td', '', '›'));
     const select = () => { state.selected = record.key; state.lookup = null; state.lookupLevel = referenceQuery(record).level || '1'; lookupSequence++; renderRecords(); renderInspector(); };
     row.addEventListener('click', select);
     row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(); } });
@@ -576,9 +813,11 @@ function renderRecords() {
   }
 }
 
+const fieldLabels = { name: '类型名称', id: 'Buff ID', nClass: '所属类型', nPower: '显示优先级', tLevel: '生效等级', bEnable: '启用', reference: 'Buff 名称或 ID', color: '颜色', label: '显示标签', priority: '优先级', keyword: '聊天关键词' };
+
 function fieldInput(key, value, options = {}) {
   const field = element('label', 'field');
-  field.append(element('span', '', key));
+  field.append(element('span', '', fieldLabels[key] || key));
   const complex = value !== null && typeof value === 'object';
   const input = document.createElement(complex || String(value).length > 100 ? 'textarea' : 'input');
   input.name = key;
@@ -613,6 +852,17 @@ function formValues(form) {
 function renderInspector() {
   const record = selectedRecord();
   const content = $('inspector-content');
+  const jx = state.document?.kind === 'jx-buff';
+  $('editor-grid').hidden = jx && !state.detailOpen;
+  $('editor-grid').classList.toggle('detail-open', jx && state.detailOpen);
+  let close = document.querySelector('.inspector-close');
+  if (!close) {
+    close = element('button', 'button inspector-close', '关闭详情');
+    close.type = 'button';
+    close.addEventListener('click', () => { state.detailOpen = false; renderInspector(); (document.querySelector('.type-member-row.selected .type-member-open') || $('type-settings-button'))?.focus(); });
+    document.querySelector('.inspector').prepend(close);
+  }
+  close.hidden = !jx;
   content.replaceChildren();
   renderSelectionHeading();
   $('inspector-status').textContent = state.document ? state.document.writable ? '本地配置' : '只读' : '未选择';
@@ -634,14 +884,26 @@ function renderInspector() {
     return;
   }
   const heading = element('div', 'section-label', '配置参数');
-  heading.append(element('span', '', `${Object.keys(record.fields).length} FIELDS`));
   content.append(heading);
   const form = element('form');
   const originalFields = record.key.startsWith('class:') ? { name: record.name, ...record.fields } : record.fields;
-  for (const [key, value] of Object.entries(originalFields || {})) form.append(fieldInput(key, value, { readonly: !state.document.writable || key === 'raw' || value !== null && typeof value === 'object' && key !== 'tLevel' }));
+  const advanced = element('details', 'advanced-fields');
+  advanced.append(element('summary', '', record.key.startsWith('class:') ? '高级样式与原始字段' : '高级字段'));
+  for (const [key, value] of Object.entries(originalFields || {})) {
+    const input = jx && key === 'nClass' ? membershipField(value) : fieldInput(key, value, { readonly: !state.document.writable || key === 'raw' || value !== null && typeof value === 'object' && key !== 'tLevel' });
+    (fieldLabels[key] ? form : advanced).append(input);
+  }
+  if (advanced.children.length > 1) form.append(advanced);
+  if (jx && !record.key.startsWith('class:')) form.append(element('p', 'inspector-note', '移出类型会将所属类型设为空字符串，Buff 配置仍保留，可撤销。'));
   const draft = state.drafts.get(record.key);
   for (const input of form.querySelectorAll('[name]')) {
-    if (draft && Object.hasOwn(draft.values, input.name)) input.value = draft.values[input.name];
+    if (draft && Object.hasOwn(draft.values, input.name)) {
+      if (input.name === 'nClass' && ![...input.options].some(option => option.value === draft.values.nClass)) {
+        const option = element('option', '', `${typeLabel(draft.values.nClass)}（待保存）`);
+        option.value = draft.values.nClass; input.append(option);
+      }
+      input.value = draft.values[input.name];
+    }
   }
   if (draft) trackDraft(form, record.key);
   form.addEventListener('input', () => {
@@ -656,15 +918,19 @@ function renderInspector() {
     event.preventDefault();
     run(async () => {
       const fields = Object.fromEntries(Object.entries(formValues(form)).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(originalFields[key])));
-      if (!Object.keys(fields).length) { toast('没有需要保存的修改。'); return; }
+      if (!Object.keys(fields).length) { state.drafts.delete(record.key); syncDraftState(); toast('没有需要保存的修改。'); return; }
       const submitted = Object.fromEntries([...form.querySelectorAll('[name]')].map(input => [input.name, input.value]));
       await draftNotifications;
       const result = await bridge.edit({ key: record.key, fields });
       if (result?.document) {
         const current = state.drafts.get(record.key);
         if (current && JSON.stringify(current.values) === JSON.stringify(submitted)) state.drafts.delete(record.key);
-        if (fields.name && record.key.startsWith('class:')) {
+        if (Object.hasOwn(fields, 'name') && record.key.startsWith('class:')) {
+          for (const [key, draft] of state.drafts) {
+            if (draft.values.nClass === record.name) state.drafts.set(key, { ...draft, values: { ...draft.values, nClass: fields.name }, fields: draft.fields ? { ...draft.fields, nClass: fields.name } : null });
+          }
           state.selected = `class:${fields.name}`;
+          if (state.selectedType === record.name) state.selectedType = fields.name;
           if (state.drafts.has(record.key)) {
             state.drafts.set(state.selected, state.drafts.get(record.key));
             state.drafts.delete(record.key);
@@ -674,7 +940,7 @@ function renderInspector() {
       if (receive(result)) toast('条目已更新。导出配置以写入文件。');
     });
   });
-  content.append(form, element('div', 'inspector-note', '字段名与值来自原文件。未识别字段保留原样。ID 和结构变更请通过添加条目操作。'));
+  content.append(form, element('div', 'inspector-note', '未修改的配置与未知字段会保留原样。'));
   appendWarnings(content);
 }
 
@@ -800,6 +1066,7 @@ async function lookup(record) {
 
 function showModal(title, content, submitText, action) {
   clearInterval(updateTimer);
+  modalMetadataRefresh = null;
   $('modal-title').textContent = title;
   $('modal-content').replaceChildren(content);
   $('modal-submit').textContent = submitText || '确定';
@@ -810,7 +1077,7 @@ function showModal(title, content, submitText, action) {
   $('modal').showModal();
 }
 
-function closeModal() { clearInterval(updateTimer); $('modal').close(); }
+function closeModal() { clearInterval(updateTimer); modalMetadataRefresh = null; $('modal').close(); }
 
 function newDocument() {
   const feature = featureById(state.featureId);
@@ -832,33 +1099,16 @@ function newDocument() {
 }
 
 function addRecord() {
+  if (state.document?.kind === 'jx-buff') { assignMember(); return; }
   const spec = formats[state.document?.kind]?.add;
   if (!spec || !state.document.writable) return;
   const content = element('div');
   content.append(element('p', 'modal-description', '填写该格式所需的原始字段。字段语义请以插件配置说明为准。'));
   const form = element('div');
-  let kindSelect;
-  const populate = () => {
-    form.replaceChildren();
-    for (const [key, value] of Object.entries(kindSelect?.value === 'class' ? { name: '' } : spec)) form.append(fieldInput(key, value));
-  };
-  if (state.document.kind === 'jx-buff') {
-    const field = element('label', 'field');
-    field.append(element('span', '', '条目类型'));
-    kindSelect = element('select');
-    for (const [value, title] of [['buff', 'Buff 条目'], ['class', '分类配置']]) { const option = element('option', '', title); option.value = value; kindSelect.append(option); }
-    field.append(kindSelect); content.append(field);
-    kindSelect.addEventListener('change', populate);
-  }
-  populate();
+  for (const [key, value] of Object.entries(spec)) form.append(fieldInput(key, value));
   content.append(form);
   showModal('添加条目', content, '添加条目', async () => {
     const fields = formValues(form);
-    if (kindSelect?.value === 'class') fields.type = 'class';
-    else if (state.document.kind === 'jx-buff') {
-      if (!/^\d+$/.test(fields.id)) throw new Error('Buff ID 需要为数字。');
-      fields.id = Number(fields.id);
-    }
     const previous = new Set(state.document.records.map((record) => record.key));
     const result = await bridge.add(fields);
     if (receive(result)) {
@@ -937,13 +1187,13 @@ $('new-button').addEventListener('click', newDocument);
 $('add-button').addEventListener('click', addRecord);
 $('report-nav').addEventListener('click', reportProblem);
 $('update-nav').addEventListener('click', updates);
-$('workspace-nav').addEventListener('click', () => { $('search').focus(); });
+$('workspace-nav').addEventListener('click', focusSearch);
 $('all-records').addEventListener('click', () => { state.category = null; renderCategories(); renderRecords(); });
-$('search').addEventListener('input', (event) => { state.search = event.target.value; renderRecords(); });
+$('search').addEventListener('input', (event) => { state.search = event.target.value; if (state.document?.kind === 'jx-buff') { state.typeSearch = state.search; if ($('type-search')) $('type-search').value = state.search; } renderRecords(); });
 for (const tab of ['config', 'box', 'source']) $(`${tab}-tab`).addEventListener('click', () => { state.tab = tab; renderInspector(); });
 $('modal-close').addEventListener('click', closeModal);
 $('modal-cancel').addEventListener('click', closeModal);
-$('modal').addEventListener('close', () => clearInterval(updateTimer));
+$('modal').addEventListener('close', () => { clearInterval(updateTimer); modalMetadataRefresh = null; });
 $('modal-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   if (!modalAction) return;
@@ -955,7 +1205,7 @@ document.addEventListener('keydown', (event) => {
   if (!(event.ctrlKey || event.metaKey)) return;
   if (event.key.toLowerCase() === 'o') { event.preventDefault(); if (!$('modal').open) open(); }
   if (event.key.toLowerCase() === 's') { event.preventDefault(); if (!$('modal').open) save(); }
-  if (event.key.toLowerCase() === 'k') { event.preventDefault(); $('search').focus(); }
+  if (event.key.toLowerCase() === 'k') { event.preventDefault(); focusSearch(); }
   if (event.key.toLowerCase() === 'z' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { event.preventDefault(); if (state.canUndo) undo(); }
 });
 

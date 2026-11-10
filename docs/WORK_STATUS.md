@@ -179,3 +179,13 @@ Publication run 42759521082 initially created the draft then hit a read-after-cr
 Version 0.1.0 users must use its existing update control once to check/download/install 0.1.1, or install the public 0.1.1 installer. From 0.1.1 onward, startup, five-minute and cooldown-protected focus checks download updates in the background. A ready banner offers restart. Normal app close installs a ready update silently without reopening, only through the existing unsaved-edit/draft close guards. The periodic ChatGPT task remains paused; app HTTP checks consume no ChatGPT usage.
 
 Future requested app behavior changes follow the approved AGENTS workflow: implement, version, verify, merge to main, and publish only after main Windows acceptance succeeds. Failed tests, untrusted PR runs, stale main runs, and mismatched/replaced assets cannot publish. Questions/status checks do not trigger app changes. Remaining game-client and opaque-MY-format limitations still apply.
+
+## Type-first UI update prepared for 0.1.2
+
+The user requested a quieter editor, larger text, four feature areas in left navigation, and live type-or-buff search with membership editing. The new JX workspace projects exact `tClass` names and `tBuff.nClass` membership into a type list and member panel. Details open on demand. Users can create and rename types, search and assign existing buffs, add numeric IDs, move membership, or remove membership while retaining the rule. Import help and unknown fields are collapsed. MY and chat retain their existing editing behavior with larger controls.
+
+All 72 unit tests pass. The actual-sample browser workflow passes search by captured name and ID, create/rename, move/remove/undo, draft retention, a renamed draft destination, and compact-window layout. Existing deterministic feature, metadata, cache, and icon-retry regressions pass. Review found a draft-destination rename loss and an unrelated-metadata detail reset; both were corrected and verified. Native and installed-upgrade smoke startup selectors now match the type workspace. All 512 vendor and 14 sample hashes remain unchanged.
+
+`docs/TYPE_WORKSPACE.md` records the design and verification commands. `artifacts/editor-types.png` and `artifacts/editor-buff.png` show the original sample with captured 12784 metadata and an intentional offline icon state. These screenshots do not establish live API access. No remote speedup is claimed; local membership appears before enrichment and the open type's members receive lookup priority.
+
+The approved delivery workflow applies to this requested behavior change. Version 0.1.2 is prepared. Windows acceptance and public publication remain pending at this checkpoint. The periodic ChatGPT task stays paused.

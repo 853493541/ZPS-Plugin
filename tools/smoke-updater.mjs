@@ -99,7 +99,7 @@ try {
   app = await _electron.launch({executablePath: executable, args: [`--user-data-dir=${userData}`, `--proxy-server=${feedURL}`], timeout: 30_000});
   const page = await app.firstWindow({timeout: 30_000});
   page.setDefaultTimeout(30_000);
-  await page.waitForSelector('#records-body tr');
+  await page.waitForSelector('#type-list .type-item');
   await waitForUpdateState(page, 'initialized');
   await app.evaluate(async ({app, session}, config) => {
     const installedRequire = process.mainModule.require('node:module').createRequire(`${app.getAppPath()}/package.json`);
