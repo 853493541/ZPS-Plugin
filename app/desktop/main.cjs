@@ -118,14 +118,14 @@ async function updates(action = 'status') {
     if (action === 'install') {
       if (updateState.status !== 'ready') throw new Error('Update not ready');
       if (sessions.dirtySessions().some(session => session.draftDirty)) {
-        await dialog.showMessageBox(win, { type: 'info', message: '先应用或撤销草稿', detail: '尚有未应用的表单草稿。请在对应功能中应用或撤销草稿后，再安装更新。', buttons: ['确定'] });
+        await dialog.showMessageBox(win, { type: 'info', message: '先应用或撤销草稿', detail: '尚有未应用的表单草稿。请在对应功能中应用或撤销草稿后，再更新。', buttons: ['确定'] });
         return updateState;
       }
       for (const session of sessions.dirtySessions()) {
         if (!(await save(session))) return updateState;
       }
-      const { response } = await dialog.showMessageBox(win, { type: 'question', message: '更新已下载。现在重启并安装？', buttons: ['取消', '重启安装'], defaultId: 0, cancelId: 0 });
-      if (response === 1) { quitApproved = true; updater.quitAndInstall(); }
+      const { response } = await dialog.showMessageBox(win, { type: 'question', message: '更新已下载。现在重启并更新？', buttons: ['取消', '重启更新'], defaultId: 0, cancelId: 0 });
+      if (response === 1) { quitApproved = true; updater.quitAndInstall(true, true); }
     }
   } catch { updateState = { status: 'error', message: '更新操作未完成。请检查网络或先检查更新。' }; }
   return updateState;
