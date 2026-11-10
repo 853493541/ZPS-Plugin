@@ -4,12 +4,21 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
-const { crc32 } = require('node:zlib');
+const { crc32, deflateSync } = require('node:zlib');
+const { createHash } = require('node:crypto');
 const { PNG: PNGCodec } = require('pngjs');
 const { createIconCache } = require('../services/icons.cjs');
 
 const png = rgba => PNGCodec.sync.write({ width: 1, height: 1, data: Buffer.from(rgba) });
 const PNG = png([255, 255, 255, 255]);
+const pngChunk = (type, data) => {
+  const chunk = Buffer.alloc(data.length + 12);
+  chunk.writeUInt32BE(data.length);
+  chunk.write(type, 4);
+  data.copy(chunk, 8);
+  chunk.writeUInt32BE(crc32(chunk.subarray(4, chunk.length - 4)), chunk.length - 4);
+  return chunk;
+};
 const response = (bytes = PNG, contentType = 'image/png') => new Response(bytes, { headers: contentType ? { 'Content-Type': contentType } : {} });
 async function setup(t, options = {}) {
   const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'zps-icons-'));
@@ -149,7 +158,12 @@ test('invalid PNG chunks, checksums, dimensions and compressed streams are never
   const zeroDimensions = Buffer.from(PNG);
   zeroDimensions.writeUInt32BE(0, 20);
   zeroDimensions.writeUInt32BE(crc32(zeroDimensions.subarray(12, 29)), 29);
-  for (const bytes of [PNG.subarray(0, 32), PNG.subarray(0, PNG.length - 1), badCRC, badStream, oversizedDimensions, zeroDimensions]) {
+  const badChunkLength = Buffer.from(PNG);
+  badChunkLength.writeUInt32BE(0xffffffff, idat - 4);
+  const oversizedStream = Buffer.concat([
+    PNG.subarray(0, 33), pngChunk('IDAT', deflateSync(Buffer.alloc(4096))), pngChunk('IEND', Buffer.alloc(0)),
+  ]);
+  for (const bytes of [PNG.subarray(0, 32), PNG.subarray(0, PNG.length - 1), badCRC, badStream, oversizedDimensions, zeroDimensions, badChunkLength, oversizedStream]) {
     const options = await setup(t);
     let requests = 0;
     const cache = createIconCache({ ...options, fetch: async () => response(++requests === 1 ? bytes : PNG) });
@@ -158,6 +172,58 @@ test('invalid PNG chunks, checksums, dimensions and compressed streams are never
     assert.equal((await cache.load({ client: 'std', id: 1 })).source, 'network');
     assert.equal(requests, 2);
   }
+});
+
+test('valid split IDAT streams and Adam7 interlaced icons survive network and offline reads', async t => {
+  const idat = PNG.indexOf(Buffer.from('IDAT'));
+  const compressed = PNG.subarray(idat + 4, idat + 4 + PNG.readUInt32BE(idat - 4));
+  const split = Buffer.concat([
+    PNG.subarray(0, 33),
+    pngChunk('IDAT', compressed.subarray(0, 1)),
+    pngChunk('IDAT', compressed.subarray(1)),
+    pngChunk('IEND', Buffer.alloc(0)),
+  ]);
+  const header = Buffer.from(PNG.subarray(16, 29));
+  header.writeUInt32BE(8);
+  header.writeUInt32BE(8, 4);
+  header[12] = 1;
+  const rows = [];
+  for (const [width, height] of [[1, 1], [1, 1], [2, 1], [2, 2], [4, 2], [4, 4], [8, 4]]) {
+    for (let row = 0; row < height; row++) rows.push(Buffer.from([0]), Buffer.alloc(width * 4, 255));
+  }
+  const interlaced = Buffer.concat([
+    PNG.subarray(0, 8), pngChunk('IHDR', header),
+    pngChunk('IDAT', deflateSync(Buffer.concat(rows))), pngChunk('IEND', Buffer.alloc(0)),
+  ]);
+  for (const bytes of [split, interlaced]) {
+    const decoded = PNGCodec.sync.read(bytes);
+    assert.ok(decoded.data.every(value => value === 255));
+    const options = await setup(t);
+    const online = await createIconCache({ ...options, fetch: async () => response(bytes) }).load({ client: 'std', id: 42 });
+    assert.equal(online.dataURL, `data:image/png;base64,${bytes.toString('base64')}`);
+    const offline = await createIconCache({ ...options, fetch: async () => { throw new Error('offline'); } }).load({ client: 'std', id: 42 });
+    assert.deepEqual(offline, { ...online, source: 'cache' });
+  }
+});
+
+test('invalid compressed streams with matching disk digests trigger a valid replacement', async t => {
+  const options = await setup(t);
+  await createIconCache({ ...options, fetch: async () => response() }).load({ client: 'std', id: 42 });
+  const metadataFile = path.join(options.cacheDir, (await fs.readdir(options.cacheDir)).find(file => file.endsWith('.json')));
+  const metadata = JSON.parse(await fs.readFile(metadataFile, 'utf8'));
+  const badStream = Buffer.from(PNG);
+  const idat = badStream.indexOf(Buffer.from('IDAT'));
+  const dataEnd = idat + 4 + badStream.readUInt32BE(idat - 4);
+  badStream[idat + 4] = 0;
+  badStream.writeUInt32BE(crc32(badStream.subarray(idat, dataEnd)), dataEnd);
+  metadata.digest = createHash('sha256').update(badStream).digest('hex');
+  await fs.writeFile(path.join(options.cacheDir, `${metadata.digest}.png`), badStream);
+  await fs.writeFile(metadataFile, JSON.stringify(metadata));
+  let requests = 0;
+  const replacement = await createIconCache({ ...options, fetch: async () => { requests++; return response(); } }).load({ client: 'std', id: 42 });
+  assert.equal(requests, 1);
+  assert.equal(replacement.source, 'network');
+  assert.equal(replacement.dataURL, `data:image/png;base64,${PNG.toString('base64')}`);
 });
 
 test('failed explicit refresh preserves the saved icon and its fetch timestamp', async t => {

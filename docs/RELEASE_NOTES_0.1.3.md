@@ -6,6 +6,7 @@ This update makes the active data file clear and keeps several datasets open wit
 - Import can open multiple files. Reopening the same source selects its existing dataset. Different paths with the same filename remain separate.
 - New dataset, new type, add Buff, new monitor, and add keyword actions have explicit names and locations.
 - Record details open in a large centered modal for JX, MY team rules, and chat. Escape closes the modal and retains drafts.
+- Corrupt icon streams are rejected consistently on Node 22 and newer runtimes, including previously saved cache files.
 - Repeated headings and technical notes are removed. File information contains source path, modification time, content fingerprint, and the plugin import destination.
 
 A version label distinguishes a user's datasets. It does not establish game compatibility. Imported files without a declared version say that the version is not labeled. A new dataset's label is included in the suggested export filename.
