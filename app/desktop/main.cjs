@@ -14,6 +14,7 @@ const uiURL = pathToFileURL(path.join(root, 'app/ui/index.html')).href;
 let win, codec, catalog, iconCache, sessions, featureRegistry;
 let sampleList = [];
 let updateState = { status: 'idle' };
+let installIntent = { phase: 'idle' };
 let updater;
 let updateChecks;
 let quitApproved = false;
@@ -86,6 +87,33 @@ async function save(session = sessions.active) {
   await atomicExport(filePath, session.bytes);
   return { ...sessions.markSaved(session), exported: true, exportedPath: filePath, exportedDataset: sessions.summary(session) };
 }
+function publicUpdateState() {
+  const { blocked, message } = installIntent;
+  return { ...updateState, installRequested: ['requested', 'started'].includes(installIntent.phase), ...(blocked ? { blocked, message } : {}) };
+}
+function setUpdateState(state) {
+  if (state.version !== updateState.version) installIntent = { phase: 'idle' };
+  updateState = state;
+}
+function updateFailed(message) {
+  installIntent = { phase: 'idle' };
+  quitApproved = false;
+  updateState = { status: 'error', ...(updateState.version ? { version: updateState.version } : {}), message };
+}
+function blockInstallForEdits() {
+  const dirty = sessions.dirtySessions();
+  if (!dirty.length) return false;
+  installIntent = { phase: 'blocked', blocked: dirty.some(session => session.draftDirty) ? 'drafts' : 'edits', message: '请先保存或撤销修改，再安装更新。' };
+  return true;
+}
+function finishRequestedInstall() {
+  if (installIntent.phase !== 'requested' || updateState.status !== 'ready' || installIntent.version !== updateState.version) return;
+  if (blockInstallForEdits()) return;
+  installIntent = { ...installIntent, phase: 'started' };
+  quitApproved = true;
+  try { updater.quitAndInstall(true, true); }
+  catch { updateFailed('更新安装未完成，请重试安装或重新检查更新。'); }
+}
 function configureUpdates() {
   if (!app.isPackaged) { updateState = { status: 'unavailable', message: '开发模式不检查更新。' }; return; }
   try {
@@ -93,13 +121,16 @@ function configureUpdates() {
     updater.autoDownload = true;
     updater.autoInstallOnAppQuit = false;
     updater.setFeedURL(updateFeed);
-    updater.on('checking-for-update', () => { updateState = { status: 'checking' }; });
-    updater.on('update-available', info => { updateState = { status: 'available', version: info.version }; });
-    updater.on('update-not-available', () => { updateState = { status: 'current' }; });
-    updater.on('download-progress', info => { updateState = { status: 'downloading', progress: Math.round(info.percent) }; });
-    updater.on('update-downloaded', info => { updateState = { status: 'ready', version: info.version }; });
-    updater.on('error', () => { updateState = { status: 'error', message: '更新暂不可用，请稍后重试或从 GitHub 下载。' }; });
-    updateChecks = createUpdateChecks({ updater, getState: () => updateState, onError: () => { updateState = { status: 'error', message: '更新暂不可用，将自动重试。' }; } });
+    updater.on('checking-for-update', () => { setUpdateState({ status: 'checking', ...(updateState.version ? { version: updateState.version } : {}) }); });
+    updater.on('update-available', info => { setUpdateState({ status: 'available', version: info.version }); });
+    updater.on('update-not-available', () => { setUpdateState({ status: 'current' }); });
+    updater.on('download-progress', info => { setUpdateState({ status: 'downloading', version: updateState.version, progress: Math.round(info.percent) }); });
+    updater.on('update-downloaded', info => {
+      setUpdateState({ status: 'ready', version: info.version });
+      void enqueue(finishRequestedInstall);
+    });
+    updater.on('error', () => { updateFailed('更新暂不可用，请重试或从 GitHub 下载。'); });
+    updateChecks = createUpdateChecks({ updater, getState: () => updateState, onError: () => { updateFailed('更新暂不可用，请重试检查更新。'); } });
     win.on('focus', () => updateChecks.check());
     app.on('will-quit', () => updateChecks.stop());
     updateChecks.start();
@@ -107,28 +138,25 @@ function configureUpdates() {
 }
 async function updates(action = 'status') {
   if (!['status', 'check', 'download', 'install'].includes(action)) throw new Error('Unknown update action');
-  if (!updater || action === 'status') return updateState;
+  if (!updater || action === 'status') return publicUpdateState();
   try {
     if (action === 'check') updateChecks?.check({ force: true });
     if (action === 'download') {
       if (updateState.status !== 'available') throw new Error('Update not available');
-      updateState = { status: 'downloading', progress: 0 };
-      updater.downloadUpdate().catch(() => { updateState = { status: 'error', message: '更新下载未完成。' }; });
-    }
-    if (action === 'install') {
-      if (updateState.status !== 'ready') throw new Error('Update not ready');
-      if (sessions.dirtySessions().some(session => session.draftDirty)) {
-        await dialog.showMessageBox(win, { type: 'info', message: '先应用或撤销草稿', detail: '尚有未应用的表单草稿。请在对应功能中应用或撤销草稿后，再更新。', buttons: ['确定'] });
-        return updateState;
+      if (!updater.autoDownload) {
+        setUpdateState({ status: 'downloading', version: updateState.version, progress: 0 });
+        updater.downloadUpdate().catch(() => { updateFailed('更新下载未完成，请重试检查更新。'); });
       }
-      for (const session of sessions.dirtySessions()) {
-        if (!(await save(session))) return updateState;
-      }
-      const { response } = await dialog.showMessageBox(win, { type: 'question', message: '更新已下载。现在重启并更新？', buttons: ['取消', '重启更新'], defaultId: 0, cancelId: 0 });
-      if (response === 1) { quitApproved = true; updater.quitAndInstall(true, true); }
     }
-  } catch { updateState = { status: 'error', message: '更新操作未完成。请检查网络或先检查更新。' }; }
-  return updateState;
+    if (action === 'install' && !['requested', 'started'].includes(installIntent.phase)) {
+      if (!['available', 'downloading', 'ready'].includes(updateState.status) || !updateState.version) throw new Error('Update not available');
+      if (!blockInstallForEdits()) {
+        installIntent = { phase: 'requested', version: updateState.version };
+        finishRequestedInstall();
+      }
+    }
+  } catch { updateFailed('更新操作未完成。请检查网络并重新检查更新。'); }
+  return publicUpdateState();
 }
 async function report(text) {
   const categories = { timeout: /timeout|timed out|超时/i, network: /network|fetch|网络/i, format: /parse|format|编码|格式/i, update: /updat|更新/i };

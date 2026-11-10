@@ -189,7 +189,6 @@ let detailReturnFocus;
 let toastTimer;
 let modalAction;
 let modalMetadataRefresh;
-let updateTimer;
 let lookupSequence = 0;
 const metadata = new Map();
 const attemptedMetadata = new Set();
@@ -1185,7 +1184,6 @@ async function lookup(record) {
 }
 
 function showModal(title, content, submitText, action) {
-  clearInterval(updateTimer);
   modalMetadataRefresh = null;
   $('modal-title').textContent = title;
   $('modal-content').replaceChildren(content);
@@ -1198,7 +1196,7 @@ function showModal(title, content, submitText, action) {
   content.querySelector('input:not([type=hidden]):not([hidden]), select, textarea, button')?.focus();
 }
 
-function closeModal() { clearInterval(updateTimer); modalMetadataRefresh = null; $('modal').close(); }
+function closeModal() { modalMetadataRefresh = null; $('modal').close(); }
 
 function newDocument() {
   const feature = featureById(state.featureId);
@@ -1260,35 +1258,6 @@ function reportProblem() {
   });
 }
 
-function updates() {
-  const content = element('div');
-  content.append(element('p', 'modal-description', '通过已配置的发布源检查桌面应用更新。'));
-  const output = element('div', 'update-state', '正在读取更新状态…');
-  const actions = element('div', 'update-actions');
-  const labels = { check: '检查更新', download: '下载更新', install: '重启并更新' };
-  const buttons = {};
-  const refresh = async (action = 'status') => {
-    try {
-      for (const button of Object.values(buttons)) button.disabled = true;
-      await draftNotifications;
-      const result = await bridge.updates(action);
-      const status = result?.status || result?.state;
-      const statusLabels = { idle: '可以检查是否有新版本。', checking: '正在检查更新…', available: '发现新版本，可以下载更新。', current: '当前已是最新版本。', downloading: '正在下载更新…', ready: '更新已下载，重启即可更新。', unavailable: '当前环境不支持自动更新。', error: '更新操作未完成。' };
-      output.textContent = typeof result === 'string' ? result : [statusLabels[status] || '更新状态未知。', result?.version ? `版本 ${result.version}` : '', result?.progress !== undefined ? `已下载 ${result.progress}%` : '', result?.message || ''].filter(Boolean).join('\n');
-      buttons.check.disabled = false;
-      buttons.download.disabled = !['available', 'update-available'].includes(status);
-      buttons.install.disabled = !['downloaded', 'ready', 'update-downloaded'].includes(status);
-    } catch (error) { output.textContent = error.message || String(error); buttons.check.disabled = false; }
-  };
-  for (const [action, label] of Object.entries(labels)) {
-    const button = element('button', 'button', label); button.type = 'button'; button.disabled = true;
-    button.addEventListener('click', () => refresh(action)); buttons[action] = button; actions.append(button);
-  }
-  content.append(output, actions);
-  showModal('应用更新', content);
-  refresh();
-  updateTimer = setInterval(() => { if ($('modal').open) refresh(); }, 3000);
-}
 
 const open = () => run(async () => { await draftNotifications; return receive(await bridge.open(), true); });
 const save = () => run(async () => { if (state.document?.writable) { await draftNotifications; const result = await bridge.save(datasetPayload()); if (receive(result)) toast('配置已导出。'); } });
@@ -1313,14 +1282,14 @@ $('dataset-info-button')?.addEventListener('click', datasetInfo);
 $('detail-modal')?.addEventListener('cancel', event => { event.preventDefault(); closeDetail(); });
 $('add-button').addEventListener('click', addRecord);
 $('report-nav').addEventListener('click', reportProblem);
-$('update-nav').addEventListener('click', updates);
+$('update-nav').addEventListener('click', checkUpdates);
 $('workspace-nav').addEventListener('click', focusSearch);
 $('all-records').addEventListener('click', () => { state.category = null; renderCategories(); renderRecords(); });
 $('search').addEventListener('input', (event) => { state.search = event.target.value; if (state.document?.kind === 'jx-buff') { state.typeSearch = state.search; if ($('type-search')) $('type-search').value = state.search; } renderRecords(); });
 for (const tab of ['config', 'box', 'source']) $(`${tab}-tab`).addEventListener('click', () => { state.tab = tab; renderInspector(); });
 $('modal-close').addEventListener('click', closeModal);
 $('modal-cancel').addEventListener('click', closeModal);
-$('modal').addEventListener('close', () => { clearInterval(updateTimer); modalMetadataRefresh = null; });
+$('modal').addEventListener('close', () => { modalMetadataRefresh = null; });
 $('modal-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   if (!modalAction) return;
@@ -1347,25 +1316,67 @@ run(async () => {
 
 
 let updateBannerBusy = false;
+let updateActionBusy = false;
+let updateActionEpoch = 0;
+let manualUpdateCheck = false;
+let updateView = null;
+
+function renderUpdateBanner(result) {
+  updateView = result;
+  const status = result?.status;
+  const known = ['available', 'downloading', 'ready'].includes(status);
+  const retry = status === 'error';
+  const show = known || retry || manualUpdateCheck && status === 'checking';
+  $('update-banner').hidden = !show;
+  const button = $('update-restart');
+  button.hidden = !known && !retry;
+  button.disabled = updateActionBusy || Boolean(result?.installRequested);
+  button.textContent = result?.installRequested ? status === 'ready' ? '正在安装…' : '准备中…' : retry ? '重试' : '安装';
+  if (result?.blocked) $('update-message').textContent = result.message || '请先保存或撤销修改，再安装更新。';
+  else if (retry) $('update-message').textContent = result.message || '更新未完成，请重试。';
+  else if (result?.installRequested) $('update-message').textContent = status === 'ready' ? '正在更新，即将重新打开应用。' : `正在下载 ${result.progress || 0}%，完成后自动更新并重启。`;
+  else if (known) $('update-message').textContent = `发现新版本${result.version ? ` ${result.version}` : ''}`;
+  else if (status === 'checking') $('update-message').textContent = '正在检查更新…';
+  if (manualUpdateCheck && ['current', 'unavailable', 'error'].includes(status)) {
+    manualUpdateCheck = false;
+    if (!retry) toast(status === 'current' ? '当前已是最新版本。' : result.message || '当前环境不支持更新。');
+  }
+}
+
 async function refreshUpdateBanner() {
-  if (updateBannerBusy || typeof bridge.updates !== 'function') return;
+  if (updateBannerBusy || updateActionBusy || typeof bridge.updates !== 'function') return;
   updateBannerBusy = true;
+  const epoch = updateActionEpoch;
   try {
     const result = await bridge.updates('status');
-    const show = result?.status === 'downloading' || result?.status === 'ready';
-    $('update-banner').hidden = !show;
-    $('update-restart').hidden = result?.status !== 'ready';
-    if (show) $('update-message').textContent = result.status === 'ready'
-      ? `新版本 ${result.version || ''} 已下载。关闭应用时自动更新，或现在重启。未导出的修改会先提醒。`
-      : `正在后台下载更新 ${result.progress || 0}%，可以继续编辑。`;
+    if (!updateActionBusy && epoch === updateActionEpoch) renderUpdateBanner(result);
   } catch {}
   finally { updateBannerBusy = false; }
 }
+
+async function checkUpdates() {
+  if (updateActionBusy) return;
+  updateActionBusy = true;
+  updateActionEpoch++;
+  manualUpdateCheck = true;
+  try { renderUpdateBanner(await bridge.updates('check')); }
+  catch (error) { renderUpdateBanner({ status: 'error', message: error.message || '检查更新未完成，请重试。' }); }
+  finally { updateActionBusy = false; if (updateView) renderUpdateBanner(updateView); }
+}
+
 $('update-restart').addEventListener('click', () => run(async () => {
-  await draftNotifications;
-  await bridge.updates('install');
-  await refreshUpdateBanner();
+  if (updateActionBusy || updateView?.installRequested) return;
+  updateActionBusy = true;
+  updateActionEpoch++;
+  $('update-restart').disabled = true;
+  try {
+    await draftNotifications;
+    const action = updateView?.status === 'error' ? 'check' : 'install';
+    if (action === 'check') manualUpdateCheck = true;
+    renderUpdateBanner(await bridge.updates(action));
+  } catch (error) { renderUpdateBanner({ status: 'error', message: error.message || '更新未完成，请重试。' }); }
+  finally { updateActionBusy = false; if (updateView) renderUpdateBanner(updateView); }
 }));
 refreshUpdateBanner();
-setInterval(() => { if (!document.hidden) refreshUpdateBanner(); }, 10000);
+setInterval(() => { if (!document.hidden) refreshUpdateBanner(); }, 2000);
 window.addEventListener('focus', refreshUpdateBanner);
