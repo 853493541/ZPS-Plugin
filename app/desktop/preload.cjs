@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('studio', Object.freeze({
   add: fields => invoke('add', fields),
   save: () => invoke('save'),
   lookup: query => invoke('lookup', query),
+  lookupCached: queries => invoke('lookupCached', queries),
+  loadIcon: query => invoke('loadIcon', query),
   updates: action => invoke('updates', action),
   report: text => invoke('report', text),
   undo: () => invoke('undo')

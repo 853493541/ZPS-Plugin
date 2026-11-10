@@ -149,3 +149,12 @@ Public installer: https://github.com/853493541/ZPS-Plugin/releases/download/v0.1
 Public update feed: https://github.com/853493541/ZPS-Plugin/releases/latest/download/latest.yml
 
 Publication and public hosting are complete in the existing repository. No separate release repository is needed. Installed 0.1.0 builds can check this anonymous feed; future tested releases must use higher versions and the same feed. Download/restart remain explicit user actions. The installer is an unsigned testing release, and existing game-client acceptance and read-only binary-format limits remain unchanged.
+
+
+## Cache loading continuation
+
+The user reported slow or missing buff names and icons. Resumed latest released source from `codex/jx3box-network-handoff` at `6500183` on isolated branch `codex/cache-loading`. No concurrent development was found. The existing catalog queues disk hits behind network requests, while tab switches clear the display cache. A deferred baseline reproduced a fresh cache hit remaining blocked behind an unrelated held request.
+
+Prepared version 0.1.1 with cache-only bulk name hydration, bounded memory reuse, request deduplication, selected/filtered lookup priority, and persistent validated icon caching. Cached data remains query/edition/level scoped and separate from preset bytes. Expired cached names appear before refresh; successful empty refresh removes an obsolete match. Downloads are lazy and bounded, missing source icons stay explicit, and retry can replace saved image bytes. `docs/CACHE_LOADING.md` records the design and regression evidence.
+
+All 55 current automated tests pass. Browser cache-loading, metadata, and four-feature regressions pass without page errors. Same-model review found stale-name invalidation, over-512 batch sizing, truncated-PNG acceptance, and detached icon observation issues; each was corrected with behavior checks. Windows packaging/installed acceptance for this continuation is pending. No new release or deployment is authorized by the caching request, and v0.1.0 remains the published release.

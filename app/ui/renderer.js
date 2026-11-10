@@ -48,8 +48,10 @@ function rememberView() {
 function clearMetadata() {
   documentGeneration++;
   lookupSequence++;
-  metadata.clear();
+  for (const node of pendingIcons.keys()) iconObserver?.unobserve(node);
+  pendingIcons.clear();
   attemptedMetadata.clear();
+  while (metadata.size > 512) metadata.delete(metadata.keys().next().value);
   enrichmentStopped = false;
   enrichment = null;
 }
@@ -163,7 +165,6 @@ const metadata = new Map();
 const attemptedMetadata = new Set();
 const failedIcons = new Set();
 let documentGeneration = 0;
-let catalogQueue = Promise.resolve();
 let enrichment = null;
 let enrichmentStopped = false;
 
@@ -218,6 +219,32 @@ function recordSubtitle(record) {
   return `${record.id !== undefined ? `ID ${record.id}` : record.key}${metadataDisplayName(item).internal ? ' · 内部名' : ''}`;
 }
 
+const pendingIcons = new Map();
+let cleanIconObservers = false;
+const iconObserver = typeof IntersectionObserver === 'function' ? new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    const start = pendingIcons.get(entry.target);
+    pendingIcons.delete(entry.target);
+    iconObserver.unobserve(entry.target);
+    start?.();
+  }
+}, { rootMargin: '200px' }) : null;
+
+function whenIconVisible(node, start) {
+  if (!iconObserver) { start(); return; }
+  pendingIcons.set(node, start);
+  iconObserver.observe(node);
+  if (cleanIconObservers) return;
+  cleanIconObservers = true;
+  queueMicrotask(() => {
+    cleanIconObservers = false;
+    for (const node of pendingIcons.keys()) {
+      if (!node.isConnected) { iconObserver.unobserve(node); pendingIcons.delete(node); }
+    }
+  });
+}
+
 function recordGlyph(record, entry = recordMetadata(record), big = false) {
   const glyph = record?.key.startsWith('class:') ? '▦' : state.document?.kind === 'chat' ? '☰' : state.document?.kind === 'opaque' ? '▧' : '✦';
   const node = element('div', `record-glyph${big ? ' big' : ''}`, glyph);
@@ -245,10 +272,10 @@ function recordGlyph(record, entry = recordMetadata(record), big = false) {
     retry.setAttribute('aria-label', `重试${label}图标`);
     retry.addEventListener('mousedown', event => event.preventDefault());
     retry.addEventListener('keydown', event => { if (!event.ctrlKey && !event.metaKey && (event.key === 'Enter' || event.key === ' ')) event.stopPropagation(); });
-    retry.addEventListener('click', event => { event.stopPropagation(); loadIcon(); });
+    retry.addEventListener('click', event => { event.stopPropagation(); loadIcon(true); });
     node.replaceChildren(retry);
   };
-  const loadIcon = () => {
+  const loadIcon = (force = false) => {
     if (node.contains(document.activeElement)) { node.tabIndex = -1; node.focus({ preventScroll: true }); }
     node.textContent = '…';
     node.title = `${label} · 图标加载中`;
@@ -260,8 +287,15 @@ function recordGlyph(record, entry = recordMetadata(record), big = false) {
     image.alt = `${label} 图标`;
     image.addEventListener('load', () => { failedIcons.delete(url); node.classList.add('has-icon'); node.title = label; node.removeAttribute('role'); node.removeAttribute('aria-label'); }, { once: true });
     image.addEventListener('error', () => { failedIcons.add(url); showRetry(); }, { once: true });
-    image.src = url;
+    const setSource = async () => {
+      try {
+        const cached = typeof bridge.loadIcon === 'function' ? await bridge.loadIcon({ client: entry.query.client, id: iconID, refresh: force }) : null;
+        image.src = cached?.dataURL || url;
+      } catch { failedIcons.add(url); showRetry(); }
+    };
     node.append(image);
+    if (typeof bridge.loadIcon === 'function' && !force && !big) whenIconVisible(node, setSource);
+    else setSource();
   };
   if (failedIcons.has(url)) showRetry();
   else loadIcon();
@@ -304,13 +338,11 @@ function renderEnrichmentProgress() {
   let node = $('metadata-progress');
   if (!node) { node = element('span', 'metadata-progress'); node.id = 'metadata-progress'; $('document-meta').append(node); }
   node.hidden = !enrichment?.total;
-  node.textContent = enrichment?.total ? `JX3BOX ${enrichment.done}/${enrichment.total}${enrichment.stopped ? ' · 连接中断，可手动查询' : enrichment.done < enrichment.total ? ' · 读取中' : ' · 已检查'}` : '';
+  node.textContent = enrichment?.total ? `JX3BOX ${enrichment.done}/${enrichment.total}${enrichment.cached ? ` · 缓存 ${enrichment.cached}` : ''}${enrichment.stopped ? ' · 连接中断，可手动查询' : enrichment.done < enrichment.total ? ' · 读取中' : ' · 已检查'}` : '';
 }
 
 function requestCatalog(query, isCurrent) {
-  const pending = catalogQueue.then(() => isCurrent() ? bridge.lookup(query) : null);
-  catalogQueue = pending.catch(() => {});
-  return pending;
+  return isCurrent() ? bridge.lookup(query) : Promise.resolve(null);
 }
 
 function startEnrichment() {
@@ -320,20 +352,52 @@ function startEnrichment() {
     const query = buffQuery(record);
     if (query) queries.set(metadataKey(query), query);
   }
-  const job = { total: queries.size, done: [...queries.keys()].filter((key) => attemptedMetadata.has(key) || metadata.has(key)).length, stopped: enrichmentStopped };
+  const job = { total: queries.size, done: [...queries.keys()].filter((key) => attemptedMetadata.has(key) || metadata.has(key)).length, stopped: enrichmentStopped, cached: 0 };
   enrichment = job;
   const isCurrent = () => generation === documentGeneration;
   renderEnrichmentProgress();
   if (job.stopped) return;
   (async () => {
-    for (const [key, query] of queries) {
+    const entries = [...queries];
+    if (typeof bridge.lookupCached === 'function') {
+      try {
+        for (let offset = 0; offset < entries.length; offset += 512) {
+          const chunk = entries.slice(offset, offset + 512);
+          const cached = await bridge.lookupCached(chunk.map(([, query]) => query));
+          if (!isCurrent()) return;
+          chunk.forEach(([key, query], index) => {
+            const result = cached?.[index];
+            if (!result) return;
+            job.cached++;
+            const entry = matchedMetadata(query, result);
+            if (entry) metadata.set(key, entry);
+            else metadata.delete(key);
+            if (!result.stale) attemptedMetadata.add(key);
+          });
+        }
+        job.done = entries.filter(([key]) => attemptedMetadata.has(key)).length;
+        refreshMetadata();
+      } catch { if (!isCurrent()) return; }
+    }
+    const remaining = new Map(entries.filter(([key]) => {
+      const previous = metadata.get(key);
+      return !attemptedMetadata.has(key) && !(previous && !previous.result.stale && Date.now() - previous.result.cachedAt < 86400000);
+    }));
+    while (remaining.size) {
       if (!isCurrent()) return;
-      if (attemptedMetadata.has(key) || metadata.has(key)) continue;
+      const selected = buffQuery(selectedRecord());
+      const visible = visibleRecords().map(record => buffQuery(record)).find(query => query && remaining.has(metadataKey(query)));
+      const preferred = selected && remaining.has(metadataKey(selected)) ? selected : visible;
+      const [key, query] = preferred ? [metadataKey(preferred), preferred] : remaining.entries().next().value;
+      remaining.delete(key);
+      const previous = metadata.get(key);
+      if (attemptedMetadata.has(key) || previous && !previous.result.stale && Date.now() - previous.result.cachedAt < 86400000) { job.done++; continue; }
       try {
         const result = await requestCatalog(query, isCurrent);
         if (!isCurrent()) return;
         const entry = matchedMetadata(query, result);
         if (entry) metadata.set(key, entry);
+        else metadata.delete(key);
         attemptedMetadata.add(key);
         if (result?.stale) job.stopped = true;
         job.done++;
@@ -722,6 +786,7 @@ async function lookup(record) {
       state.lookup = { result };
       const entry = matchedMetadata(query, result);
       if (entry) metadata.set(metadataKey(query), entry);
+      else metadata.delete(metadataKey(query));
       refreshMetadata(metadataKey(query));
     }
   } catch (error) { if (isCurrent()) state.lookup = { error: error.message || String(error) }; }

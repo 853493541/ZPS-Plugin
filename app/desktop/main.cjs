@@ -5,11 +5,12 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { randomUUID } = require('node:crypto');
 const { createCatalog } = require('../services/catalog.cjs');
+const { createIconCache } = require('../services/icons.cjs');
 const { updateFeed } = require('../services/release.cjs');
 const root = path.resolve(__dirname, '../..');
 const samplesRoot = app.isPackaged ? path.join(process.resourcesPath, 'samples') : path.join(root, 'samples');
 const uiURL = pathToFileURL(path.join(root, 'app/ui/index.html')).href;
-let win, codec, catalog, sessions, featureRegistry;
+let win, codec, catalog, iconCache, sessions, featureRegistry;
 let sampleList = [];
 let updateState = { status: 'idle' };
 let updater;
@@ -131,6 +132,7 @@ async function start() {
   const manifest = JSON.parse(await fs.readFile(path.join(samplesRoot, 'SAMPLES.json'), 'utf8'));
   sampleList = Object.keys(manifest.files).filter(file => /\.jx3dat$/i.test(file) || /团队气劲\/[^/]+\.txt$/.test(file) || /推荐设置关键词\.txt$/.test(file)).map(file => ({ path: file, name: file, filename: path.basename(file) }));
   catalog = createCatalog({ fetch: (...args) => net.fetch(...args), cacheDir: path.join(app.getPath('userData'), 'buff-cache') });
+  iconCache = createIconCache({ fetch: (...args) => net.fetch(...args), cacheDir: path.join(app.getPath('userData'), 'icon-cache') });
   win = new BrowserWindow({ width: 1360, height: 900, minWidth: 1000, minHeight: 680, title: 'ZPS 数据工坊', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
@@ -157,12 +159,12 @@ async function start() {
     edit: change => sessions.mutate('editDocument', change),
     add: fields => sessions.mutate('addRecord', fields),
     undo: () => sessions.undo(),
-    save: () => save(), lookup: query => catalog.lookup(query), updates, report
+    save: () => save(), lookup: query => catalog.lookup(query), lookupCached: queries => catalog.lookupCached(queries), loadIcon: query => iconCache.load(query), updates, report
   };
   for (const [name, handler] of Object.entries(handlers)) {
     ipcMain.handle(`studio:${name}`, (event, payload) => {
       if (event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame || event.senderFrame.url !== uiURL) throw new Error('Untrusted IPC sender');
-      if (name === 'lookup' || name === 'samples' || name === 'updates' && payload !== 'install') return handler(payload);
+      if (name === 'lookup' || name === 'lookupCached' || name === 'loadIcon' || name === 'samples' || name === 'updates' && payload !== 'install') return handler(payload);
       return enqueue(() => handler(payload));
     });
   }

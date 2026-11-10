@@ -7,9 +7,11 @@ import * as codec from '../app/core/documents.mjs';
 import { createFeatureSessions } from '../app/core/feature-sessions.mjs';
 import * as featureRegistry from '../app/ui/features.mjs';
 import { createCatalog } from '../app/services/catalog.cjs';
+import { createIconCache } from '../app/services/icons.cjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const catalog = createCatalog({ fetch, cacheDir: process.env.PREVIEW_CACHE_DIR || path.join(root, 'artifacts', 'preview-buff-cache') });
+const iconCache = createIconCache({ fetch, cacheDir: process.env.PREVIEW_ICON_CACHE_DIR || path.join(root, 'artifacts', 'preview-icon-cache') });
 const ui = path.join(root, 'app/ui');
 const manifest = JSON.parse(await fs.readFile(path.join(root, 'samples/SAMPLES.json'), 'utf8'));
 const files = Object.keys(manifest.files).filter(p => p.endsWith('.jx3dat') || p.includes('团队气劲') && p.endsWith('.txt') || p.includes('推荐设置关键词'));
@@ -58,6 +60,8 @@ const methods = {
   undo: () => sessions.undo(),
   save: () => { throw Error('Native export is available in the desktop app. Browser preview never writes source files.'); },
   lookup: query => catalog.lookup(query),
+  lookupCached: queries => catalog.lookupCached(queries),
+  loadIcon: query => iconCache.load(query),
   updates: () => ({ status: 'unavailable', message: 'Updates are available in an installed Windows release.' }),
   report: () => { throw Error('Local diagnostic export is available in the desktop app.'); }
 };
@@ -74,7 +78,7 @@ const bridgeScript = `window.studio ||= Object.freeze(Object.fromEntries(${JSON.
 }])));`;
 function dispatch(method, payload, discardToken) {
   const run = () => methods[method](payload, confirmDiscard(discardToken));
-  if (method === 'lookup' || method === 'samples' || method === 'updates') return run();
+  if (method === 'lookup' || method === 'lookupCached' || method === 'loadIcon' || method === 'samples' || method === 'updates') return run();
   const task = pending.then(run);
   pending = task.catch(() => {});
   return task;
