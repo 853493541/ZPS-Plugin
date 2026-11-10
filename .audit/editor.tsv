@@ -21,3 +21,4 @@ ts	phase	decision	why	evidence	result
 2026-11-10T03:43:31Z	start	Resume cache-loading work from latest accessible-session source	User reports slow or missing buff names and icons; no active competing run found	docs/CACHE_LOADING.md	active
 2026-11-10T03:43:31Z	cache	Load cached metadata before network and persist decoded icons	A fresh hit was blocked behind a held miss; cold icons and repeated tab lookups wasted work	tools/smoke-cache-loading.mjs	local regression checks pass
 2026-11-10T03:45:13Z	review	Correct stale metadata, bounded batch and malformed icon handling	Independent same-model review reproduced obsolete names and truncated images entering cache	docs/CACHE_LOADING.md	55 tests and browser regressions pass
+2026-11-10T03:49:31Z	windows	Pass cache-update packaging, installed lifecycle and upgrade checks	Verify PNG dependency and cache code in actual Windows package	https://github.com/853493541/ZPS-Plugin/actions/runs/42751510036	VERIFIED

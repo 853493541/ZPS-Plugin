@@ -23,3 +23,7 @@ The original catalog reproduced head-of-line blocking: a known fresh cache hit r
 Catalog tests cover cache-only fresh/stale/miss results, no network on warm reads, request sharing, mutation isolation, and refresh behavior. Icon tests cover persistent offline reuse, concurrent limits, timeouts, corrupt/truncated images, recovery, and eviction. The browser regression `tools/smoke-cache-loading.mjs` verifies stale names/icons before a held refresh, tab and draft retention, authoritative empty refresh removal, and 513 cached queries loaded in batches with zero network calls. Existing metadata and feature-tab browser regressions also pass.
 
 This cloud instance still cannot access JX3BOX. Tests use previously captured public buff fixtures and controlled PNGs. No new live-network speedup or end-user Windows timing is claimed. First-time uncached data still requires network access. The 17 sample records previously identified without a public icon remain explicitly missing, rather than being repaired with fabricated artwork.
+
+## Windows acceptance
+
+[Run 42751510036](https://github.com/853493541/ZPS-Plugin/actions/runs/42751510036) passed the version 0.1.1 application at `b9312cb`. It verifies the 55 automated tests, native Electron startup, installed NSIS lifecycle, production PNG dependency inclusion through packaged startup, release asset validation, and installed upgrade with retained user-data hashes. This is a test artifact; the cache changes are not merged or published as a release.
