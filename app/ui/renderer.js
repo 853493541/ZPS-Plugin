@@ -1265,7 +1265,7 @@ function updates() {
   content.append(element('p', 'modal-description', '通过已配置的发布源检查桌面应用更新。'));
   const output = element('div', 'update-state', '正在读取更新状态…');
   const actions = element('div', 'update-actions');
-  const labels = { check: '检查更新', download: '下载更新', install: '安装并重启' };
+  const labels = { check: '检查更新', download: '下载更新', install: '重启并更新' };
   const buttons = {};
   const refresh = async (action = 'status') => {
     try {
@@ -1273,7 +1273,7 @@ function updates() {
       await draftNotifications;
       const result = await bridge.updates(action);
       const status = result?.status || result?.state;
-      const statusLabels = { idle: '可以检查是否有新版本。', checking: '正在检查更新…', available: '发现新版本，可以下载更新。', current: '当前已是最新版本。', downloading: '正在下载更新…', ready: '更新已下载，安装后将重启应用。', unavailable: '当前环境不支持自动更新。', error: '更新操作未完成。' };
+      const statusLabels = { idle: '可以检查是否有新版本。', checking: '正在检查更新…', available: '发现新版本，可以下载更新。', current: '当前已是最新版本。', downloading: '正在下载更新…', ready: '更新已下载，重启即可更新。', unavailable: '当前环境不支持自动更新。', error: '更新操作未完成。' };
       output.textContent = typeof result === 'string' ? result : [statusLabels[status] || '更新状态未知。', result?.version ? `版本 ${result.version}` : '', result?.progress !== undefined ? `已下载 ${result.progress}%` : '', result?.message || ''].filter(Boolean).join('\n');
       buttons.check.disabled = false;
       buttons.download.disabled = !['available', 'update-available'].includes(status);

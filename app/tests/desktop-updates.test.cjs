@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
-test('automatic downloads and guarded close protect drafts and unexported edits', async t => {
+async function createFixture(t, response = 0) {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'zps-auto-update-'));
   t.after(() => fs.rm(temporary, { recursive: true, force: true }));
   const root = path.resolve(__dirname, '../..');
@@ -26,7 +26,7 @@ test('automatic downloads and guarded close protect drafts and unexported edits'
     ipcMain: {handle: (name,handler) => handlers.set(name,handler)},
     dialog: {
       showErrorBox: (_,message) => rejectReady(Error(message)),
-      showMessageBox: async (_,options) => {dialogs.push(options);return{response:0};},
+      showMessageBox: async (_,options) => {dialogs.push(options);return{response};},
       showSaveDialog: async (_, options) => ({canceled:false,filePath:path.join(temporary,path.basename(options.defaultPath))})
     },
     BrowserWindow: class {
@@ -41,17 +41,26 @@ test('automatic downloads and guarded close protect drafts and unexported edits'
   const modules=[['electron',electron],['electron-updater',{autoUpdater:updater}]].map(([name,exports])=>{
     const file=require.resolve(name),previous=require.cache[file];require.cache[file]={exports};return{file,previous};
   });
+  const mainFile = require.resolve('../desktop/main.cjs');
+  const previousMain = require.cache[mainFile];
+  delete require.cache[mainFile];
   t.after(()=>{
     appEvents.get('will-quit')?.();
     for(const {file,previous} of modules){if(previous)require.cache[file]=previous;else delete require.cache[file];}
+    if(previousMain)require.cache[mainFile]=previousMain;else delete require.cache[mainFile];
     if(originalResources)Object.defineProperty(process,'resourcesPath',originalResources);else delete process.resourcesPath;
   });
   require('../desktop/main.cjs');await ready;await new Promise(resolve=>setImmediate(resolve));
+  const event={sender:win.webContents,senderFrame:win.webContents.mainFrame};
+  const invoke=(name,payload)=>handlers.get(`studio:${name}`)(event,payload);
+  return { temporary, updater, installs, dialogs, win, invoke, checks };
+}
+
+test('automatic downloads and guarded close protect drafts and unexported edits', async t => {
+  const { temporary, updater, installs, dialogs, win, invoke, checks } = await createFixture(t);
   assert.equal(updater.autoDownload,true);
   assert.equal(updater.autoInstallOnAppQuit,false,'installation must use the guarded close path');
   assert.equal(checks,1);
-  const event={sender:win.webContents,senderFrame:win.webContents.mainFrame};
-  const invoke=(name,payload)=>handlers.get(`studio:${name}`)(event,payload);
   const snapshot=await invoke('activateFeature','jx-buff');
   const buff=snapshot.document.records.find(record=>record.id);
   await invoke('edit',{key:buff.key,fields:{nPower:11}});
@@ -75,4 +84,12 @@ test('automatic downloads and guarded close protect drafts and unexported edits'
   win.events.get('close')({preventDefault(){}});
   await invoke('activateFeature','jx-buff');
   assert.deepEqual(installs,[[true,false]],'clean normal close silently installs without reopening');
+});
+
+test('accepted restart silently installs the downloaded update and relaunches', async t => {
+  const { updater, installs, dialogs, invoke } = await createFixture(t, 1);
+  updater.emit('update-downloaded', {version: '0.1.1'});
+  await invoke('updates', 'install');
+  assert.equal(dialogs.at(-1).type, 'question');
+  assert.deepEqual(installs, [[true, true]], 'accepted restart must silently update and reopen the app');
 });

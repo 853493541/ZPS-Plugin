@@ -117,9 +117,13 @@ try {
     updater.installDirectory = config.installDirectory;
     updater.disableDifferentialDownload = true;
     if (!updater.autoDownload) throw new Error('Updates must download automatically');
-    updater.autoInstallOnAppQuit = false;
+    if (updater.autoInstallOnAppQuit !== false) throw new Error('Updates must use the guarded close path');
     const quitAndInstall = updater.quitAndInstall.bind(updater);
-    updater.quitAndInstall = () => quitAndInstall(true, false);
+    updater.quitAndInstall = (...args) => {
+      log('quit-and-install', args);
+      if (args.length !== 2 || args[0] !== true || args[1] !== false) throw new Error('Normal close must silently install without relaunching');
+      return quitAndInstall(...args);
+    };
     for (const event of ['checking-for-update', 'update-available', 'update-not-available', 'update-downloaded', 'error']) {
       updater.on(event, info => log(event, info instanceof Error ? info.message : info?.version));
     }
@@ -152,23 +156,27 @@ try {
     assert.equal((await waitForState('ready')).version, currentVersion);
     assert.ok(requests.some(request => request.name === artifact.url && request.method === 'GET'), 'Installer must actually be fetched from loopback');
     await app.evaluate(({dialog}) => {
-      dialog.showMessageBox = async (_window, options) => {
-        if (options.type !== 'question' || !options.message.includes('重启')) throw new Error('Unexpected updater dialog');
-        return {response: 1};
-      };
+      dialog.showMessageBox = async () => { throw new Error('Clean normal close must not show a dialog'); };
     });
     const closed = app.waitForEvent('close', {timeout: 30_000});
-    await page.evaluate(() => window.studio.updates('install')).catch(error => {
+    await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0].close()).catch(error => {
       if (!/closed|destroyed/i.test(error.message)) throw error;
     });
     await closed;
     app = undefined;
-    console.log('PASS previous installed version checked and automatically downloaded current installer; silent update requested. Upgrade proof awaits verify phase.');
+    const events = (await fs.readFile(eventsFile, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
+    const installs = events.filter(event => event.event === 'quit-and-install');
+    assert.deepEqual(installs.map(event => event.details), [[true, false]], 'Actual normal close must request silent install without relaunching');
+    const state = JSON.parse(await fs.readFile(stateFile, 'utf8'));
+    state.normalCloseInstallArgs = installs[0].details;
+    await fs.writeFile(stateFile, JSON.stringify(state, null, 2));
+    console.log('PASS previous installed version automatically downloaded current installer and normal window close requested silent update without relaunching. Upgrade proof awaits verify phase.');
   } else {
     const state = JSON.parse(await fs.readFile(stateFile, 'utf8'));
     assert.equal(state.previousVersion, previousVersion);
     assert.equal(state.currentVersion, currentVersion);
     assert.equal(state.userData, identity.userData);
+    assert.deepEqual(state.normalCloseInstallArgs, [true, false], 'Upgrade must retain proof of the actual normal-close install mode');
     for (const file of state.retainedFiles) {
       assert.ok(within(file.path, root));
       assert.equal(await digest(file.path), file.sha256, `Upgrade changed retained file ${file.path}`);
