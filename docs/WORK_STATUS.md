@@ -168,3 +168,14 @@ The user asked to publish the update now and make future implemented app changes
 
 
 Windows PR run 42758692696 passed the automatic-updater application at `99a128f`, including all 66 tests, native/installed lifecycle, and real automatic-download upgrade with retention checks. The following checkpoint updates documentation only. User-authorized merge and main acceptance/publication are proceeding through the automatic workflow; no public release is claimed before that succeeds.
+
+
+## Version 0.1.1 delivered with automatic updates
+
+The user authorized immediate publication and an ongoing automatic app-delivery workflow. PR 1 merged the released-source foundation, cache update, and new updater into main at `cb0804b105a1382199e63daddf410950ea12cf0a`. Main Windows acceptance run 42759149743 passed all 66 tests, native and installed lifecycle, asset verification, and actual automatic-download upgrade/retention checks.
+
+Publication run 42759521082 initially created the draft then hit a read-after-create release-list visibility race. Retrying only its failed publication job succeeded, without rebuilding or replacing assets. Version 0.1.1 is public at https://github.com/853493541/ZPS-Plugin/releases/tag/v0.1.1. The anonymous latest.yml request returned HTTP200 and version 0.1.1. Public release metadata contains all five expected assets and the exact accepted source target. The publisher now uses the structured draft creation response instead of immediately searching a potentially stale list.
+
+Version 0.1.0 users must use its existing update control once to check/download/install 0.1.1, or install the public 0.1.1 installer. From 0.1.1 onward, startup, five-minute and cooldown-protected focus checks download updates in the background. A ready banner offers restart. Normal app close installs a ready update silently without reopening, only through the existing unsaved-edit/draft close guards. The periodic ChatGPT task remains paused; app HTTP checks consume no ChatGPT usage.
+
+Future requested app behavior changes follow the approved AGENTS workflow: implement, version, verify, merge to main, and publish only after main Windows acceptance succeeds. Failed tests, untrusted PR runs, stale main runs, and mismatched/replaced assets cannot publish. Questions/status checks do not trigger app changes. Remaining game-client and opaque-MY-format limitations still apply.
