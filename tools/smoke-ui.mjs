@@ -5,13 +5,16 @@ const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless
 try {
 const page=await browser.newPage({viewport:{width:1536,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const opened=page.waitForResponse(response=>response.url().endsWith('/preview-api/openSample')&&response.request().method()==='POST');
-await page.goto(process.env.PREVIEW_URL||'http://127.0.0.1:4173');await page.waitForSelector('#records-body tr');
+await page.goto(process.env.PREVIEW_URL||'http://127.0.0.1:4173');await page.waitForSelector('#type-list .type-item');
 const original=(await (await opened).json()).result;
 assert.equal(original.dirty,false);assert.equal(original.canUndo,false);
-assert.equal(await page.locator('#records-body tr').count(),275);
-await page.locator('#search').fill('12784');assert.equal(await page.locator('#records-body tr').count(),1);
+assert.equal(original.document.records.length,275);
+assert.equal(await page.locator('#type-list .type-item').count(),100);
+await page.locator('#type-search').fill('12784');
+await page.locator('#type-list .type-item').first().click();
+assert.equal(await page.locator('#type-members .type-member-row').count(),1);
 await fs.mkdir('artifacts',{recursive:true});
-await page.locator('#records-body tr').click();await page.screenshot({path:'artifacts/editor.png',fullPage:true});
+await page.locator('#type-members .type-member-row').click();await page.screenshot({path:'artifacts/editor.png',fullPage:true});
 await page.locator('#box-tab').click();
 async function lookup() {
  const pending=page.waitForResponse(response=>response.url().endsWith('/preview-api/lookup')&&response.request().method()==='POST'&&Number(response.request().postDataJSON()?.payload?.id)===12784);
@@ -50,6 +53,7 @@ await page.waitForFunction(()=>document.querySelector('#document-title').textCon
 await page.locator('#add-button').click();await page.locator('#modal [name="reference"]').fill('测试气劲|lv1');await page.locator('#modal-submit').click();
 await page.waitForSelector('#records-body tr');assert.match(await page.locator('#records-body').innerText(),/测试气劲/);
 await page.locator('#feature-tabs [data-feature="my-target"]').click();await page.waitForFunction(()=>document.querySelector('#feature-tabs [data-feature="my-target"]')?.getAttribute('aria-selected')==='true');
+if (!await page.locator('.sample-picker').evaluate(node=>node.open)) await page.locator('.sample-picker summary').click();
 await page.locator('#sample-list button').filter({hasText:'其他辅助'}).click();await page.waitForFunction(()=>document.querySelector('#save-button').disabled);
 assert.equal(await page.locator('#add-button').isDisabled(),true);
 console.log(`PASS: 275 actual JX records; 12784 std level 1 = 逃兵 (${first.source}, then cache); raw API payload retained; metadata leaves preset clean; search, edit, undo, MY creation, add, binary read-only; no page errors: ${errors.length}`);assert.deepEqual(errors,[]);

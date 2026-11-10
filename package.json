@@ -1,12 +1,12 @@
 {
   "name": "zps-studio",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "MY and JX preset studio for Windows",
   "main": "app/desktop/main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node app/tests/documents.test.mjs && node app/tests/catalog.test.cjs && node app/tests/features.test.mjs && node app/tests/desktop-features.test.cjs && node app/tests/feature-sessions.test.mjs && node app/tests/icons.test.cjs && node app/tests/update-checks.test.cjs && node app/tests/desktop-updates.test.cjs",
+    "test": "node app/tests/documents.test.mjs && node app/tests/catalog.test.cjs && node app/tests/features.test.mjs && node app/tests/desktop-features.test.cjs && node app/tests/feature-sessions.test.mjs && node app/tests/icons.test.cjs && node app/tests/update-checks.test.cjs && node app/tests/desktop-updates.test.cjs && node app/tests/jx-workspace.test.mjs",
     "preview": "node tools/preview.mjs",
     "dist:win": "electron-builder --win nsis --x64 --publish never",
     "test:desktop": "node tools/smoke-desktop.mjs"

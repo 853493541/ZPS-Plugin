@@ -13,7 +13,7 @@ try {
     return route.fulfill({ json: { result: { list: [], raw: { list: [] }, total: 0, client: query.client, query, source: 'network', stale: false, cachedAt: Date.now() } } });
   });
   await page.goto(url);
-  await page.waitForSelector('#records-body tr');
+  await page.waitForSelector('#type-list .type-item');
   const tabs = page.locator('#feature-tabs [role="tab"]');
   assert.equal(await tabs.count(), 4);
   async function activate(id) {
@@ -25,10 +25,12 @@ try {
       return tab?.getAttribute('aria-selected') === 'true' && panel?.getAttribute('aria-busy') === 'false' && document.querySelector('#breadcrumb-name')?.textContent !== '未打开文件';
     }, id);
   }
+  if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#document-title').innerText(), /剑心|BUFF/i);
-  await page.locator('#search').fill('12784');
-  await page.locator('#records-body tr').click();
+  await page.locator('#type-search').fill('12784');
+  await page.locator('#type-list .type-item').first().click();
+  await page.locator('#type-members .type-member-row').click();
   await page.locator('[name="nPower"]').fill('11');
   let releaseEdit, editCaptured;
   const editGate = new Promise(resolve => { releaseEdit = resolve; });
@@ -57,6 +59,7 @@ try {
   await activate('my-target');
   assert.equal(await page.locator('#sample-list button').count(), 3);
   assert.match(await page.locator('#document-title').innerText(), /目标监控/);
+  if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   for (const filename of ['其他辅助.jx3dat', '技能监控.jx3dat', '自用完整版.jx3dat']) {
     await page.locator('#sample-list button').filter({ hasText: filename }).click();
     await page.waitForFunction(filename => document.querySelector('#breadcrumb-name')?.textContent === filename, filename);
@@ -76,7 +79,7 @@ try {
   await page.getByRole('button', { name: '保存条目修改' }).click();
   await page.waitForFunction(() => !document.querySelector('#undo-button').disabled);
   await activate('jx-buff');
-  assert.equal(await page.locator('#search').inputValue(), '12784');
+  assert.equal(await page.locator('#type-search').inputValue(), '12784');
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '12', 'switching features must retain an unapplied form draft');
   const response = await page.request.post(new URL('/preview-api/activateFeature', url).href, { data: { payload: 'jx-buff' } });
   const applied = (await response.json()).result;
@@ -87,6 +90,7 @@ try {
   await page.waitForFunction(() => document.querySelector('[name="nPower"]')?.value === '10');
   await page.locator('[name="nPower"]').fill('13');
   const cancelDiscard = page.waitForEvent('dialog').then(dialog => dialog.dismiss());
+  if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   await page.locator('#sample-list button').click();
   await cancelDiscard;
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '13', 'canceling a draft-only replacement must preserve the draft');

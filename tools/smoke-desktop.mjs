@@ -13,7 +13,7 @@ let app;
 try {
  app=await launch();
  const page=await app.firstWindow();
- await page.waitForSelector('#records-body tr');
+ await page.waitForSelector('#type-list .type-item');
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const files=await page.evaluate(()=>window.studio.samples());assert.equal(files.length,6);
  const source=files.find(p=>p.path.endsWith('BuffData.jx3dat'));
@@ -52,7 +52,7 @@ try {
   const userData=await app.evaluate(({app})=>app.getPath('userData'));
   const probeFile=path.join(userData,`zps-smoke-${Date.now()}.json`);
   await fs.mkdir(userData,{recursive:true});await fs.writeFile(probeFile,'preserve-on-uninstall');
-  await app.close();app=await launch();const reopened=await app.firstWindow();await reopened.waitForSelector('#records-body tr');
+  await app.close();app=await launch();const reopened=await app.firstWindow();await reopened.waitForSelector('#type-list .type-item');
   assert.equal(await app.evaluate(({app})=>app.getPath('userData')),userData);
   assert.equal(await fs.readFile(probeFile,'utf8'),'preserve-on-uninstall');
   if(process.env.ZPS_SMOKE_STATE){
