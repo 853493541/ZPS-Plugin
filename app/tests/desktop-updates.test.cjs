@@ -27,7 +27,7 @@ test('automatic downloads and guarded close protect drafts and unexported edits'
     dialog: {
       showErrorBox: (_,message) => rejectReady(Error(message)),
       showMessageBox: async (_,options) => {dialogs.push(options);return{response:0};},
-      showSaveDialog: async () => ({canceled:false,filePath:path.join(temporary,'edited.jx3dat')})
+      showSaveDialog: async (_, options) => ({canceled:false,filePath:path.join(temporary,path.basename(options.defaultPath))})
     },
     BrowserWindow: class {
       constructor(){win=this;this.events=new Map();this.webContents={mainFrame:{url:uiURL},setWindowOpenHandler(){},on(){}};}
@@ -60,11 +60,18 @@ test('automatic downloads and guarded close protect drafts and unexported edits'
   await invoke('activateFeature','jx-buff');
   assert.equal(prevented,true);assert.equal(installs.length,0);
   assert.match(dialogs.at(-1).message,/未导出/);
-  await invoke('setDraftState',{featureId:'jx-buff',dirty:true});
+  const second = await invoke('create', {kind:'jx-buff', filename:'other.jx3dat', gameVersion:'测试版本'});
+  await invoke('setDraftState',{datasetId:snapshot.datasetId,dirty:true});
   await invoke('updates','install');
   assert.equal(installs.length,0);assert.match(dialogs.at(-1).message,/草稿/);
-  await invoke('setDraftState',{featureId:'jx-buff',dirty:false});
-  await invoke('save');
+  assert.equal((await invoke('undo')).datasetId,second.datasetId,'an inactive draft must block restart without changing selection');
+  await invoke('setDraftState',{datasetId:snapshot.datasetId,dirty:false});
+  await invoke('updates','install');
+  assert.equal(installs.length,0,'canceling restart must keep the app open after exporting both datasets');
+  assert.equal((await invoke('undo')).datasetId,second.datasetId,'exporting inactive update targets must preserve selection');
+  assert.equal((await fs.readdir(temporary)).filter(file=>file.endsWith('.jx3dat')).length,2);
+  assert.equal((await invoke('activateDataset',snapshot.datasetId)).dirty,false);
+  assert.equal((await invoke('activateDataset',second.datasetId)).dirty,false);
   win.events.get('close')({preventDefault(){}});
   await invoke('activateFeature','jx-buff');
   assert.deepEqual(installs,[[true,false]],'clean normal close silently installs without reopening');

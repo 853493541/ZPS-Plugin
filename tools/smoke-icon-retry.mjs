@@ -35,7 +35,8 @@ try {
   await retry.waitFor();
   await retry.focus();
   await page.keyboard.press('Control+k');
-  assert.equal(await page.locator('#type-search').evaluate(node => node === document.activeElement), true, 'an icon retry must not swallow application shortcuts');
+  assert.equal(await page.locator('#detail-modal').evaluate(node => node.open && node.matches(':modal')), true, 'application shortcuts must preserve modal isolation');
+  assert.equal(await page.evaluate(() => document.querySelector('#detail-modal').contains(document.activeElement)), true, 'focus must remain inside the modal');
   const initialRequests = requests;
   assert.ok(initialRequests > 0);
   await page.locator('[name="nPower"]').fill('12');
@@ -45,7 +46,7 @@ try {
   assert.ok(requests > initialRequests, 'retry must issue a new image request after a failure');
   assert.equal(await page.locator('#selection-heading h3').innerText(), '逃兵');
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '12', 'icon retry must preserve typed form values');
-  assert.equal(await page.locator('#dirty-dot').isHidden(), true);
+  assert.equal(await page.locator('#dirty-dot').isVisible(), true, 'unapplied draft must stay marked after icon retry');
   assert.equal(await page.locator('#undo-button').isDisabled(), true);
   await page.locator('[name="nPower"]').fill('10');
   await page.locator('.inspector-close').click();

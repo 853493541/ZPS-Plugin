@@ -23,7 +23,7 @@ const within = (target, directory) => target === directory || target.startsWith(
 async function confirmDiscard(targets) {
   const dirty = (Array.isArray(targets) ? targets : [targets]).filter(session => session?.dirty || session?.draftDirty);
   if (!dirty.length) return true;
-  const { response } = await dialog.showMessageBox(win, { type: 'warning', message: '以下文档的修改尚未导出。是否放弃修改？', detail: dirty.map(session => session.filename).join('\n'), buttons: ['取消', '放弃修改'], defaultId: 0, cancelId: 0 });
+  const { response } = await dialog.showMessageBox(win, { type: 'warning', message: '以下文档的修改尚未导出。是否放弃修改？', detail: dirty.map(session => `${session.filename}${session.gameVersion ? ` · ${session.gameVersion}` : ''}\n${session.source.displayPath}`).join('\n\n'), buttons: ['取消', '放弃修改'], defaultId: 0, cancelId: 0 });
   return response === 1;
 }
 function outputBytes(result) {
@@ -32,11 +32,24 @@ function outputBytes(result) {
 async function readDocument(file) {
   const stat = await fs.stat(file);
   if (!stat.isFile() || stat.size > 32 * 1024 * 1024) throw new Error('文件不是有效的数据文件，或超过 32 MB。');
-  return { bytes: await fs.readFile(file), filename: file };
+  const canonical = await fs.realpath(file);
+  return { bytes: await fs.readFile(canonical), filename: path.basename(canonical), source: { kind: 'file', key: process.platform === 'win32' ? canonical.toLowerCase() : canonical, displayPath: canonical, modifiedAt: stat.mtime.toISOString() } };
 }
-async function replaceDocument(file) {
-  const { bytes, filename } = await readDocument(file);
-  return sessions.replace(bytes, filename, { confirmDiscard });
+async function readSample(file) {
+  const document = await readDocument(path.join(samplesRoot, file));
+  return { ...document, source: { ...document.source, kind: 'sample', key: file, displayPath: file } };
+}
+function datasetId(value) {
+  if (value === undefined) return undefined;
+  const id = typeof value === 'string' ? value : value?.datasetId;
+  if (typeof id !== 'string' || !id) throw new Error('Invalid dataset identity');
+  return id;
+}
+function mutate(operation, value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid edit');
+  const { datasetId: id, ...change } = value;
+  if (id !== undefined) datasetId(id);
+  return sessions.mutate(operation, change, id);
 }
 function enqueue(operation) {
   const task = pending.then(operation);
@@ -67,10 +80,11 @@ async function save(session = sessions.active) {
   if (!session) throw new Error('请先打开或新建数据。');
   const ext = path.extname(session.filename);
   const stem = path.basename(session.filename, ext);
-  const { canceled, filePath } = await dialog.showSaveDialog(win, { title: '导出数据副本', defaultPath: path.join(app.getPath('documents'), `${stem}_edited${ext}`), filters: [{ name: '插件数据', extensions: ext === '.txt' ? ['txt'] : ['jx3dat'] }] });
+  const version = session.gameVersion ? `_${session.gameVersion.replace(/[<>:"/\\|?*]/g, '_')}` : '';
+  const { canceled, filePath } = await dialog.showSaveDialog(win, { title: '导出数据副本', defaultPath: path.join(app.getPath('documents'), `${stem}${version}_edited${ext}`), filters: [{ name: '插件数据', extensions: ext === '.txt' ? ['txt'] : ['jx3dat'] }] });
   if (canceled || !filePath) return null;
   await atomicExport(filePath, session.bytes);
-  return { ...sessions.markSaved(session), exported: true };
+  return { ...sessions.markSaved(session), exported: true, exportedPath: filePath, exportedDataset: sessions.summary(session) };
 }
 function configureUpdates() {
   if (!app.isPackaged) { updateState = { status: 'unavailable', message: '开发模式不检查更新。' }; return; }
@@ -132,7 +146,7 @@ async function start() {
   const { createFeatureSessions } = await import('../core/feature-sessions.mjs');
   sessions = createFeatureSessions({ codec, ...featureRegistry });
   const manifest = JSON.parse(await fs.readFile(path.join(samplesRoot, 'SAMPLES.json'), 'utf8'));
-  sampleList = Object.keys(manifest.files).filter(file => /\.jx3dat$/i.test(file) || /团队气劲\/[^/]+\.txt$/.test(file) || /推荐设置关键词\.txt$/.test(file)).map(file => ({ path: file, name: file, filename: path.basename(file) }));
+  sampleList = Object.keys(manifest.files).filter(file => /\.jx3dat$/i.test(file) || /团队气劲\/[^/]+\.txt$/.test(file) || /推荐设置关键词\.txt$/.test(file)).map(file => ({ path: file, name: file, filename: path.basename(file), ...(manifest.files[file].modifiedAt ? { modifiedAt: manifest.files[file].modifiedAt } : {}) }));
   catalog = createCatalog({ fetch: (...args) => net.fetch(...args), cacheDir: path.join(app.getPath('userData'), 'buff-cache') });
   iconCache = createIconCache({ fetch: (...args) => net.fetch(...args), cacheDir: path.join(app.getPath('userData'), 'icon-cache') });
   win = new BrowserWindow({ width: 1360, height: 900, minWidth: 1000, minHeight: 680, title: 'ZPS 数据工坊', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
@@ -144,24 +158,36 @@ async function start() {
     setDraftState: value => sessions.setDraftState(value),
     activateFeature: id => sessions.activate(id, async featureId => {
       const sample = sampleList.find(item => featureRegistry.featureForSample(item.path) === featureId);
-      return sample ? readDocument(path.join(samplesRoot, sample.path)) : null;
+      return sample ? readSample(sample.path) : null;
     }),
+    activateDataset: id => sessions.activateDataset(datasetId(id)),
+    closeDataset: id => sessions.closeDataset(datasetId(id), { confirmDiscard }),
     openSample: async file => {
       if (!sampleList.some(item => item.path === file)) throw new Error('未列出的示例文件。');
-      return replaceDocument(path.join(samplesRoot, file));
+      const sample = await readSample(file);
+      return sessions.open(sample.bytes, sample.filename, sample);
     },
     open: async () => {
-      const result = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: '插件数据', extensions: ['jx3dat', 'txt'] }] });
-      return result.canceled || !result.filePaths[0] ? null : replaceDocument(result.filePaths[0]);
+      const result = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'], filters: [{ name: '插件数据', extensions: ['jx3dat', 'txt'] }] });
+      if (result.canceled || !result.filePaths.length) return null;
+      const documents = await Promise.all(result.filePaths.map(readDocument));
+      return sessions.openMany(documents);
     },
-    create: async kind => {
+    create: async value => {
+      const input = typeof value === 'string' ? { kind: value } : value;
+      if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid new dataset');
+      const { kind, gameVersion = '' } = input;
       const result = codec.createDocument(kind);
-      return sessions.replace(outputBytes(result), result.filename || ({ 'jx-buff': 'BuffData.jx3dat', 'my-team': 'my-team.txt', chat: 'chat-keywords.txt' }[kind]), { dirty: true, confirmDiscard });
+      const filename = input.filename ?? result.filename ?? ({ 'jx-buff': 'BuffData.jx3dat', 'my-team': 'my-team.txt', chat: 'chat-keywords.txt' }[kind]);
+      if (typeof filename !== 'string' || !filename.trim() || filename.length > 255 || /[<>:"/\\|?*\x00-\x1f]/.test(filename)) throw new Error('Invalid dataset filename');
+      const extension = kind === 'jx-buff' ? '.jx3dat' : '.txt';
+      if (!filename.toLowerCase().endsWith(extension)) throw new Error(`数据文件名需要以 ${extension} 结尾。`);
+      return sessions.open(outputBytes(result), filename, { dirty: true, gameVersion });
     },
-    edit: change => sessions.mutate('editDocument', change),
-    add: fields => sessions.mutate('addRecord', fields),
-    undo: () => sessions.undo(),
-    save: () => save(), lookup: query => catalog.lookup(query), lookupCached: queries => catalog.lookupCached(queries), loadIcon: query => iconCache.load(query), updates, report
+    edit: change => mutate('editDocument', change),
+    add: fields => mutate('addRecord', fields),
+    undo: value => sessions.undo(datasetId(value)),
+    save: value => save(sessions.resolve(datasetId(value))), lookup: query => catalog.lookup(query), lookupCached: queries => catalog.lookupCached(queries), loadIcon: query => iconCache.load(query), updates, report
   };
   for (const [name, handler] of Object.entries(handlers)) {
     ipcMain.handle(`studio:${name}`, (event, payload) => {

@@ -19,6 +19,10 @@ try {
  const source=files.find(p=>p.path.endsWith('BuffData.jx3dat'));
  let snapshot=await page.evaluate(p=>window.studio.openSample(p),source.path);
  assert.equal(snapshot.document.records.length,275);
+ const originalDatasetId=snapshot.datasetId;
+ assert.ok(originalDatasetId);
+ assert.equal(snapshot.source.kind,'sample');
+ assert.equal(snapshot.source.key,source.path);
  const row=snapshot.document.records.find(r=>r.id);
  await page.evaluate(key=>window.studio.edit({key,fields:{nPower:11}}),row.key);
  snapshot=await page.evaluate(()=>window.studio.undo());assert.equal(snapshot.dirty,false);
@@ -36,7 +40,22 @@ try {
  await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},destination);
  snapshot=await page.evaluate(()=>window.studio.open());
  assert.equal(snapshot.document.records.find(r=>r.key===row.key).fields.nPower,12);
- await page.evaluate(()=>window.studio.create('my-team'));
+ const importedDatasetId=snapshot.datasetId;
+ assert.notEqual(importedDatasetId,originalDatasetId);
+ assert.equal(snapshot.datasets.filter(dataset=>dataset.datasetId===originalDatasetId).length,1);
+ await page.evaluate(({datasetId,key})=>window.studio.edit({datasetId,key,fields:{nPower:13}}),{datasetId:originalDatasetId,key:row.key});
+ snapshot=await page.evaluate(datasetId=>window.studio.undo(datasetId),originalDatasetId);
+ assert.equal(snapshot.datasetId,importedDatasetId,'inactive edits and undo preserve active selection');
+ assert.equal(snapshot.document.records.find(r=>r.key===row.key).fields.nPower,12);
+ await page.evaluate(datasetId=>window.studio.setDraftState({datasetId,dirty:true}),originalDatasetId);
+ await app.evaluate(({dialog})=>{dialog.showMessageBox=async()=>({response:0});});
+ assert.equal(await page.evaluate(datasetId=>window.studio.closeDataset(datasetId),originalDatasetId),null,'canceling close retains inactive drafts');
+ snapshot=await page.evaluate(p=>window.studio.openSample(p),source.path);
+ assert.equal(snapshot.datasetId,originalDatasetId);
+ assert.equal(snapshot.hasDrafts,true,'reopening preserves unapplied drafts');
+ await page.evaluate(datasetId=>window.studio.setDraftState({datasetId,dirty:false}),originalDatasetId);
+ await page.evaluate(datasetId=>window.studio.activateDataset(datasetId),importedDatasetId);
+ await page.evaluate(()=>window.studio.create({kind:'my-team',filename:'新团队.txt',gameVersion:'丝路风雨'}));
  snapshot=await page.evaluate(()=>window.studio.add({reference:'测试|lv1',color:'#FFFFFFFF',label:'测',priority:9}));
  assert.equal(snapshot.document.kind,'my-team');assert.equal(snapshot.document.records.length,1);
  const teamFile=path.join(temporary,'团队 气劲.txt');
@@ -60,7 +79,7 @@ try {
    await fs.writeFile(process.env.ZPS_SMOKE_STATE,JSON.stringify({probeFile,retainedFiles}));
   }
  }
- console.log('PASS native Electron preload, actual samples, edit, undo, Chinese paths, overwrite backup, reopen export, MY creation, local report'+(installed?', installed restart and retained user data':''));
+ console.log('PASS native Electron preload, actual samples, edit, undo, Chinese paths, overwrite backup, reopen export, independent datasets/drafts/undo, MY creation, local report'+(installed?', installed restart and retained user data':''));
 } finally {
  if(app){await app.evaluate(({dialog})=>{dialog.showMessageBox=async()=>({response:1});}).catch(()=>{});await app.close();}
  if(!process.env.ZPS_SMOKE_DATA_DIR)await fs.rm(temporary,{recursive:true,force:true});

@@ -24,6 +24,7 @@ try {
   await deserter.scrollIntoViewIfNeeded();
   await page.waitForFunction(() => document.querySelector('#type-members [data-key="buff:12784"] img')?.naturalWidth === 48);
   await deserter.click();
+  assert.equal(await page.locator('#detail-modal').evaluate(node => node.open && node.matches(':modal')), true);
   await page.waitForFunction(() => document.querySelector('#selection-heading img')?.naturalWidth === 48);
   assert.equal(await page.locator('#selection-heading h3').innerText(), '逃兵');
   assert.equal(await page.locator('#dirty-dot').isHidden(), true);

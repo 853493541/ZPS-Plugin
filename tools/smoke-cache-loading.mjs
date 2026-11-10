@@ -35,12 +35,14 @@ try{
  await page.waitForFunction(()=>document.querySelector('#selection-heading img')?.naturalWidth>0);
  assert.match(await page.locator('#selection-heading').innerText(),/逃兵.*离线缓存/s);
  await page.locator('[name="nPower"]').fill('123');
+ await page.locator('.inspector-close').click();
  const chat=page.getByRole('tab',{name:'茗伊聊天监控'});await chat.click();
  await page.getByRole('tab',{name:'剑心 BUFF增强'}).click();
+ await page.locator('#type-members .type-member-row').click();
  await page.waitForFunction(()=>document.querySelector('[name="nPower"]')?.value==='123');
  assert.match(await page.locator('#selection-heading').innerText(),/逃兵/);
  assert.equal(await page.locator('#undo-button').isDisabled(),true,'metadata must not edit preset bytes');
- assert.equal(await page.locator('#dirty-dot').isVisible(),false);
+ assert.equal(await page.locator('#dirty-dot').isVisible(),true,'unapplied drafts must be marked while metadata leaves bytes clean');
  await page.evaluate(()=>{
   for(const {query,resolve} of window.cacheTest.pending) resolve({list:[],total:0,raw:{list:[]},client:query.client,source:'network',stale:false,cachedAt:Date.now()});
  });

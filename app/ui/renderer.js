@@ -8,9 +8,11 @@ const formats = {
   chat: { add: { keyword: '' } },
   opaque: {},
 };
-const freshView = () => ({ document: null, filename: '', dirty: false, canUndo: false, selected: null, selectedType: null, typeSearch: '', memberSearch: '', detailOpen: false, category: null, search: '', tab: 'config', lookup: null, lookupClient: 'std', lookupLevel: '1', drafts: new Map() });
-const state = { ...freshView(), featureId: features[0].id, samples: [], busy: false };
+const freshView = () => ({ datasetId: null, document: null, filename: '', source: null, gameVersion: '', revision: '', dirty: false, canUndo: false, selected: null, selectedType: null, typeSearch: '', memberSearch: '', detailOpen: false, category: null, search: '', tab: 'config', lookup: null, lookupClient: 'std', lookupLevel: '1', drafts: new Map() });
+const state = { ...freshView(), featureId: features[0].id, samples: [], datasets: [], busy: false };
 const views = new Map();
+const viewKey = (value = state) => value.datasetId || value.featureId;
+const datasetPayload = (fields = {}) => ({ ...fields, ...(state.datasetId ? { datasetId: state.datasetId } : {}) });
 let activationQueue = Promise.resolve();
 let activationSequence = 0;
 let switching = false;
@@ -24,9 +26,11 @@ function draftIsDirty(key, draft = state.drafts.get(key)) {
 }
 
 function syncDraftState() {
-  if (typeof bridge.setDraftState !== 'function') return;
   const dirty = [...state.drafts].some(([key, draft]) => draftIsDirty(key, draft));
-  const payload = { featureId: state.featureId, dirty };
+  $('dirty-dot').hidden = !state.dirty && !dirty;
+  renderDatasets();
+  if (!state.document || typeof bridge.setDraftState !== 'function') return;
+  const payload = datasetPayload({ featureId: state.featureId, dirty });
   draftNotifications = draftNotifications.catch(() => {}).then(() => bridge.setDraftState(payload));
   draftNotifications.catch(error => toast(error.message || String(error), true));
 }
@@ -45,7 +49,7 @@ async function openSample(path) {
 }
 
 function rememberView() {
-  views.set(state.featureId, Object.fromEntries(Object.keys(freshView()).map(key => [key, state[key]])));
+  views.set(viewKey(), Object.fromEntries(Object.keys(freshView()).map(key => [key, state[key]])));
 }
 
 function clearMetadata() {
@@ -60,29 +64,41 @@ function clearMetadata() {
 }
 
 function activateFeature(id) {
-  if ((state.busy && !switching) || (id === state.featureId && (switching || state.document))) return;
   featureById(id);
+  if (id === state.featureId && (switching || state.document)) return;
+  activateWorkspace(() => bridge.activateFeature(id), id);
+}
+
+function activateDataset(id, focus = false) {
+  if (id === state.datasetId) return;
+  const summary = state.datasets.find(item => item.datasetId === id);
+  if (!summary) return;
+  activateWorkspace(() => bridge.activateDataset(id), summary.featureId || state.featureId);
+  if (focus) activationQueue.then(() => {
+    if (state.datasetId === id) $('dataset-tabs')?.querySelector('[aria-selected=true]')?.focus({ preventScroll: true });
+  });
+}
+
+function activateWorkspace(activate, featureId) {
+  if (state.busy && !switching) return;
   if (!switching) rememberView();
   const sequence = ++activationSequence;
   switching = true;
   state.busy = true;
   clearMetadata();
-  clearTimeout(toastTimer);
-  $('toast').hidden = true;
-  Object.assign(state, freshView(), { featureId: id });
+  closeDetail(false);
+  Object.assign(state, freshView(), { featureId, datasets: [] });
   $('search').value = '';
   render();
-  activationQueue = activationQueue.then(async () => {
+  activationQueue = activationQueue.catch(() => {}).then(async () => {
     if (sequence !== activationSequence) return;
     try {
       await draftNotifications;
-      const result = await bridge.activateFeature(id);
+      const result = await activate();
       if (sequence !== activationSequence) return;
-      Object.assign(state, views.get(id) || freshView());
-      state.document = null;
       state.busy = false;
       switching = false;
-      if (!receive(result, false, true)) { state.dirty = false; state.canUndo = false; render(); }
+      if (!receive(result, false, true)) render();
     } catch (error) {
       if (sequence !== activationSequence) return;
       state.busy = false;
@@ -91,6 +107,15 @@ function activateFeature(id) {
       toast(error.message || String(error), true);
     }
   });
+}
+
+async function closeDataset(id) {
+  await draftNotifications;
+  const result = await bridge.closeDataset(id);
+  if (!result || result.canceled || result.cancelled) return;
+  const remaining = result.datasets;
+  if (Array.isArray(remaining) && !remaining.some(item => item.datasetId === id)) views.delete(id);
+  receive(result, false, true);
 }
 
 function initializeFeatures() {
@@ -160,6 +185,7 @@ const bridge = window.studio || new Proxy({}, {
     return body.result;
   },
 });
+let detailReturnFocus;
 let toastTimer;
 let modalAction;
 let modalMetadataRefresh;
@@ -449,26 +475,32 @@ async function run(action) {
 }
 
 function receive(result, reset = false, restore = false) {
-  if (!result?.document) return false;
-  const id = result.featureId || featureForKind(result.document.kind) || state.featureId;
-  if (id !== state.featureId) {
-    rememberView();
-    Object.assign(state, views.get(id) || freshView(), { featureId: id });
+  if (!result || result.canceled || result.cancelled) return false;
+  if (Array.isArray(result.datasets)) state.datasets = result.datasets;
+  if (!result.document && !Object.hasOwn(result, 'datasetId')) return false;
+  const featureId = result.featureId || featureForKind(result.document?.kind) || state.featureId;
+  const key = result.datasetId || featureId;
+  const previousKey = viewKey();
+  const changed = key !== previousKey || !state.document || !result.datasetId && reset && result.filename !== state.filename;
+  if (changed) {
+    if (state.document && (!Array.isArray(result.datasets) || result.datasets.some(item => item.datasetId === state.datasetId))) rememberView();
+    const remembered = !result.datasetId && reset && result.filename !== state.filename ? null : views.get(key);
+    Object.assign(state, remembered || freshView(), { featureId });
     clearMetadata();
+    closeDetail(false);
   }
   documentGeneration++;
   lookupSequence++;
   state.lookup = null;
-  if (reset) { clearMetadata(); state.drafts = new Map(); }
-  if (!reset && state.document?.kind === 'jx-buff' && result.document.kind === 'jx-buff') {
+  if (!changed && state.document?.kind === 'jx-buff' && result.document?.kind === 'jx-buff') {
     for (const previous of state.document.records.filter(record => record.key.startsWith('buff:'))) {
       const next = result.document.records.find(record => record.key === previous.key);
       if (next && state.drafts.has(previous.key)) state.drafts.set(previous.key, rebaseMembershipDraft(state.drafts.get(previous.key), previous, next));
     }
   }
-  Object.assign(state, { document: result.document, filename: result.filename || '', dirty: Boolean(result.dirty), canUndo: Boolean(result.canUndo) });
-  if (reset) Object.assign(state, { selected: null, selectedType: null, typeSearch: '', memberSearch: '', detailOpen: false, category: null, search: '', lookup: null, tab: 'config' });
-  if (!state.document.records.some((record) => record.key === state.selected)) {
+  Object.assign(state, { datasetId: result.datasetId || null, document: result.document || null, filename: result.filename || '', source: result.source || null, gameVersion: result.gameVersion || '', revision: result.revision || '', dirty: Boolean(result.dirty), canUndo: Boolean(result.canUndo) });
+  if (!state.document) Object.assign(state, freshView(), { featureId });
+  if (state.document && !state.document.records.some(record => record.key === state.selected)) {
     state.selected = state.document.records[0]?.key ?? null;
     if (!restore) state.lookupLevel = referenceQuery(selectedRecord()).level || '1';
   }
@@ -496,23 +528,79 @@ function visibleRecords() {
   return (state.document?.records || []).filter((record) => (!state.category || String(record.category || '未分类') === state.category) && (!state.search || `${recordName(record)} ${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
 }
 
+function versionLabel(dataset = state) { return dataset.gameVersion ? `版本 ${dataset.gameVersion}` : '版本未标注'; }
+
+function renderDatasets() {
+  const tabs = $('dataset-tabs');
+  if (!tabs) return;
+  const focusedId = document.activeElement.closest?.('.dataset-tab-item')?.dataset.datasetId;
+  tabs.replaceChildren();
+  const summaries = state.datasets.length ? state.datasets : state.document ? [{ ...state, datasetId: viewKey() }] : [];
+  for (const summary of summaries) {
+    const item = element('div', 'dataset-tab-item');
+    item.dataset.datasetId = summary.datasetId;
+    const button = element('button', `dataset-tab${summary.datasetId === viewKey() ? ' active' : ''}`);
+    button.type = 'button'; button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(summary.datasetId === viewKey()));
+    button.tabIndex = summary.datasetId === viewKey() ? 0 : -1;
+    const dirty = summary.datasetId === viewKey() ? state.dirty || [...state.drafts].some(([key, draft]) => draftIsDirty(key, draft)) : summary.dirty || summary.hasDrafts;
+    button.append(element('span', 'dataset-tab-name', `${fileName(summary.filename)}${dirty ? ' ·' : ''}`));
+    const duplicates = summaries.filter(item => fileName(item.filename) === fileName(summary.filename)).length > 1;
+    const sourcePath = summary.source?.displayPath || summary.filename;
+    const parent = duplicates ? summary.source?.kind === 'new' ? '新建' : String(sourcePath || '').replace(/[\\/][^\\/]+$/, '') : '';
+    button.append(element('span', 'dataset-tab-secondary', [versionLabel(summary), parent].filter(Boolean).join(' · ')));
+    button.title = [sourcePath, versionLabel(summary), dirty ? '有未导出或未应用的修改' : ''].filter(Boolean).join('\n');
+    button.addEventListener('click', () => activateDataset(summary.datasetId));
+    button.addEventListener('keydown', event => {
+      const index = summaries.indexOf(summary);
+      const next = { ArrowRight: (index + 1) % summaries.length, ArrowLeft: (index + summaries.length - 1) % summaries.length, Home: 0, End: summaries.length - 1 }[event.key];
+      if (next === undefined) return;
+      event.preventDefault(); activateDataset(summaries[next].datasetId, true);
+    });
+    const close = actionButton('×', '', () => run(() => closeDataset(summary.datasetId)));
+    close.className = 'dataset-close'; close.setAttribute('aria-label', `关闭 ${fileName(summary.filename)}`); close.disabled = state.busy;
+    button.disabled = state.busy && !switching;
+    item.append(button, close); tabs.append(item);
+  }
+  if (focusedId) [...tabs.children].find(item => item.dataset.datasetId === focusedId)?.querySelector('.dataset-tab')?.focus({ preventScroll: true });
+}
+
+function datasetInfo() {
+  if (!state.document) return;
+  const content = element('dl', 'dataset-info-list');
+  const sourceLabels = { file: '本地文件', sample: '内置样本', new: '新建数据集' };
+  const rows = [
+    ['文件名', fileName(state.filename)],
+    ['数据版本', state.gameVersion || '版本未标注'],
+    ['来源', sourceLabels[state.source?.kind] || '未记录'],
+    ['原始路径', state.source?.kind === 'new' ? '在工作区内新建' : state.source?.displayPath || state.filename || '未记录'],
+    ['导入位置', featureById(state.featureId).importPath],
+    ['源文件修改时间', state.source?.modifiedAt ? new Date(state.source.modifiedAt).toLocaleString() : '未记录'],
+    ['当前内容指纹', state.revision || '未记录'],
+  ];
+  for (const [label, value] of rows) content.append(element('dt', '', label), element('dd', '', value));
+  content.append(element('p', 'muted-text', '数据版本由使用者标注，不代表已验证游戏兼容性。'));
+  showModal('数据集信息', content);
+}
+
 function render() {
   const doc = state.document;
   const feature = featureById(state.featureId);
   renderFeatures();
+  renderDatasets();
+  if ($('active-feature-label')) $('active-feature-label').textContent = feature.title;
+  if ($('dataset-version')) $('dataset-version').textContent = doc ? versionLabel() : '新建或打开数据集';
+  if ($('dataset-info-button')) $('dataset-info-button').disabled = !doc || state.busy;
   const count = doc?.records.length || 0;
   $('breadcrumb-name').textContent = doc ? fileName(state.filename) : '未打开文件';
   $('breadcrumb-name').title = state.filename;
-  $('dirty-dot').hidden = !state.dirty;
+  $('dirty-dot').hidden = !state.dirty && ![...state.drafts].some(([key, draft]) => draftIsDirty(key, draft));
   $('document-title').textContent = feature.title;
   $('document-description').textContent = switching ? '正在切换工作区…' : doc ? fileName(state.filename) : '打开本地配置，或选择此功能的样本。';
   $('format-badge').textContent = feature.kind === 'opaque' ? 'READ ONLY' : feature.badge;
   renderAvailability();
   $('sidebar-count').textContent = count;
   $('document-meta').replaceChildren();
-  for (const text of doc ? [`${doc.encoding || '原始编码'} · ${doc.writable ? '可编辑' : '只读'}`, `${count} 个条目`, '保留原有格式与未知字段'] : ['本地工作区', '保留原有格式与未知字段']) {
-    $('document-meta').append(element('span', '', text));
-  }
   renderCategories();
   renderRecords();
   renderTypeWorkspace();
@@ -524,9 +612,15 @@ function render() {
 function renderAvailability() {
   const feature = featureById(state.featureId);
   const format = formats[feature.kind];
+  for (const button of document.querySelectorAll('.dataset-tab')) button.disabled = state.busy && !switching;
+  for (const button of document.querySelectorAll('.dataset-close')) button.disabled = state.busy;
+  if ($('dataset-info-button')) $('dataset-info-button').disabled = !state.document || state.busy;
   $('save-button').disabled = state.busy || !state.document?.writable || feature.kind === 'opaque';
   $('undo-button').disabled = state.busy || !state.canUndo;
+  $('new-button').textContent = '＋ 新建数据集';
   $('new-button').disabled = state.busy || !format.add;
+  $('add-button').textContent = feature.kind === 'jx-buff' ? '＋ 添加 Buff' : feature.kind === 'chat' ? '＋ 添加关键词' : '＋ 新建监控';
+  if ($('empty-create')) $('empty-create').disabled = state.busy || !format.add;
   $('add-button').hidden = feature.kind === 'opaque';
   $('add-button').disabled = state.busy || !state.document?.writable || !format.add;
   $('search').disabled = switching;
@@ -561,7 +655,7 @@ function renderTypeWorkspace() {
   if (!$('type-search')) {
     const master = element('aside', 'type-master');
     const heading = element('div', 'type-master-header');
-    heading.append(element('h3', '', '类型'), actionButton('添加类型', 'add-type-button', addType));
+    heading.append(element('h3', '', '类型'), actionButton('＋ 新建类型', 'add-type-button', addType));
     const search = element('input', 'type-search');
     search.id = 'type-search'; search.type = 'search'; search.placeholder = '搜索类型、Buff 名称或 ID';
     search.setAttribute('aria-label', '搜索类型、Buff 名称或 ID');
@@ -599,7 +693,7 @@ function renderTypeHeader() {
     openDetail(group.record);
   });
   settings.disabled = !group || group.name === '' && !group.record || !state.document?.writable;
-  const assign = actionButton('添加 Buff 到此类型', 'assign-member-button', assignMember);
+  const assign = actionButton('＋ 添加 Buff', 'assign-member-button', assignMember);
   assign.disabled = !group || !state.document?.writable;
   actions.append(settings, assign);
   $('type-detail-header').replaceChildren(heading, actions);
@@ -650,7 +744,7 @@ function renderTypeLists(changedKey) {
       row.append(recordGlyph(record), open);
       members.append(row);
     }
-    if (!records.length) members.append(element('p', 'type-empty', !currentType() ? '添加类型后，就可以放入 Buff。' : state.memberSearch || state.typeSearch ? '当前类型中没有匹配的 Buff。' : '此类型还没有 Buff。点击“添加 Buff 到此类型”开始。'));
+    if (!records.length) members.append(element('p', 'type-empty', !currentType() ? '添加类型后，就可以放入 Buff。' : state.memberSearch || state.typeSearch ? '当前类型中没有匹配的 Buff。' : '此类型还没有 Buff。点击“＋ 添加 Buff”开始。'));
   }
   list.scrollTop = scroll[0]; members.scrollTop = scroll[1];
   if (focusedType !== undefined) [...list.children].find(node => node.dataset.type === focusedType)?.focus({ preventScroll: true });
@@ -658,6 +752,7 @@ function renderTypeLists(changedKey) {
 }
 
 function openDetail(record) {
+  detailReturnFocus = document.activeElement;
   state.selected = record.key;
   state.detailOpen = true;
   state.lookup = null;
@@ -666,7 +761,7 @@ function openDetail(record) {
   lookupSequence++;
   renderTypeLists();
   renderInspector();
-  document.querySelector('.inspector-close')?.focus();
+  requestAnimationFrame(() => $('inspector-content').querySelector('input:not([readonly]), select:not([disabled]), textarea:not([readonly]), button')?.focus());
 }
 
 function membershipField(value) {
@@ -689,11 +784,11 @@ function addType(initial = '') {
   content.append(element('p', 'modal-description', '创建一个类型。名称按原样保存；类型样式可在创建后编辑。'));
   const field = fieldInput('name', typeof initial === 'string' ? initial : '');
   content.append(field);
-  showModal('添加类型', content, '创建类型', async () => {
+  showModal('新建类型', content, '创建类型', async () => {
     const name = field.querySelector('input').value;
     if (!name) throw new Error('请输入类型名称。');
     await draftNotifications;
-    const result = await bridge.add({ type: 'class', name });
+    const result = await bridge.add(datasetPayload({ type: 'class', name }));
     if (result?.document) { state.selectedType = name; state.typeSearch = ''; state.search = ''; state.memberSearch = ''; }
     if (receive(result)) { closeModal(); toast('类型已创建。'); }
   });
@@ -731,12 +826,12 @@ function assignMember() {
     if (mode.value === 'existing') {
       if (!existing.value) throw new Error('请选择已有 Buff，或改为输入 Buff ID。');
       if (draftIsDirty(existing.value)) throw new Error('这个 Buff 有尚未应用的编辑，请先在详情中保存修改。');
-      result = await bridge.edit({ key: existing.value, fields: { nClass: group.name } });
+      result = await bridge.edit(datasetPayload({ key: existing.value, fields: { nClass: group.name } }));
     } else {
       if (!/^\d+$/.test(id.value) || !Number.isSafeInteger(Number(id.value))) throw new Error('Buff ID 需要为非负整数。');
       const record = state.document.records.find(item => item.id === Number(id.value));
       if (record && draftIsDirty(record.key)) throw new Error('这个 Buff 有尚未应用的编辑，请先在详情中保存修改。');
-      result = record ? await bridge.edit({ key: record.key, fields: { nClass: group.name } }) : await bridge.add({ id: Number(id.value), nClass: group.name });
+      result = record ? await bridge.edit(datasetPayload({ key: record.key, fields: { nClass: group.name } })) : await bridge.add(datasetPayload({ id: Number(id.value), nClass: group.name }));
     }
     if (result?.document) { state.typeSearch = ''; state.search = ''; state.memberSearch = ''; }
     if (receive(result)) { closeModal(); toast('Buff 已放入当前类型。可使用撤销恢复。'); }
@@ -786,13 +881,28 @@ function renderRecords() {
   const empty = $('empty-state');
   if (state.document && !records.length) {
     empty.querySelector('h3').textContent = state.document.kind === 'opaque' ? '当前文件以只读方式打开' : state.search || state.category ? '没有匹配的条目' : '这份配置还没有条目';
-    empty.querySelector('p').textContent = state.document.kind === 'opaque' ? '在右侧原始数据页查看文件内容。' : state.search || state.category ? '尝试其他关键词或切换分类。' : '点击添加条目开始编辑。';
+    empty.querySelector('p').textContent = state.document.kind === 'opaque' ? '查看原始内容，或打开其他数据集。' : state.search || state.category ? '尝试其他关键词或切换分类。' : '创建第一条记录开始编辑。';
     $('empty-open').hidden = true;
   } else {
     empty.querySelector('h3').textContent = '从一份配置开始';
     empty.querySelector('p').textContent = switching ? '正在载入此功能的配置，请稍候。' : `${featureById(state.featureId).title} · 打开本地文件，或选择左侧样本。`;
     empty.querySelector('h3').textContent = switching ? '正在切换工作区' : '从一份配置开始';
     $('empty-open').hidden = false;
+  }
+  empty.querySelectorAll('.empty-create, .empty-add, .empty-view-content').forEach(node => node.remove());
+  const kind = featureById(state.featureId).kind;
+  if (!state.document && formats[kind].add) {
+    const create = actionButton('＋ 新建数据集', 'empty-create', newDocument);
+    create.classList.add('empty-create', 'primary'); empty.append(create);
+  } else if (state.document?.kind === 'opaque') {
+    const view = actionButton('查看内容', '', () => {
+      detailReturnFocus = document.activeElement;
+      state.detailOpen = true; state.tab = 'source'; renderInspector();
+    });
+    view.classList.add('empty-view-content'); empty.append(view);
+  } else if (state.document?.writable && !records.length && !state.search && !state.category) {
+    const create = actionButton(kind === 'chat' ? '＋ 添加关键词' : '＋ 新建监控', '', addRecord);
+    create.classList.add('empty-add', 'primary'); empty.append(create);
   }
   for (const record of records) {
     const row = element('tr', `record-row${record.key === state.selected ? ' selected' : ''}`);
@@ -806,7 +916,7 @@ function renderRecords() {
     const categoryCell = element('td');
     categoryCell.append(element('span', 'category-pill', record.category || (record.key.startsWith('class:') ? '分类配置' : '未分类')));
     row.append(glyphCell, nameCell, categoryCell, element('td', '', '›'));
-    const select = () => { state.selected = record.key; state.lookup = null; state.lookupLevel = referenceQuery(record).level || '1'; lookupSequence++; renderRecords(); renderInspector(); };
+    const select = () => { openDetail(record); renderRecords(); };
     row.addEventListener('click', select);
     row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(); } });
     $('records-body').append(row);
@@ -849,20 +959,33 @@ function formValues(form) {
   return fields;
 }
 
+function closeDetail(restoreFocus = true) {
+  state.detailOpen = false;
+  const modal = $('detail-modal');
+  if (modal?.open) modal.close();
+  if (restoreFocus) {
+    const row = [...document.querySelectorAll('.type-member-row, .record-row')].find(node => node.dataset.key === state.selected);
+    const target = detailReturnFocus?.isConnected ? detailReturnFocus : row?.querySelector('.type-member-open') || row || $('type-settings-button');
+    target?.focus({ preventScroll: true });
+  }
+}
+
 function renderInspector() {
   const record = selectedRecord();
   const content = $('inspector-content');
   const jx = state.document?.kind === 'jx-buff';
-  $('editor-grid').hidden = jx && !state.detailOpen;
-  $('editor-grid').classList.toggle('detail-open', jx && state.detailOpen);
+  $('editor-grid').hidden = jx;
+  const modal = $('detail-modal');
   let close = document.querySelector('.inspector-close');
   if (!close) {
-    close = element('button', 'button inspector-close', '关闭详情');
-    close.type = 'button';
-    close.addEventListener('click', () => { state.detailOpen = false; renderInspector(); (document.querySelector('.type-member-row.selected .type-member-open') || $('type-settings-button'))?.focus(); });
-    document.querySelector('.inspector').prepend(close);
+    close = actionButton('关闭详情', '', () => closeDetail());
+    close.classList.add('inspector-close');
+    ($('detail-owner-file')?.parentElement || document.querySelector('.inspector')).append(close);
   }
-  close.hidden = !jx;
+  if ($('detail-owner-file')) $('detail-owner-file').textContent = fileName(state.filename);
+  if (state.detailOpen && state.document) {
+    if (modal && !modal.open) modal.showModal();
+  } else if (modal?.open) modal.close();
   content.replaceChildren();
   renderSelectionHeading();
   $('inspector-status').textContent = state.document ? state.document.writable ? '本地配置' : '只读' : '未选择';
@@ -874,7 +997,7 @@ function renderInspector() {
     $(`${tab}-tab`).setAttribute('aria-selected', String(state.tab === tab));
   }
   if (state.tab === 'source') {
-    content.append(element('div', 'section-label', record ? '条目原始数据' : '文件原始内容'), element('p', 'file-source', '只读预览。编辑配置字段后，导出时保留未修改的内容。'), element('pre', 'raw-data', record ? JSON.stringify(record, null, 2) : state.document?.text || '尚未打开配置文件。'));
+    content.append(element('div', 'section-label', record ? '条目原始数据（只读）' : '文件原始内容（只读）'), element('pre', 'raw-data', record ? JSON.stringify(record, null, 2) : state.document?.text || '尚未打开配置文件。'));
     return;
   }
   if (state.tab === 'box') { renderLookup(content, record); return; }
@@ -883,22 +1006,19 @@ function renderInspector() {
     appendWarnings(content);
     return;
   }
-  const heading = element('div', 'section-label', '配置参数');
-  content.append(heading);
   const form = element('form');
   const originalFields = record.key.startsWith('class:') ? { name: record.name, ...record.fields } : record.fields;
   const advanced = element('details', 'advanced-fields');
   advanced.append(element('summary', '', record.key.startsWith('class:') ? '高级样式与原始字段' : '高级字段'));
   for (const [key, value] of Object.entries(originalFields || {})) {
     const input = jx && key === 'nClass' ? membershipField(value) : fieldInput(key, value, { readonly: !state.document.writable || key === 'raw' || value !== null && typeof value === 'object' && key !== 'tLevel' });
-    (fieldLabels[key] ? form : advanced).append(input);
+    (fieldLabels[key] && key !== 'raw' ? form : advanced).append(input);
   }
   if (advanced.children.length > 1) form.append(advanced);
-  if (jx && !record.key.startsWith('class:')) form.append(element('p', 'inspector-note', '移出类型会将所属类型设为空字符串，Buff 配置仍保留，可撤销。'));
   const draft = state.drafts.get(record.key);
   for (const input of form.querySelectorAll('[name]')) {
     if (draft && Object.hasOwn(draft.values, input.name)) {
-      if (input.name === 'nClass' && ![...input.options].some(option => option.value === draft.values.nClass)) {
+      if (input.name === 'nClass' && input.options && ![...input.options].some(option => option.value === draft.values.nClass)) {
         const option = element('option', '', `${typeLabel(draft.values.nClass)}（待保存）`);
         option.value = draft.values.nClass; input.append(option);
       }
@@ -921,7 +1041,7 @@ function renderInspector() {
       if (!Object.keys(fields).length) { state.drafts.delete(record.key); syncDraftState(); toast('没有需要保存的修改。'); return; }
       const submitted = Object.fromEntries([...form.querySelectorAll('[name]')].map(input => [input.name, input.value]));
       await draftNotifications;
-      const result = await bridge.edit({ key: record.key, fields });
+      const result = await bridge.edit(datasetPayload({ key: record.key, fields }));
       if (result?.document) {
         const current = state.drafts.get(record.key);
         if (current && JSON.stringify(current.values) === JSON.stringify(submitted)) state.drafts.delete(record.key);
@@ -940,7 +1060,7 @@ function renderInspector() {
       if (receive(result)) toast('条目已更新。导出配置以写入文件。');
     });
   });
-  content.append(form, element('div', 'inspector-note', '未修改的配置与未知字段会保留原样。'));
+  content.append(form);
   appendWarnings(content);
 }
 
@@ -1074,7 +1194,8 @@ function showModal(title, content, submitText, action) {
   $('modal-cancel').textContent = action ? '取消' : '关闭';
   $('modal-submit').disabled = false;
   modalAction = action;
-  $('modal').showModal();
+  if (!$('modal').open) $('modal').showModal();
+  content.querySelector('input:not([type=hidden]):not([hidden]), select, textarea, button')?.focus();
 }
 
 function closeModal() { clearInterval(updateTimer); modalMetadataRefresh = null; $('modal').close(); }
@@ -1083,18 +1204,22 @@ function newDocument() {
   const feature = featureById(state.featureId);
   if (state.busy || !formats[feature.kind].add) return;
   const content = element('div');
-  content.append(element('p', 'modal-description', `为${feature.title}创建空白配置。导出时选择保存位置。`));
-  const label = element('label', 'format-choice');
+  const extension = feature.kind === 'jx-buff' ? '.jx3dat' : '.txt';
+  const filename = fieldInput('filename', `${feature.title} 新数据集${extension}`);
+  filename.querySelector('span').textContent = '数据文件名';
+  filename.querySelector('input').required = true;
+  const version = fieldInput('gameVersion', '');
+  version.querySelector('span').textContent = '数据版本（可选）';
+  version.querySelector('input').placeholder = '例如 赛季名称 / 2026-11';
   const input = element('input');
-  input.type = 'radio'; input.name = 'new-kind'; input.value = feature.kind; input.checked = true;
-  const text = element('div');
-  text.append(element('strong', '', feature.title), element('small', '', feature.importPath));
-  label.append(input, text);
-  content.append(label);
-  showModal(`新建${feature.title}`, content, '创建配置', async () => {
+  input.type = 'radio'; input.name = 'new-kind'; input.value = feature.kind; input.checked = true; input.hidden = true;
+  content.append(filename, version, input, element('p', 'muted-text', '版本用于区分你的数据集，不代表已验证游戏兼容性。'));
+  showModal('新建数据集', content, '创建数据集', async () => {
+    const name = filename.querySelector('input').value.trim();
+    if (!name) throw new Error('请输入数据文件名。');
     await draftNotifications;
-    const result = await bridge.create(feature.kind);
-    if (receive(result, true)) { closeModal(); toast('已创建空白配置。'); }
+    const result = await bridge.create({ kind: feature.kind, filename: name.toLowerCase().endsWith(extension) ? name : `${name}${extension}`, gameVersion: version.querySelector('input').value.trim() });
+    if (receive(result, true)) { closeModal(); toast('已创建数据集。'); }
   });
 }
 
@@ -1103,14 +1228,14 @@ function addRecord() {
   const spec = formats[state.document?.kind]?.add;
   if (!spec || !state.document.writable) return;
   const content = element('div');
-  content.append(element('p', 'modal-description', '填写该格式所需的原始字段。字段语义请以插件配置说明为准。'));
   const form = element('div');
   for (const [key, value] of Object.entries(spec)) form.append(fieldInput(key, value));
   content.append(form);
-  showModal('添加条目', content, '添加条目', async () => {
+  const label = state.document.kind === 'chat' ? '添加关键词' : '新建监控';
+  showModal(label, content, label, async () => {
     const fields = formValues(form);
     const previous = new Set(state.document.records.map((record) => record.key));
-    const result = await bridge.add(fields);
+    const result = await bridge.add(datasetPayload(fields));
     if (receive(result)) {
       state.selected = state.document.records.find((record) => !previous.has(record.key))?.key || state.selected;
       state.category = null; state.search = ''; $('search').value = ''; state.tab = 'config';
@@ -1166,14 +1291,14 @@ function updates() {
 }
 
 const open = () => run(async () => { await draftNotifications; return receive(await bridge.open(), true); });
-const save = () => run(async () => { if (state.document?.writable) { await draftNotifications; const result = await bridge.save(); if (receive(result)) toast('配置已导出。'); } });
+const save = () => run(async () => { if (state.document?.writable) { await draftNotifications; const result = await bridge.save(datasetPayload()); if (receive(result)) toast('配置已导出。'); } });
 for (const id of ['open-button', 'sidebar-open', 'empty-open']) $(id).addEventListener('click', open);
 $('save-button').addEventListener('click', save);
 const undo = () => run(async () => {
   const previous = state.document;
   const drafts = new Map(state.drafts);
   await draftNotifications;
-  const result = await bridge.undo();
+  const result = await bridge.undo(datasetPayload());
   if (result?.document) {
     for (const record of previous?.records || []) {
       const restored = result.document.records.find(item => item.key === record.key);
@@ -1184,6 +1309,8 @@ const undo = () => run(async () => {
 });
 $('undo-button').addEventListener('click', undo);
 $('new-button').addEventListener('click', newDocument);
+$('dataset-info-button')?.addEventListener('click', datasetInfo);
+$('detail-modal')?.addEventListener('cancel', event => { event.preventDefault(); closeDetail(); });
 $('add-button').addEventListener('click', addRecord);
 $('report-nav').addEventListener('click', reportProblem);
 $('update-nav').addEventListener('click', updates);
@@ -1203,7 +1330,7 @@ $('modal-form').addEventListener('submit', async (event) => {
 });
 document.addEventListener('keydown', (event) => {
   if (!(event.ctrlKey || event.metaKey)) return;
-  if (event.key.toLowerCase() === 'o') { event.preventDefault(); if (!$('modal').open) open(); }
+  if (event.key.toLowerCase() === 'o') { event.preventDefault(); if (!$('modal').open && !$('detail-modal')?.open) open(); }
   if (event.key.toLowerCase() === 's') { event.preventDefault(); if (!$('modal').open) save(); }
   if (event.key.toLowerCase() === 'k') { event.preventDefault(); focusSearch(); }
   if (event.key.toLowerCase() === 'z' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { event.preventDefault(); if (state.canUndo) undo(); }
