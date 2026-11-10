@@ -75,12 +75,13 @@ test('desktop IPC adds independent datasets, exports inactive targets and guards
   const fileOne = path.join(directoryOne, 'BuffData.jx3dat');
   const fileTwo = path.join(directoryTwo, 'BuffData.jx3dat');
   await Promise.all([fs.writeFile(fileOne, original), fs.writeFile(fileTwo, original)]);
+  const [canonicalOne, canonicalTwo] = await Promise.all([fs.realpath(fileOne), fs.realpath(fileTwo)]);
   openFiles = [fileOne, fileTwo];
   const imported = await invoke('open');
   assert.ok(openOptions.properties.includes('multiSelections'));
   assert.equal(imported.datasets.length, 3);
-  const firstFile = imported.datasets.find(dataset => dataset.source.displayPath === fileOne);
-  const secondFile = imported.datasets.find(dataset => dataset.source.displayPath === fileTwo);
+  const firstFile = imported.datasets.find(dataset => dataset.source.displayPath === canonicalOne);
+  const secondFile = imported.datasets.find(dataset => dataset.source.displayPath === canonicalTwo);
   assert.notEqual(firstFile.datasetId, secondFile.datasetId);
   assert.notEqual(firstFile.datasetId, jx.datasetId);
   await invoke('edit', { datasetId: firstFile.datasetId, key: buff.key, fields: { nPower: 19 } });
@@ -89,7 +90,7 @@ test('desktop IPC adds independent datasets, exports inactive targets and guards
   assert.equal(saved.datasetId, secondFile.datasetId, 'inactive export must preserve the active dataset');
   assert.equal(saved.exportedPath, saveFile);
   assert.equal(saved.exportedDataset.datasetId, firstFile.datasetId);
-  assert.equal(saved.exportedDataset.source.displayPath, fileOne, 'export keeps source identity');
+  assert.equal(saved.exportedDataset.source.displayPath, canonicalOne, 'export keeps source identity');
   const { openDocument } = await import('../core/documents.mjs');
   const output = openDocument(await fs.readFile(saveFile), saveFile);
   assert.equal(output.records.find(record => record.id === 12784).fields.nPower, 19);
