@@ -1,5 +1,5 @@
 # Current session handoff
 
-Read [CURSOR_HANDOFF.md](CURSOR_HANDOFF.md) for the current fresh-environment pickup. Resume branch `codex/one-click-update`, not main, to continue the unfinished 0.1.5 one-click updater.
+Read [CURSOR_HANDOFF.md](CURSOR_HANDOFF.md) for the current fresh-environment pickup. Use main. The one-click updater is complete and published in 0.1.5; its old WIP instructions and retry/status TODOs are superseded.
 
-The older API-only handoff is superseded. Its historical evidence remains in Git history and `WORK_STATUS.md`. The repository is public, hosting works, and 0.1.4 is already published. Do not recreate old repository/visibility blockers or follow old release commands.
+The repository is public and hosting works. Older API-only and initial-publication blockers are historical. Read the latest WORK_STATUS before starting a new request, and do not repeat completed updater work.
