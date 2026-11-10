@@ -1317,6 +1317,7 @@ run(async () => {
 
 let updateBannerBusy = false;
 let updateActionBusy = false;
+let updateActionEpoch = 0;
 let manualUpdateCheck = false;
 let updateView = null;
 
@@ -1345,9 +1346,10 @@ function renderUpdateBanner(result) {
 async function refreshUpdateBanner() {
   if (updateBannerBusy || updateActionBusy || typeof bridge.updates !== 'function') return;
   updateBannerBusy = true;
+  const epoch = updateActionEpoch;
   try {
     const result = await bridge.updates('status');
-    if (!updateActionBusy) renderUpdateBanner(result);
+    if (!updateActionBusy && epoch === updateActionEpoch) renderUpdateBanner(result);
   } catch {}
   finally { updateBannerBusy = false; }
 }
@@ -1355,6 +1357,7 @@ async function refreshUpdateBanner() {
 async function checkUpdates() {
   if (updateActionBusy) return;
   updateActionBusy = true;
+  updateActionEpoch++;
   manualUpdateCheck = true;
   try { renderUpdateBanner(await bridge.updates('check')); }
   catch (error) { renderUpdateBanner({ status: 'error', message: error.message || '检查更新未完成，请重试。' }); }
@@ -1364,10 +1367,11 @@ async function checkUpdates() {
 $('update-restart').addEventListener('click', () => run(async () => {
   if (updateActionBusy || updateView?.installRequested) return;
   updateActionBusy = true;
+  updateActionEpoch++;
   $('update-restart').disabled = true;
   try {
     await draftNotifications;
-    const action = updateView?.status === 'error' && !updateView.version ? 'check' : 'install';
+    const action = updateView?.status === 'error' ? 'check' : 'install';
     if (action === 'check') manualUpdateCheck = true;
     renderUpdateBanner(await bridge.updates(action));
   } catch (error) { renderUpdateBanner({ status: 'error', message: error.message || '更新未完成，请重试。' }); }
