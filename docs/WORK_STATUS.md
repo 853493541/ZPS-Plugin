@@ -189,3 +189,13 @@ All 72 unit tests pass. The actual-sample browser workflow passes search by capt
 `docs/TYPE_WORKSPACE.md` records the design and verification commands. `artifacts/editor-types.png` and `artifacts/editor-buff.png` show the original sample with captured 12784 metadata and an intentional offline icon state. These screenshots do not establish live API access. No remote speedup is claimed; local membership appears before enrichment and the open type's members receive lookup priority.
 
 The approved delivery workflow applies to this requested behavior change. Version 0.1.2 is prepared. Windows acceptance and public publication remain pending at this checkpoint. The periodic ChatGPT task stays paused.
+
+## Version 0.1.2 delivered
+
+PR 3 merged the type-first UI at `3ded2eda4a13a46fe6888a16e951746c1412f430`. Independent GPT-6.1 Sol medium source review and fresh Chromium verification passed, including keyboard access, retry controls without nested buttons, cross-type rename drafts, and the 1050×760 layout. All 72 unit tests and five deterministic browser regressions passed. Both Windows PR acceptance run 42765001280 and final main acceptance run 42765437914 passed native smoke, packaging, installed lifecycle, asset verification, and actual installed upgrade/retention checks.
+
+Automatic publication run 42765815159 succeeded without intervention and published https://github.com/853493541/ZPS-Plugin/releases/tag/v0.1.2 from the exact accepted main commit. All five public release assets are present. An anonymous latest.yml request returned HTTP200, version 0.1.2, and SHA-256 `ec343dd0f8d36add5bfb970c232630c6446a34a40b8891514a3c193e4c64945f`, matching the public asset digest. Installer SHA-256 is `3d6df359219b2e2bb5ffc262bf28b1632102a3af4eaf8f77b9e0c7c22cdd6d91`.
+
+Public installer: https://github.com/853493541/ZPS-Plugin/releases/download/v0.1.2/ZPS-Studio-Setup-0.1.2.exe
+
+Installed 0.1.1 apps can detect/download this update using their startup, periodic, or focus checks and install on guarded close or explicit restart. The requested UI update is complete. Do not repeat its passing builds. The periodic ChatGPT task stays paused. Original game-client acceptance, unknown target-monitor binary format, and source metadata coverage limitations remain separate from this completed UI update.
