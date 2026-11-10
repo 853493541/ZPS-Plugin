@@ -7,6 +7,7 @@ const { randomUUID } = require('node:crypto');
 const { createCatalog } = require('../services/catalog.cjs');
 const { createIconCache } = require('../services/icons.cjs');
 const { updateFeed } = require('../services/release.cjs');
+const { createUpdateChecks } = require('../services/update-checks.cjs');
 const root = path.resolve(__dirname, '../..');
 const samplesRoot = app.isPackaged ? path.join(process.resourcesPath, 'samples') : path.join(root, 'samples');
 const uiURL = pathToFileURL(path.join(root, 'app/ui/index.html')).href;
@@ -14,6 +15,7 @@ let win, codec, catalog, iconCache, sessions, featureRegistry;
 let sampleList = [];
 let updateState = { status: 'idle' };
 let updater;
+let updateChecks;
 let quitApproved = false;
 let pending = Promise.resolve();
 
@@ -74,7 +76,7 @@ function configureUpdates() {
   if (!app.isPackaged) { updateState = { status: 'unavailable', message: '开发模式不检查更新。' }; return; }
   try {
     updater = require('electron-updater').autoUpdater;
-    updater.autoDownload = false;
+    updater.autoDownload = true;
     updater.autoInstallOnAppQuit = false;
     updater.setFeedURL(updateFeed);
     updater.on('checking-for-update', () => { updateState = { status: 'checking' }; });
@@ -83,17 +85,17 @@ function configureUpdates() {
     updater.on('download-progress', info => { updateState = { status: 'downloading', progress: Math.round(info.percent) }; });
     updater.on('update-downloaded', info => { updateState = { status: 'ready', version: info.version }; });
     updater.on('error', () => { updateState = { status: 'error', message: '更新暂不可用，请稍后重试或从 GitHub 下载。' }; });
-    updater.checkForUpdates().catch(() => { updateState = { status: 'error', message: '更新暂不可用。' }; });
+    updateChecks = createUpdateChecks({ updater, getState: () => updateState, onError: () => { updateState = { status: 'error', message: '更新暂不可用，将自动重试。' }; } });
+    win.on('focus', () => updateChecks.check());
+    app.on('will-quit', () => updateChecks.stop());
+    updateChecks.start();
   } catch { updateState = { status: 'unavailable', message: '此版本未配置自动更新。' }; }
 }
 async function updates(action = 'status') {
   if (!['status', 'check', 'download', 'install'].includes(action)) throw new Error('Unknown update action');
   if (!updater || action === 'status') return updateState;
   try {
-    if (action === 'check') {
-      updateState = { status: 'checking' };
-      updater.checkForUpdates().catch(() => { updateState = { status: 'error', message: '更新暂不可用。' }; });
-    }
+    if (action === 'check') updateChecks?.check({ force: true });
     if (action === 'download') {
       if (updateState.status !== 'available') throw new Error('Update not available');
       updateState = { status: 'downloading', progress: 0 };
@@ -175,7 +177,11 @@ async function start() {
     if (closing) return;
     closing = true;
     enqueue(async () => {
-      if (await confirmDiscard(sessions.dirtySessions())) { quitApproved = true; win.close(); }
+      if (await confirmDiscard(sessions.dirtySessions())) {
+        quitApproved = true;
+        if (updateState.status === 'ready') updater.quitAndInstall(true, false);
+        else win.close();
+      }
     }).catch(() => {}).finally(() => { closing = false; });
   });
   await win.loadFile(path.join(root, 'app/ui/index.html'));

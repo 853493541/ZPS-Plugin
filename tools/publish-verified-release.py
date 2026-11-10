@@ -38,6 +38,14 @@ if repository != '853493541/ZPS-Plugin' or not run_id.isdigit():
 run = api(f'repos/{repository}/actions/runs/{run_id}')
 if run['status'] != 'completed' or run['conclusion'] != 'success' or run['path'] != '.github/workflows/windows.yml':
     raise ValueError('Publication requires a successful Windows acceptance run')
+def require_current_main():
+    if os.environ.get('REQUIRE_MAIN_HEAD') == '1':
+        current = api(f'repos/{repository}/commits/main')['sha']
+        if current != run['head_sha']:
+            raise ValueError('Accepted run was superseded by newer main changes; refusing publication')
+
+
+require_current_main()
 package = json.loads(Path('package.json').read_text())
 version = package['version']
 tag = f'v{version}'
@@ -82,6 +90,7 @@ with tempfile.TemporaryDirectory(prefix='zps-release-') as temporary:
     if actual != expected:
         raise ValueError('Uploaded assets do not match the exact tested bytes')
     if uploaded['draft']:
+        require_current_main()
         gh('release', 'edit', tag, '--repo', repository, '--draft=false', '--latest', '--notes-file', notes)
     published = api(f'repos/{repository}/releases/{release["id"]}')
     if published['draft'] or published['prerelease'] or not published['published_at']:

@@ -116,7 +116,7 @@ try {
     Object.defineProperty(updater.app, 'baseCachePath', {get: () => config.cache});
     updater.installDirectory = config.installDirectory;
     updater.disableDifferentialDownload = true;
-    updater.autoDownload = false;
+    if (!updater.autoDownload) throw new Error('Updates must download automatically');
     updater.autoInstallOnAppQuit = false;
     const quitAndInstall = updater.quitAndInstall.bind(updater);
     updater.quitAndInstall = () => quitAndInstall(true, false);
@@ -149,9 +149,6 @@ try {
     await fs.writeFile(probe, JSON.stringify({message: '保留用户数据', previousVersion}));
     const retainedFiles = await Promise.all([probe, exported, path.join(root, backups[0])].map(async file => ({path: file, sha256: await digest(file)})));
     await fs.writeFile(stateFile, JSON.stringify({previousVersion, currentVersion, userData, exported, rowKey: row.key, retainedFiles, upgradeVerified: false}, null, 2));
-    const available = await waitForState('available');
-    assert.equal(available.version, currentVersion);
-    await page.evaluate(() => window.studio.updates('download'));
     assert.equal((await waitForState('ready')).version, currentVersion);
     assert.ok(requests.some(request => request.name === artifact.url && request.method === 'GET'), 'Installer must actually be fetched from loopback');
     await app.evaluate(({dialog}) => {
@@ -166,7 +163,7 @@ try {
     });
     await closed;
     app = undefined;
-    console.log('PASS previous installed version checked and downloaded current installer; silent update requested. Upgrade proof awaits verify phase.');
+    console.log('PASS previous installed version checked and automatically downloaded current installer; silent update requested. Upgrade proof awaits verify phase.');
   } else {
     const state = JSON.parse(await fs.readFile(stateFile, 'utf8'));
     assert.equal(state.previousVersion, previousVersion);

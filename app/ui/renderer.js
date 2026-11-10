@@ -967,3 +967,28 @@ run(async () => {
   renderSamples();
   if (state.samples.length) await openSample(state.samples[0].path);
 });
+
+
+let updateBannerBusy = false;
+async function refreshUpdateBanner() {
+  if (updateBannerBusy || typeof bridge.updates !== 'function') return;
+  updateBannerBusy = true;
+  try {
+    const result = await bridge.updates('status');
+    const show = result?.status === 'downloading' || result?.status === 'ready';
+    $('update-banner').hidden = !show;
+    $('update-restart').hidden = result?.status !== 'ready';
+    if (show) $('update-message').textContent = result.status === 'ready'
+      ? `新版本 ${result.version || ''} 已下载。关闭应用时自动更新，或现在重启。未导出的修改会先提醒。`
+      : `正在后台下载更新 ${result.progress || 0}%，可以继续编辑。`;
+  } catch {}
+  finally { updateBannerBusy = false; }
+}
+$('update-restart').addEventListener('click', () => run(async () => {
+  await draftNotifications;
+  await bridge.updates('install');
+  await refreshUpdateBanner();
+}));
+refreshUpdateBanner();
+setInterval(() => { if (!document.hidden) refreshUpdateBanner(); }, 10000);
+window.addEventListener('focus', refreshUpdateBanner);
