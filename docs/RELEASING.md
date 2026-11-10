@@ -1,6 +1,6 @@
 # Publish a Windows release
 
-The source, installers, and update files all use the existing `853493541/ZPS-Plugin` repository. The user explicitly approved making it public, including its source history and addon references. The GitHub connection cannot change repository visibility and returns HTTP403 for that setting. A release can be prepared and published in the existing repository while it is private, but anonymous downloads and update checks work only after the owner changes visibility to Public. No separate repository is required.
+The source, installers, and update files all use the existing public `853493541/ZPS-Plugin` repository. The owner approved and applied Public visibility, including source history and addon references. Version 0.1.0 is published, and anonymous installer, blockmap, and update-feed downloads have been verified against the tested hashes. No separate repository is required.
 
 The first prepared version is `0.1.0`. It is unsigned because no publisher certificate is configured. Do not describe it as a signed or production-certified release. The editable JX, team-buff, and chat formats are supported; opaque target-monitor exports remain read-only. Real game-client import acceptance remains separate from installer tests.
 

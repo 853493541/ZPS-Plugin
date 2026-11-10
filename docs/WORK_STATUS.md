@@ -140,3 +140,12 @@ Direct asset upload from the cloud connection failed with HTTP401 at uploads.git
 The repository was still Private at the final visibility check. The owner approved Public visibility, but the connection's PATCH returned integration HTTP403 and the shared-browser fallback could not access settings. The owner was asked to set Public manually. The release exists now; GitHub-authenticated users with repo access can download it. Anonymous downloads and automatic update checks become available when this same repository is Public. No additional repository or rebuilt installer is needed for that visibility change.
 
 Publication helper hardening serializes publishing jobs, refuses asset replacement, and verifies the actual tag commit before and after publishing. The selected accepted run ID is an explicit operator input; the manifest head SHA, release target, feed, version and asset hashes must all agree.
+
+## Public release and anonymous feed verified
+
+The owner changed ZPS-Plugin to Public. Repository metadata confirms public visibility, and v0.1.0 remains the published latest release. Anonymous HTTPS requests, without an Authorization header, returned HTTP200 for the 102392363-byte installer, 107307-byte blockmap, and 349-byte latest.yml. SHA-256 values for all three exactly match the verified acceptance artifact from run42721383886. The report is retained at `artifacts/public-release-verification.json`.
+
+Public installer: https://github.com/853493541/ZPS-Plugin/releases/download/v0.1.0/ZPS-Studio-Setup-0.1.0.exe
+Public update feed: https://github.com/853493541/ZPS-Plugin/releases/latest/download/latest.yml
+
+Publication and public hosting are complete in the existing repository. No separate release repository is needed. Installed 0.1.0 builds can check this anonymous feed; future tested releases must use higher versions and the same feed. Download/restart remain explicit user actions. The installer is an unsigned testing release, and existing game-client acceptance and read-only binary-format limits remain unchanged.
