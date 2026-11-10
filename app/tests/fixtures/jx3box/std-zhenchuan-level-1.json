@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-11-09T19:18:41.654949+00:00",
+  "sourceUrl": "https://node.jx3box.com/buff/name/%E7%9C%9F%E4%BC%A0?client=std&level=1",
+  "query": {
+    "client": "std",
+    "name": "真传",
+    "level": 1
+  },
+  "raw": {
+    "total": 0,
+    "per": 10,
+    "pages": 0,
+    "page": 1,
+    "list": []
+  }
+}

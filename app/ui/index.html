@@ -31,7 +31,12 @@
     </aside>
     <main class="workspace">
       <header class="topbar"><div class="breadcrumbs">工作区 <span>/</span> <strong id="breadcrumb-name">未打开文件</strong><i id="dirty-dot" hidden></i></div><div class="top-actions"><button class="button subtle" id="undo-button" disabled title="撤销上次修改">↶ <span>撤销</span></button><button class="button" id="new-button">＋ 新建</button><button class="button" id="open-button">打开文件</button><button class="button primary" id="save-button" disabled><span>↗</span> 导出配置</button></div></header>
+      <aside id="update-banner" class="update-banner" role="status" hidden><span id="update-message"></span><button id="update-restart" class="button primary" hidden>重启并更新</button></aside>
+      <div id="feature-tabs" class="feature-tabs" role="tablist" aria-label="插件功能" aria-orientation="horizontal"></div>
+      <div id="feature-panels" class="feature-panels"></div>
+      <div id="feature-workspace" class="feature-workspace">
       <div class="content-heading"><div><div class="eyebrow">CONFIGURATION LIBRARY</div><h2 id="document-title">配置库</h2><p id="document-description">在一个工作区内管理 MY 与 JX 配置。</p></div><span class="format-badge" id="format-badge">就绪</span></div>
+      <div class="feature-guidance"><span id="feature-addon" class="feature-addon"></span><p id="feature-guidance"></p><p id="import-destination"></p><div id="feature-presets" class="feature-presets" hidden></div></div>
       <div class="document-meta" id="document-meta"><span><i class="online-dot"></i> 本地工作区</span><span>保留原有格式与未知字段</span></div>
       <section class="editor-grid">
         <section class="records-panel" aria-label="配置条目">
@@ -42,6 +47,7 @@
         </section>
         <aside class="inspector" aria-label="条目详情"><div class="inspector-heading"><span class="eyebrow">INSPECTOR</span><span class="inspector-status" id="inspector-status">未选择</span></div><div id="selection-heading" class="selection-heading"><div class="record-glyph big">⌘</div><h3>条目详情</h3><p>从配置库中选择一个条目</p></div><div class="inspector-tabs" role="tablist"><button class="active" id="config-tab" role="tab" aria-selected="true">配置字段</button><button id="box-tab" role="tab" aria-selected="false">JX3BOX <span>↗</span></button><button id="source-tab" role="tab" aria-selected="false">原始数据</button></div><div class="inspector-content" id="inspector-content"></div></aside>
       </section>
+      </div>
       <footer class="statusbar"><span><i class="online-dot"></i> <span id="status-text">准备就绪</span></span><span>ZPS 配置工作台 <span class="status-separator">·</span> MY / JX</span></footer>
     </main>
   </div>

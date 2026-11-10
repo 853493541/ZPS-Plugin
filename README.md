@@ -57,7 +57,7 @@ This private baseline is for the project's personal research. No game client is 
 
 ## ZPS Studio
 
-The first desktop implementation supports JX buff rules and classes, MY team-buff text, and chat keywords. Unknown binary target-monitor exports open read-only. [The format map](docs/DATA_FORMATS.md) records the evidence and limitations.
+The workspace separates four addon features into tabs: 剑心 BUFF增强, 茗伊团队气劲, 茗伊目标监控, and 茗伊聊天监控. Each tab lists only its own presets and import destination. The three target-monitor exports are grouped in the target-monitor tab and remain read-only. Editing supports JX buff rules and classes, MY team-buff text, and chat keywords. [The format map](docs/DATA_FORMATS.md) records the evidence and limitations.
 
 Node.js 22 or later is required for development.
 
@@ -85,9 +85,9 @@ Use the plugin's own import interface to check the exported copy. The game clien
 
 ### Buff details and updates
 
-The JX3BOX pane requests metadata on demand and exposes the full returned record, with edition, level, provenance, and cache state. A missing result is not proof that a buff does not exist. 真传 coverage and live API compatibility remain unverified. [API research](docs/JX3BOX_API.md) documents the actual upstream frontend contract.
+Buff names and official icons load automatically for buff records, and the JX3BOX pane exposes the full returned record with edition, level, provenance, and cache state. Internal names are labeled when no public name exists. All 177 supplied JX preset IDs matched live standard-edition level 1 records. A missing result is not proof that a buff does not exist. Historical 真传 equivalence and exhaustive level coverage remain unverified. [API research](docs/JX3BOX_API.md) documents the actual upstream frontend contract.
 
-Installed Windows builds check GitHub Releases through electron-updater. Download and installation are separate actions, and unsaved work must be exported before restart. This repository is private; anonymous update checks cannot retrieve private releases. A public update feed or an authenticated server-side distribution service is required before automatic updates work for end users. No access token belongs in the app. Release publishing and signing credentials are not configured, and no release has been published.
+Windows x64 installers are available from this repository's releases. Starting with 0.1.1, the app checks for updates at startup, every five minutes while open, and when returning to the app with a cooldown. Updates download in the background. A ready update installs on normal guarded app close or through the restart banner. Existing edit and draft protections stay active. Version 0.1.0 users need to use the sidebar update control once to check, download and install the new version. The installer remains unsigned. The repository is public, and no GitHub token is embedded in the app.
 
 **Report a problem** exports an inspectable local JSON report with the description you enter and application/platform metadata. It does not upload the report or automatically attach your presets.
 
@@ -99,6 +99,6 @@ npm test
 npm run dist:win
 ```
 
-The Windows workflow builds an x64 NSIS installer, blockmap, and update metadata as downloadable CI artifacts. It then installs the actual package in a disposable Windows runner and verifies packaged startup, Chinese paths, export backups, restart, uninstall, and retained user-data hashes. Production distribution still requires signing, interactive acceptance, and an installed-version upgrade test. It does not publish releases.
+The Windows workflow builds an x64 NSIS installer, blockmap, and update metadata as downloadable CI artifacts. It then installs the actual package in a disposable Windows runner and verifies packaged startup, Chinese paths, export backups, restart, uninstall, and retained user-data hashes. The installed-upgrade test also verifies automatic download and retained user data. Successful same-repository main-push acceptance triggers publication of the exact verified assets; PR runs cannot publish and superseded main runs are skipped. Future app changes require a version increment. Signing and interactive/game-client acceptance retain their documented limitations.
 
 The current evidence and next steps are in [WORK_STATUS](docs/WORK_STATUS.md). An hourly continuation task checks for unfinished work; scheduling cannot guarantee quota availability or an exact reset-time resume.

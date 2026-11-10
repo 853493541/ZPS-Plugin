@@ -1,0 +1,45 @@
+name: Publish verified app update
+on:
+  workflow_run:
+    workflows: [Windows desktop]
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    concurrency:
+      group: zps-studio-release-publication
+      cancel-in-progress: false
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Check accepted source is still main
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACCEPTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          current=$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)
+          if [ "$current" = "$ACCEPTED_SHA" ]; then
+            echo "eligible=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping an acceptance run superseded by newer main changes."
+          fi
+      - name: Publish exact verified release assets
+        if: steps.current.outputs.eligible == 'true'
+        run: python tools/publish-verified-release.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUIRE_MAIN_HEAD: '1'
+          RELEASE_RUN_ID: ${{ github.event.workflow_run.id }}

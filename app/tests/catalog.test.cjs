@@ -11,6 +11,172 @@ async function setup(t, options = {}) {
   return { cacheDir, ...options };
 }
 const response = raw => ({ ok: true, json: async () => raw });
+function deferred() {
+  let resolve;
+  const promise = new Promise(done => { resolve = done; });
+  return { promise, resolve };
+}
+test('fresh memory and disk cache lookups finish while an unrelated network request is blocked', { timeout: 2000 }, async t => {
+  for (const restart of [false, true]) {
+    const options = await setup(t, { intervalMs: 0 });
+    const started = deferred();
+    const blocked = deferred();
+    t.after(() => blocked.resolve(response({ list: [] })));
+    const fetch = async url => {
+      if (url.includes('/id/2?')) {
+        started.resolve();
+        return blocked.promise;
+      }
+      return response({ list: [{ BuffID: 1, Name: 'cached' }] });
+    };
+    let catalog = createCatalog({ ...options, fetch });
+    await catalog.lookup({ id: 1 });
+    if (restart) catalog = createCatalog({ ...options, fetch });
+    const waiting = catalog.lookup({ id: 2 });
+    await started.promise;
+    const hit = await catalog.lookup({ id: 1 });
+    assert.equal(hit.source, 'cache');
+    assert.equal(hit.list[0].Name, 'cached');
+    blocked.resolve(response({ list: [{ BuffID: 2 }] }));
+    await waiting;
+  }
+});
+test('concurrent equivalent queries share the network request and own their returned data', { timeout: 2000 }, async t => {
+  const started = deferred();
+  const blocked = deferred();
+  t.after(() => blocked.resolve(response({ list: [] })));
+  let calls = 0;
+  let current = 100;
+  const options = await setup(t, { intervalMs: 0, ttlMs: 10, now: () => current });
+  await createCatalog({ ...options, fetch: async () => response({ list: [{ BuffID: 7 }] }) }).lookup({ id: 7 });
+  current = 110;
+  const catalog = createCatalog({ ...options, fetch: async () => {
+    calls++;
+    started.resolve();
+    return blocked.promise;
+  } });
+  assert.equal((await catalog.lookupCached([{ id: 7 }]))[0].stale, true);
+  const first = catalog.lookup({ id: ' 7 ', level: '' });
+  const second = catalog.lookup({ id: 7, client: 'std', level: 1 });
+  await started.promise;
+  assert.equal((await catalog.lookupCached([{ id: 7 }]))[0].stale, true);
+  blocked.resolve(response({ list: [{ BuffID: 7, Extra: { unchanged: true } }], metadata: { kept: true } }));
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(calls, 1);
+  assert.equal(a.source, 'network');
+  assert.equal(b.source, 'network');
+  a.list[0].Extra.unchanged = false;
+  a.raw.metadata.kept = false;
+  a.query.value = 'corrupted';
+  assert.equal(b.list[0].Extra.unchanged, true);
+  const cached = await catalog.lookup({ id: 7 });
+  assert.equal(cached.raw.metadata.kept, true);
+  assert.equal(cached.query.value, '7');
+  assert.equal(cached.list[0].Extra.unchanged, true);
+});
+test('bulk cache reads preserve order, fresh and expired data across restart without network work', async t => {
+  let current = 100;
+  const options = await setup(t, { intervalMs: 0, ttlMs: 10, now: () => current });
+  const writer = createCatalog({ ...options, fetch: async url => response({ list: [{ Name: url }], extra: { preserved: true } }) });
+  await writer.lookup({ name: '  旧气劲  ', client: 'origin', level: 2 });
+  current = 111;
+  await writer.lookup({ id: 5 });
+  let calls = 0;
+  const reader = createCatalog({ ...options, fetch: async () => { calls++; throw new Error('cache-only lookup must not fetch'); } });
+  const inputs = [{ id: 5 }, { id: 999 }, { name: '旧气劲', client: 'origin', level: '2' }, { name: '旧气劲' }, { id: 5, level: 2 }];
+  const results = await reader.lookupCached(inputs);
+  assert.deepEqual(results.map(item => item && [item.source, item.stale]), [['cache', false], null, ['cache', true], null, null]);
+  assert.equal(results[0].cachedAt, 111);
+  assert.equal(results[2].cachedAt, 100);
+  assert.deepEqual(results[2].query, { type: 'name', value: '旧气劲', client: 'origin', level: 2 });
+  assert.equal(results[2].raw.extra.preserved, true);
+  results[2].raw.extra.preserved = false;
+  assert.equal((await reader.lookupCached([inputs[2]]))[0].raw.extra.preserved, true);
+  assert.deepEqual(await reader.lookupCached([]), []);
+  assert.equal(calls, 0);
+});
+test('bulk cache reads reject invalid batches and queries without network work', async t => {
+  let calls = 0;
+  const catalog = createCatalog(await setup(t, { fetch: async () => { calls++; return response({ list: [] }); } }));
+  for (const inputs of [null, {}, Array(513).fill({ id: 1 }), Array(1), [{ id: 1 }, { id: '../2' }], [{ id: 1, client: 'bad' }], [{ id: 1, level: 0 }], [null]]) {
+    await assert.rejects(catalog.lookupCached(inputs));
+  }
+  assert.equal((await catalog.lookupCached(Array(512).fill({ id: 1 }))).length, 512);
+  assert.equal(calls, 0);
+});
+test('expired lookups await refresh while cache-only reads can show their stale data', { timeout: 2000 }, async t => {
+  let current = 100;
+  const started = deferred();
+  const blocked = deferred();
+  t.after(() => blocked.resolve(response({ list: [] })));
+  let calls = 0;
+  const catalog = createCatalog(await setup(t, { intervalMs: 0, ttlMs: 10, now: () => current, fetch: async () => {
+    if (++calls === 1) return response({ list: [{ BuffID: 4, Name: 'old' }] });
+    started.resolve();
+    return blocked.promise;
+  } }));
+  await catalog.lookup({ id: 4 });
+  current = 110;
+  let settled = false;
+  const refresh = catalog.lookup({ id: 4 }).then(value => { settled = true; return value; });
+  await started.promise;
+  const [stale] = await catalog.lookupCached([{ id: 4 }]);
+  assert.equal(stale.source, 'cache');
+  assert.equal(stale.stale, true);
+  assert.equal(stale.list[0].Name, 'old');
+  assert.equal(settled, false);
+  blocked.resolve(response({ list: [{ BuffID: 4, Name: 'new' }] }));
+  const refreshed = await refresh;
+  assert.equal(refreshed.source, 'network');
+  assert.equal(refreshed.stale, false);
+  assert.equal(refreshed.list[0].Name, 'new');
+  assert.equal((await catalog.lookupCached([{ id: 4 }]))[0].stale, false);
+  assert.equal(calls, 2);
+});
+test('the captured public buff response survives lookup, disk cache, and offline fallback', async t => {
+  const fixture = JSON.parse(await fs.readFile(path.join(__dirname, 'fixtures/jx3box/std-12784-level-1.json'), 'utf8'));
+  let current = Date.parse(fixture.capturedAt);
+  const options = await setup(t, { ttlMs: 10, intervalMs: 0, now: () => current });
+  const service = createCatalog({ ...options, fetch: async url => {
+    assert.equal(url, fixture.sourceUrl);
+    return response(fixture.raw);
+  } });
+  const live = await service.lookup(fixture.query);
+  assert.equal(live.source, 'network');
+  assert.equal(live.list[0].Name, '逃兵');
+  assert.equal(live.list[0].BuffID, 12784);
+  assert.equal(live.list[0].Level, 1);
+  assert.equal(live.list[0].CanCancel, false);
+  assert.equal(live.list[0].ScriptFile, null);
+  assert.deepEqual(live.raw, fixture.raw);
+  const offline = createCatalog({ ...options, fetch: async () => { throw new Error('offline'); } });
+  const cached = await offline.lookup(fixture.query);
+  assert.equal(cached.source, 'cache');
+  assert.equal(cached.stale, false);
+  assert.deepEqual(cached.raw, fixture.raw);
+  current += 11;
+  const stale = await offline.lookup(fixture.query);
+  assert.equal(stale.stale, true);
+  assert.deepEqual(stale.raw, fixture.raw);
+});
+test('captured edition, name, and empty level responses retain their query and raw fields', async t => {
+  for (const file of ['origin-12784-level-1.json', 'wujie-12784-level-1.json', 'std-12784-level-2.json', 'std-deserter-level-1.json', 'std-zhenchuan-level-1.json', 'std-12724-level-1.json']) {
+    const fixture = JSON.parse(await fs.readFile(path.join(__dirname, 'fixtures/jx3box', file), 'utf8'));
+    const options = await setup(t);
+    const catalog = createCatalog({ ...options, fetch: async url => {
+      assert.equal(url, fixture.sourceUrl);
+      return response(fixture.raw);
+    } });
+    const result = await catalog.lookup(fixture.query);
+    assert.equal(result.client, fixture.query.client);
+    assert.equal(result.query.level, fixture.query.level);
+    assert.deepEqual(result.raw, fixture.raw);
+    assert.equal(result.total, fixture.raw.total);
+    const cached = await catalog.lookup(fixture.query);
+    assert.equal(cached.source, 'cache');
+    assert.deepEqual(cached.list, fixture.raw.list);
+  }
+});
 test('looks up an official client and preserves the complete response', async t => {
   const raw = { list: [{ BuffID: 42, Level: '1', Name: '测试', Extra: { unchanged: true } }], metadata: 'kept' };
   let requested;

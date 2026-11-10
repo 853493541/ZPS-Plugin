@@ -1,19 +1,20 @@
 {
   "name": "zps-studio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "MY and JX preset studio for Windows",
   "main": "app/desktop/main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node app/tests/documents.test.mjs && node app/tests/catalog.test.cjs",
+    "test": "node app/tests/documents.test.mjs && node app/tests/catalog.test.cjs && node app/tests/features.test.mjs && node app/tests/desktop-features.test.cjs && node app/tests/feature-sessions.test.mjs && node app/tests/icons.test.cjs && node app/tests/update-checks.test.cjs && node app/tests/desktop-updates.test.cjs",
     "preview": "node tools/preview.mjs",
     "dist:win": "electron-builder --win nsis --x64 --publish never",
     "test:desktop": "node tools/smoke-desktop.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.6.2",
-    "iconv-lite": "^0.6.3"
+    "iconv-lite": "^0.6.3",
+    "pngjs": "^7.0.0"
   },
   "devDependencies": {
     "electron": "^39.0.0",
@@ -28,19 +29,25 @@
     },
     "files": [
       "app/**/*",
+      "!app/tests/**/*",
       "package.json"
     ],
     "extraResources": [
       {
         "from": "samples",
-        "to": "samples"
+        "to": "samples",
+        "filter": [
+          "SAMPLES.json",
+          "**/*.jx3dat",
+          "**/\u771f\u4f20\uff08\u4ec5\uff09\u56e2\u961f\u6c14\u52b2.txt",
+          "**/\u63a8\u8350\u8bbe\u7f6e\u5173\u952e\u8bcd.txt"
+        ]
       }
     ],
     "publish": [
       {
-        "provider": "github",
-        "owner": "853493541",
-        "repo": "ZPS-Plugin"
+        "provider": "generic",
+        "url": "https://github.com/853493541/ZPS-Plugin/releases/latest/download/"
       }
     ],
     "win": {
@@ -51,6 +58,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "artifactName": "ZPS-Studio-Setup-${version}.${ext}"
   }
 }

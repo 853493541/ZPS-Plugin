@@ -4,10 +4,16 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_run_id:
+        description: 'Publish the verified windows-desktop artifact from this successful run ID; leave empty to build only'
+        required: false
+        type: string
 permissions:
   contents: read
 jobs:
   windows:
+    if: ${{ github.event.inputs.release_run_id == '' }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +30,14 @@ jobs:
       - name: Test installed Windows application
         shell: pwsh
         run: ./tools/smoke-installer.ps1
+      - name: Verify release assets
+        run: node tools/verify-release.mjs
+      - name: Test installed version upgrade
+        shell: pwsh
+        timeout-minutes: 20
+        run: ./tools/smoke-upgrade.ps1 -PreviousVersion 0.0.9 -FeedDirectory dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v4
         with:
           name: windows-desktop
@@ -31,4 +45,32 @@ jobs:
             dist/*.exe
             dist/*.blockmap
             dist/latest.yml
+            dist/release-manifest.json
+            dist/SHA256SUMS.txt
           if-no-files-found: error
+      - name: Retain upgrade evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-evidence
+          path: |
+            ${{ runner.temp }}/zps-upgrade-*/state.json
+            ${{ runner.temp }}/zps-upgrade-*/events-*.jsonl
+            ${{ runner.temp }}/zps-upgrade-*/requests-*.json
+          if-no-files-found: ignore
+  publish:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_run_id != '' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: zps-studio-release-publication
+      cancel-in-progress: false
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish exact verified release assets
+        run: python tools/publish-verified-release.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_RUN_ID: ${{ inputs.release_run_id }}
