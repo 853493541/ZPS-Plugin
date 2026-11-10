@@ -46,7 +46,9 @@ try {
   let current = await snapshot();
   assert.equal(current.document.records.find(record => record.id === 12784).fields.nClass, '沉默');
   assert.equal(current.document.records.find(record => record.id === 12784).fields.nPower, 13);
+  await page.locator('.inspector-close').click();
   await page.locator('#undo-button').click();
+  await page.locator('.type-member-row').click();
   await page.waitForFunction(type => document.querySelector('[name="nClass"]')?.value === type, originalType);
   await page.locator('.inspector-close').click();
 
@@ -102,21 +104,26 @@ try {
   current = await snapshot();
   assert.equal(current.document.records.find(record => record.id === 12784).fields.nClass, '');
   assert.equal(current.document.records.filter(record => record.key.startsWith('buff:')).length, 177, 'remove membership must retain rule');
+  await page.locator('.inspector-close').click();
   await page.locator('#undo-button').click();
   await page.waitForFunction(() => document.querySelector('#type-detail-header p')?.textContent.startsWith('1 个 Buff'));
-  await page.locator('.inspector-close').click();
   await fs.mkdir('artifacts', { recursive: true });
   await page.screenshot({ path: 'artifacts/type-workspace.png' });
   await page.locator('#type-members [data-key="buff:12784"]').click();
   await page.locator('#box-tab').click();
+  assert.equal(await page.locator('#detail-modal').evaluate(node => node.open && node.matches(':modal')), true);
+  const detailBox = await page.locator('#detail-modal').boundingBox();
+  assert.ok(Math.abs(detailBox.x + detailBox.width / 2 - 720) <= 2 && Math.abs(detailBox.y + detailBox.height / 2 - 480) <= 2, 'record detail must be centered');
   await page.screenshot({ path: 'artifacts/type-buff-detail.png' });
   await page.setViewportSize({ width: 1050, height: 760 });
+  const compactDetail = await page.locator('#detail-modal').boundingBox();
+  assert.ok(compactDetail.x >= 0 && compactDetail.y >= 0 && compactDetail.x + compactDetail.width <= 1050 && compactDetail.y + compactDetail.height <= 760, 'compact modal must fit the viewport');
   await page.locator('.inspector-close').click();
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   const memberBox = await page.locator('#type-members').boundingBox();
   assert.ok(memberBox.width > 400 && memberBox.height > 250, 'smaller window must retain useful member workspace');
   assert.deepEqual(errors, []);
-  console.log('PASS actual sample type/name/ID live search, readable navigation, draft retention, membership move/remove/undo, create/rename references, detail drawer, compact viewport');
+  console.log('PASS actual sample type/name/ID live search, readable navigation, draft retention, membership move/remove/undo, create/rename references, centered native detail modal, compact viewport');
 } finally {
   await browser.close();
 }

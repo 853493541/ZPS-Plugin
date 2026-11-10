@@ -18,7 +18,19 @@ const files = Object.keys(manifest.files).filter(p => p.endsWith('.jx3dat') || p
 const sessions = createFeatureSessions({ codec, ...featureRegistry });
 const confirmations = new WeakMap();
 let pending = Promise.resolve();
-const readSample = async file => ({ bytes: await fs.readFile(path.join(root, 'samples', file)), filename: path.basename(file) });
+const readSample = async file => ({ bytes: await fs.readFile(path.join(root, 'samples', file)), filename: path.basename(file), source: { kind: 'sample', key: file, displayPath: file } });
+function datasetId(value) {
+  if (value === undefined) return undefined;
+  const id = typeof value === 'string' ? value : value?.datasetId;
+  if (typeof id !== 'string' || !id) throw Error('Invalid dataset identity');
+  return id;
+}
+function mutate(operation, value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error('Invalid edit');
+  const { datasetId: id, ...change } = value;
+  if (id !== undefined) datasetId(id);
+  return sessions.mutate(operation, change, id);
+}
 class ConfirmationRequired extends Error {
   constructor(confirmation) {
     super('Discard confirmation required');
@@ -34,30 +46,38 @@ function confirmDiscard(token) {
     }
     const confirmation = { token: randomUUID(), bytes: session.bytes, draftDirty: session.draftDirty };
     confirmations.set(session, confirmation);
-    throw new ConfirmationRequired({ token: confirmation.token, filename: session.filename, featureId: session.featureId });
+    throw new ConfirmationRequired({ token: confirmation.token, filename: session.filename, featureId: session.featureId, datasetId: session.datasetId, displayPath: session.source.displayPath, gameVersion: session.gameVersion });
   };
 }
 const methods = {
   samples: () => files.map(file => ({ path: file, name: file, filename: path.basename(file) })),
+  activateDataset: id => sessions.activateDataset(datasetId(id)),
+  closeDataset: (id, confirmDiscard) => sessions.closeDataset(datasetId(id), { confirmDiscard }),
   setDraftState: value => sessions.setDraftState(value),
   activateFeature: id => sessions.activate(id, async featureId => {
     const file = files.find(file => featureRegistry.featureForSample(file) === featureId);
     return file ? readSample(file) : null;
   }),
-  openSample: async (file, confirmDiscard) => {
+  openSample: async file => {
     if (!files.includes(file)) throw Error('Unknown sample');
     const sample = await readSample(file);
-    return sessions.replace(sample.bytes, sample.filename, { confirmDiscard });
+    return sessions.open(sample.bytes, sample.filename, sample);
   },
   open: () => { throw Error('Use the sample library in browser preview. Native files open in the Windows application.'); },
-  create: (kind, confirmDiscard) => {
+  create: value => {
+    const input = typeof value === 'string' ? { kind: value } : value;
+    if (!input || typeof input !== 'object' || Array.isArray(input)) throw Error('Invalid new dataset');
+    const { kind, gameVersion = '' } = input;
     const result = codec.createDocument(kind);
-    const filename = result.filename || { 'jx-buff': 'BuffData.jx3dat', 'my-team': 'my-team.txt', chat: 'chat-keywords.txt' }[kind];
-    return sessions.replace(result.bytes ?? result, filename, { dirty: true, confirmDiscard });
+    const filename = input.filename ?? result.filename ?? { 'jx-buff': 'BuffData.jx3dat', 'my-team': 'my-team.txt', chat: 'chat-keywords.txt' }[kind];
+    if (typeof filename !== 'string' || /[<>:"/\\|?*\x00-\x1f]/.test(filename)) throw Error('Invalid dataset filename');
+    const extension = kind === 'jx-buff' ? '.jx3dat' : '.txt';
+    if (!filename.toLowerCase().endsWith(extension)) throw new Error(`数据文件名需要以 ${extension} 结尾。`);
+    return sessions.open(result.bytes ?? result, filename, { dirty: true, gameVersion });
   },
-  edit: change => sessions.mutate('editDocument', change),
-  add: fields => sessions.mutate('addRecord', fields),
-  undo: () => sessions.undo(),
+  edit: change => mutate('editDocument', change),
+  add: fields => mutate('addRecord', fields),
+  undo: value => sessions.undo(datasetId(value)),
   save: () => { throw Error('Native export is available in the desktop app. Browser preview never writes source files.'); },
   lookup: query => catalog.lookup(query),
   lookupCached: queries => catalog.lookupCached(queries),
@@ -72,7 +92,7 @@ const bridgeScript = `window.studio ||= Object.freeze(Object.fromEntries(${JSON.
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Preview request failed');
     if (!data.confirmation) return data.result;
-    if (!window.confirm('以下文档的修改尚未导出。是否放弃修改？\\n' + data.confirmation.filename)) return null;
+    if (!window.confirm('以下文档的修改尚未导出。是否放弃修改？\\n' + data.confirmation.filename + (data.confirmation.gameVersion ? ' · ' + data.confirmation.gameVersion : '') + '\\n' + data.confirmation.displayPath)) return null;
     discardToken = data.confirmation.token;
   }
 }])));`;

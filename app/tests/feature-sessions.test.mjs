@@ -211,3 +211,82 @@ test('invalid or unloaded draft notifications cannot change any session', async 
   }
   assert.equal(sessions.dirtySessions().length, 0);
 });
+
+test('same-feature datasets retain independent bytes, undo, drafts, identities and source revisions', async () => {
+  const sessions = store();
+  const sample = await first('jx-buff');
+  const origin = name => ({ kind: 'file', key: `/imports/${name}/BuffData.jx3dat`, displayPath: `/imports/${name}/BuffData.jx3dat`, modifiedAt: '2026-11-10T00:00:00.000Z' });
+  const one = sessions.open(sample.bytes, sample.filename, { source: origin('one'), gameVersion: '丝路风雨' });
+  sessions.mutate('editDocument', { key: 'buff:244', fields: { nPower: 11 } }, one.datasetId);
+  sessions.setDraftState({ datasetId: one.datasetId, featureId: 'jx-buff', dirty: true });
+  const two = sessions.open(sample.bytes, sample.filename, { source: origin('two') });
+  assert.notEqual(two.datasetId, one.datasetId);
+  assert.equal(two.datasets.length, 2);
+  assert.equal(power(two), 10);
+  assert.equal(two.hasDrafts, false);
+  assert.equal(two.canUndo, false);
+  assert.equal(two.datasets[0].gameVersion, '丝路风雨');
+  assert.notEqual(two.datasets[0].revision, one.revision);
+  assert.equal(two.revision, one.revision);
+  const reopened = sessions.open(sample.bytes, sample.filename, { source: origin('one') });
+  assert.equal(reopened.datasetId, one.datasetId);
+  assert.equal(reopened.datasets.length, 2);
+  assert.equal(power(reopened), 11);
+  assert.equal(reopened.hasDrafts, true);
+  sessions.activateDataset(two.datasetId);
+  const unchanged = sessions.undo(one.datasetId);
+  assert.equal(unchanged.datasetId, two.datasetId);
+  const restored = sessions.activateDataset(one.datasetId);
+  assert.equal(restored.revision, one.revision);
+  assert.equal(restored.hasDrafts, true);
+  assert.equal(restored.dirty, false);
+  assert.deepEqual(restored.source, origin('one'));
+});
+
+test('batch open validates every dataset before installing any and deduplicates exact origins', async () => {
+  const sessions = store();
+  await sessions.activate('chat', first);
+  const before = sessions.snapshot();
+  const sample = await first('jx-buff');
+  const valid = { ...sample, source: { kind: 'file', key: '/one/BuffData.jx3dat', displayPath: '/one/BuffData.jx3dat' } };
+  assert.throws(() => sessions.openMany([valid, { bytes: Buffer.from('return os.execute("unsafe")'), filename: 'bad.jx3dat' }]));
+  assert.deepEqual(sessions.snapshot(), before);
+  const opened = sessions.openMany([valid, valid]);
+  assert.equal(opened.datasets.length, 1);
+  assert.notEqual(opened.datasetId, before.datasetId);
+});
+
+test('closing checks the selected dataset including drafts and handles siblings and the last dataset', async () => {
+  const sessions = store();
+  const sample = await first('chat');
+  const one = sessions.open(sample.bytes, 'one.txt');
+  sessions.setDraftState({ datasetId: one.datasetId, dirty: true });
+  const two = sessions.open(sample.bytes, 'two.txt');
+  assert.equal(await sessions.closeDataset(one.datasetId), null);
+  assert.equal(sessions.snapshot().datasetId, two.datasetId);
+  assert.equal(sessions.snapshot().datasets.length, 2);
+  assert.equal((await sessions.closeDataset(one.datasetId, { confirmDiscard: session => session.draftDirty })).datasetId, two.datasetId);
+  const empty = await sessions.closeDataset(two.datasetId);
+  assert.deepEqual(empty, { featureId: 'chat', datasetId: null, document: null, filename: '', dirty: false, hasDrafts: false, canUndo: false, datasets: [] });
+  assert.deepEqual(sessions.snapshot(), empty);
+  await sessions.activate('jx-buff', first);
+  assert.deepEqual(await sessions.activate('chat', () => assert.fail('Closed last sample must not reload')), empty);
+  assert.throws(() => sessions.activateDataset(one.datasetId), /Unknown dataset/);
+  assert.throws(() => sessions.activateDataset(), /Invalid dataset identity/);
+  await assert.rejects(sessions.closeDataset(), /Invalid dataset identity/);
+});
+
+test('explicit inactive mutations and export acknowledgements preserve active selection and reject unknown identities', async () => {
+  const sessions = store();
+  const sample = await first('jx-buff');
+  const one = sessions.open(sample.bytes, 'one.jx3dat');
+  const target = sessions.resolve(one.datasetId);
+  const two = sessions.open(sample.bytes, 'two.jx3dat');
+  sessions.mutate('editDocument', { key: 'buff:244', fields: { nPower: 12 } }, one.datasetId);
+  assert.equal(power(sessions.snapshot()), 10);
+  assert.equal(sessions.snapshot().datasetId, two.datasetId);
+  assert.equal(sessions.markSaved(target).datasetId, two.datasetId);
+  assert.equal(power(sessions.activateDataset(one.datasetId)), 12);
+  assert.equal(sessions.snapshot().dirty, false);
+  for (const action of [() => sessions.resolve('missing'), () => sessions.undo('missing'), () => sessions.mutate('addRecord', {}, 'missing'), () => sessions.setDraftState({ datasetId: 'missing', dirty: true })]) assert.throws(action, /Unknown dataset/);
+});

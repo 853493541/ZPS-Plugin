@@ -2,6 +2,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { createHash, randomUUID } = require('node:crypto');
+const { inflateSync } = require('node:zlib');
 const { PNG } = require('pngjs');
 
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -16,6 +17,17 @@ function validPNG(bytes) {
   const height = bytes.readUInt32BE(20);
   if (!width || !height || width > MAX_DIMENSION || height > MAX_DIMENSION) return false;
   try {
+    const imageData = [];
+    for (let offset = 8; offset < bytes.length;) {
+      if (bytes.length - offset < 12) return false;
+      const length = bytes.readUInt32BE(offset);
+      if (length > bytes.length - offset - 12) return false;
+      if (bytes.toString('ascii', offset + 4, offset + 8) === 'IDAT') imageData.push(bytes.subarray(offset + 8, offset + 8 + length));
+      offset += length + 12;
+    }
+    // pngjs uses private zlib internals that can swallow inflate errors on Node 22.
+    // Allow 16-bit RGBA samples and all seven Adam7 passes' filter bytes.
+    inflateSync(Buffer.concat(imageData), { maxOutputLength: width * height * 8 + height * 16 + 1024 });
     PNG.sync.read(bytes, { checkCRC: true });
     return true;
   } catch { return false; }

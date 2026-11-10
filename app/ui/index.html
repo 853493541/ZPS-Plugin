@@ -10,23 +10,26 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar" aria-label="功能导航">
-      <div class="workspace-title"><div class="brand" aria-label="ZPS Studio">Z<span>·</span></div><div><h1>ZPS Studio</h1><p>MY / JX 配置编辑器</p></div></div>
-      <div class="sidebar-section">插件功能</div>
+      <div class="workspace-title"><div class="brand" aria-label="ZPS Studio">Z<span>·</span></div><div><h1>ZPS Studio</h1></div></div>
       <div id="feature-tabs" class="feature-tabs" role="tablist" aria-label="插件功能" aria-orientation="vertical"></div>
-      <button class="sidebar-open" id="sidebar-open">打开本地配置 <kbd>Ctrl O</kbd></button>
+      <button class="sidebar-open" id="sidebar-open">导入数据文件 <kbd>Ctrl O</kbd></button>
       <details class="sample-picker"><summary>打开配置样本</summary><div id="sample-list" class="sample-list"><p class="sidebar-hint">正在读取样本…</p></div></details>
       <div hidden><button id="workspace-nav">工作区</button><button id="all-records">全部条目 <span id="sidebar-count"></span></button><span id="category-count"></span><div id="category-list"></div></div>
-      <div class="sidebar-footer"><span class="online-dot"></span>本地编辑，导出后导入插件</div>
+      <div class="sidebar-footer"></div>
       <div class="sidebar-tools"><button id="update-nav" class="button subtle">检查更新</button><button id="report-nav" class="button subtle">反馈问题</button></div>
     </aside>
     <main class="workspace">
-      <header class="topbar"><div class="breadcrumbs">工作区 <span>/</span> <strong id="breadcrumb-name">未打开文件</strong><i id="dirty-dot" hidden></i></div><div class="top-actions"><button class="button subtle" id="undo-button" disabled title="撤销上次修改">↶ <span>撤销</span></button><button class="button" id="new-button">＋ 新建</button><button class="button" id="open-button">打开文件</button><button class="button primary" id="save-button" disabled><span>↗</span> 导出配置</button></div></header>
+      <header class="topbar">
+        <div class="dataset-identity"><span id="active-feature-label"></span><div class="dataset-title-line"><h2 id="breadcrumb-name">未打开数据集</h2><i id="dirty-dot" hidden aria-label="未导出修改"></i></div><div class="dataset-subline"><span id="dataset-version">版本未标注</span><button class="identity-info" id="dataset-info-button" aria-label="查看数据集信息">文件信息</button></div></div>
+        <div class="top-actions"><button class="button subtle" id="undo-button" disabled title="撤销上次修改">↶ <span>撤销</span></button><button class="button" id="new-button">＋ 新建数据集</button><button class="button" id="open-button">导入文件</button><button class="button primary" id="save-button" disabled>导出当前数据集</button></div>
+      </header>
+      <div id="dataset-tabs" class="dataset-tabs" role="tablist" aria-label="打开的数据集"></div>
       <aside id="update-banner" class="update-banner" role="status" hidden><span id="update-message"></span><button id="update-restart" class="button primary" hidden>重启并更新</button></aside>
       <div id="feature-panels" class="feature-panels"></div>
       <div id="feature-workspace" class="feature-workspace">
-      <div class="content-heading"><div><h2 id="document-title">配置库</h2><p id="document-description">在一个工作区内管理 MY 与 JX 配置。</p></div><span class="format-badge" id="format-badge">就绪</span></div>
-      <details class="workspace-help"><summary>使用与导入说明</summary><div class="feature-guidance"><span id="feature-addon" class="feature-addon"></span><p id="feature-guidance"></p><p id="import-destination"></p><div id="feature-presets" class="feature-presets" hidden></div></div></details>
-      <div class="document-meta" id="document-meta"><span><i class="online-dot"></i> 本地工作区</span><span>保留原有格式与未知字段</span></div>
+      <div class="content-heading" hidden><div><h2 id="document-title">配置库</h2><p id="document-description">在一个工作区内管理 MY 与 JX 配置。</p></div><span class="format-badge" id="format-badge">就绪</span></div>
+      <details class="workspace-help"><summary>导入说明</summary><div class="feature-guidance"><span id="feature-addon" class="feature-addon"></span><p id="feature-guidance"></p><p id="import-destination"></p><div id="feature-presets" class="feature-presets" hidden></div></div></details>
+
       <section id="type-workspace" class="type-workspace" aria-label="类型与 Buff" hidden></section>
       <section id="editor-grid" class="editor-grid">
         <section class="records-panel" aria-label="配置条目">
@@ -35,12 +38,15 @@
           <div class="table-scroll"><table><thead><tr><th class="icon-column"></th><th>名称 / 标识</th><th>分类</th><th class="row-arrow"></th></tr></thead><tbody id="records-body"></tbody></table><div id="empty-state" class="empty-state"><div class="empty-symbol">▤</div><h3>从一份配置开始</h3><p>打开本地文件，或选择左侧样本。<br>支持 JX Buff、MY 团队配置与聊天配置。</p><button class="button" id="empty-open">打开配置文件</button></div></div>
           <footer class="table-footer"><span id="record-total">0 个条目</span></footer>
         </section>
-        <aside class="inspector" aria-label="条目详情"><div class="inspector-heading"><span>条目详情</span><span class="inspector-status" id="inspector-status">未选择</span></div><div id="selection-heading" class="selection-heading"><div class="record-glyph big">⌘</div><h3>条目详情</h3><p>从配置库中选择一个条目</p></div><div class="inspector-tabs" role="tablist"><button class="active" id="config-tab" role="tab" aria-selected="true">编辑</button><button id="box-tab" role="tab" aria-selected="false">JX3BOX <span>↗</span></button><button id="source-tab" role="tab" aria-selected="false">原始数据</button></div><div class="inspector-content" id="inspector-content"></div></aside>
+
       </section>
       </div>
-      <footer class="statusbar"><span><i class="online-dot"></i> <span id="status-text">准备就绪</span></span><span>ZPS 配置工作台 <span class="status-separator">·</span> MY / JX</span></footer>
+      <footer class="statusbar"><span><i class="online-dot"></i> <span id="status-text">准备就绪</span></span><div id="document-meta" class="document-meta"></div></footer>
     </main>
   </div>
+  <dialog id="detail-modal" class="detail-modal" aria-labelledby="selection-heading"><div class="detail-modal-shell"><header class="detail-modal-header"><span id="detail-owner-file"></span></header>
+        <aside class="inspector" aria-label="条目详情"><div class="inspector-heading"><span>条目详情</span><span class="inspector-status" id="inspector-status">未选择</span></div><div id="selection-heading" class="selection-heading"><div class="record-glyph big">⌘</div><h3>条目详情</h3><p>从配置库中选择一个条目</p></div><div class="inspector-tabs" role="tablist"><button class="active" id="config-tab" role="tab" aria-selected="true">编辑</button><button id="box-tab" role="tab" aria-selected="false">JX3BOX <span>↗</span></button><button id="source-tab" role="tab" aria-selected="false">原始数据</button></div><div class="inspector-content" id="inspector-content"></div></aside>
+  </div></dialog>
   <dialog id="modal"><form id="modal-form"><header class="modal-header"><div><div class="eyebrow" id="modal-eyebrow">ZPS STUDIO</div><h2 id="modal-title"></h2></div><button class="icon-button" type="button" id="modal-close" aria-label="关闭">×</button></header><div id="modal-content"></div><footer class="modal-actions"><button class="button" type="button" id="modal-cancel">取消</button><button class="button primary" type="submit" id="modal-submit">确定</button></footer></form></dialog>
   <div id="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="renderer.js"></script>
