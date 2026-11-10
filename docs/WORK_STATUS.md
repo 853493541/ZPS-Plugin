@@ -212,3 +212,15 @@ Windows PR run 42794829433 stopped in the desktop IPC test because its duplicate
 
 
 The next Windows run, 42795143948, passed the corrected dataset tests and exposed an existing pngjs validation difference on Node 22.23.4. The exact failure reproduced locally under that runtime while Node 24 passed. A PNG with an invalid compressed IDAT header and valid chunk CRC was accepted as zero pixels by pngjs on Node 22. The icon cache now checks bounded chunk ranges and validates the concatenated stream through public `zlib.inflateSync` before pngjs decoding. Split-IDAT, Adam7, invalid length/output, and matching-digest corrupt disk cases are covered. All 15 icon tests pass on both runtimes. The complete 78-test suite passes on exact Node 22.23.4. Independent review passed the fix on both runtimes and additional 16-bit Adam7 dimension cases before the next Windows run.
+
+## Version 0.1.3 delivered
+
+PR 5 merged dataset identity, independent same-feature sessions, explicit creation actions, centered record modals, and the Node 22 PNG validation repair at `d63471abb7e1d15b40034cd92cffd36cd738e645`. Independent GPT-6.1 Sol medium source and Chromium reviews passed. All 78 tests passed on exact Node 22.23.4. The 15 icon tests also passed on Node 24.22.1, with additional reviewer verification of 16-bit Adam7 images through maximum dimensions. Seven deterministic browser checks passed. Original 512 vendor and 14 sample file hashes remain unchanged.
+
+Windows PR acceptance run 42796189124 and final main acceptance run 42796708189 passed all tests, native smoke, packaging, installed lifecycle, asset verification, and real automatic-download upgrade/retention checks. The earlier canonical-path assertion and runtime-specific PNG decoder failures are resolved, not skipped.
+
+Automatic publication run 42797158781 succeeded and published https://github.com/853493541/ZPS-Plugin/releases/tag/v0.1.3 from the exact accepted commit. All five release assets are public. Anonymous latest.yml returned HTTP200 with version 0.1.3 and SHA-256 `e2ccdfbadeba1964394b1b4ebd2d717e7f2835202c864c4beab3d018b5ebf937`, matching public metadata. Installer SHA-256 is `1df55d6c20b5f93cb7ce143142ba1434e32ef21ab4689c065ca1e3dac42217f8`.
+
+Public installer: https://github.com/853493541/ZPS-Plugin/releases/download/v0.1.3/ZPS-Studio-Setup-0.1.3.exe
+
+Installed 0.1.1 and newer apps can detect/download the update at startup, periodically, or on focus, then install through guarded close or explicit restart. The three requested UI changes are complete. Dataset tabs and custom labels remain session-scoped; exports retain bytes in the original plugin format and suggested filenames include declared versions. Do not claim restart persistence or inferred game compatibility. Original game-client acceptance and opaque target-monitor editing remain separate gates. Keep the recurring ChatGPT task paused and do not repeat passing builds without a new relevant change.
