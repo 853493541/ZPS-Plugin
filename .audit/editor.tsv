@@ -24,3 +24,4 @@ ts	phase	decision	why	evidence	result
 2026-11-10T03:49:31Z	windows	Pass cache-update packaging, installed lifecycle and upgrade checks	Verify PNG dependency and cache code in actual Windows package	https://github.com/853493541/ZPS-Plugin/actions/runs/42751510036	VERIFIED
 2026-11-10T04:53:31Z	delivery	Authorize automatic verified releases and background app updates	User requested publishing now and automatic future delivery of implemented app changes	docs/RELEASE_NOTES_0.1.1.md	66 tests and banner smoke pass
 2026-11-10T04:57:38Z	updates	Verify automatic download and installed upgrade before main integration	User requested a working automatic delivery workflow	https://github.com/853493541/ZPS-Plugin/actions/runs/42758692696	VERIFIED
+2026-11-10T05:05:18Z	release	Publish 0.1.1 and verify public update metadata	User requested immediate delivery and automatic future updates	https://github.com/853493541/ZPS-Plugin/releases/tag/v0.1.1	VERIFIED

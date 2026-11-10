@@ -71,8 +71,12 @@ with tempfile.TemporaryDirectory(prefix='zps-release-') as temporary:
     release = next((item for item in releases if item['tag_name'] == tag), None)
     notes = f'docs/RELEASE_NOTES_{version}.md'
     if release is None:
-        gh('release', 'create', tag, '--repo', repository, '--draft', '--target', run['head_sha'], '--title', f'ZPS Studio {version} - Windows testing release', '--notes-file', notes)
-        release = next(item for item in api(f'repos/{repository}/releases?per_page=100') if item['tag_name'] == tag)
+        created = subprocess.check_output(
+            ['gh', 'api', '--method', 'POST', f'repos/{repository}/releases', '--input', '-'],
+            input=json.dumps({'tag_name': tag, 'target_commitish': run['head_sha'], 'draft': True,
+                              'name': f'ZPS Studio {version} - Windows testing release',
+                              'body': Path(notes).read_text()}), text=True)
+        release = json.loads(created)
     if release['target_commitish'] != run['head_sha']:
         raise ValueError('Release target does not match the accepted source commit')
     existing_tag = tag_commit(repository, tag)
