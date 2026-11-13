@@ -28,7 +28,7 @@ try {
   }
   if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   assert.equal(await page.locator('#sample-list button').count(), 1);
-  assert.match(await page.locator('#document-title').innerText(), /剑心|BUFF/i);
+  assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /剑心|BUFF/i);
   await page.locator('#type-search').fill('12784');
   await page.locator('#type-list .type-item').first().click();
   await page.locator('#type-members .type-member-row').click();
@@ -51,7 +51,7 @@ try {
   await activate('my-team');
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#sample-list').innerText(), /真传（仅）团队气劲/);
-  assert.match(await page.locator('#document-title').innerText(), /团队气劲/);
+  assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /团队气劲/);
   await page.locator('#search').fill('弹跳');
   const teamKey = await page.locator('#records-body tr').first().getAttribute('data-key');
   await page.locator('#records-body tr').first().click();
@@ -60,7 +60,7 @@ try {
   await page.waitForFunction(() => !document.querySelector('#undo-button').disabled);
   await activate('my-target');
   assert.equal(await page.locator('#sample-list button').count(), 3);
-  assert.match(await page.locator('#document-title').innerText(), /目标监控/);
+  assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /目标监控/);
   if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   for (const filename of ['其他辅助.jx3dat', '技能监控.jx3dat', '自用完整版.jx3dat']) {
     await page.locator('#sample-list button').filter({ hasText: filename }).click();

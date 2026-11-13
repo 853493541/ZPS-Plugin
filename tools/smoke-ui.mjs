@@ -51,7 +51,7 @@ await page.locator('#undo-button').click();await page.locator('#type-members .ty
 await page.locator('.inspector-close').click();
 await page.locator('#feature-tabs [data-feature="my-team"]').click();await page.waitForFunction(()=>document.querySelector('#feature-tabs [data-feature="my-team"]')?.getAttribute('aria-selected')==='true');
 await page.locator('#new-button').click();await page.locator('#modal [name="filename"]').fill('测试团队气劲.txt');await page.locator('#modal [name="gameVersion"]').fill('烟雾测试');await page.locator('#modal-submit').click();
-await page.waitForFunction(()=>document.querySelector('#document-title').textContent.includes('团队气劲'));
+await page.waitForFunction(()=>document.querySelector('#feature-tabs [aria-selected="true"]').textContent.includes('团队气劲'));
 await page.locator('#add-button').click();await page.locator('#modal [name="reference"]').fill('测试气劲|lv1');await page.locator('#modal-submit').click();
 await page.waitForSelector('#records-body tr');assert.match(await page.locator('#records-body').innerText(),/测试气劲/);
 if(await page.locator('#detail-modal').evaluate(node=>node.open))await page.locator('.inspector-close').click();

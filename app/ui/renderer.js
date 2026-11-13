@@ -8,7 +8,7 @@ const formats = {
   chat: { add: { keyword: '' } },
   opaque: {},
 };
-const freshView = () => ({ datasetId: null, document: null, filename: '', source: null, gameVersion: '', revision: '', dirty: false, canUndo: false, selected: null, selectedType: null, typeSearch: '', memberSearch: '', detailOpen: false, category: null, search: '', tab: 'config', lookup: null, lookupClient: 'std', lookupLevel: '1', drafts: new Map() });
+const freshView = () => ({ datasetId: null, document: null, filename: '', source: null, gameVersion: '', revision: '', dirty: false, canUndo: false, selected: null, selectedType: null, typeSearch: '', memberSearch: '', detailOpen: false, search: '', tab: 'config', lookup: null, lookupClient: 'std', lookupLevel: '1', drafts: new Map() });
 const state = { ...freshView(), featureId: features[0].id, samples: [], datasets: [], busy: false };
 const views = new Map();
 const viewKey = (value = state) => value.datasetId || value.featureId;
@@ -156,21 +156,6 @@ function renderFeatures() {
     panel.hidden = !active;
     panel.setAttribute('aria-busy', String(switching && active));
     if (active) panel.append($('feature-workspace'));
-  }
-  $('feature-addon').textContent = feature.addon;
-  $('feature-guidance').textContent = feature.description;
-  $('import-destination').textContent = `导入位置 · ${feature.importPath}`;
-  $('feature-presets').replaceChildren();
-  $('feature-presets').hidden = feature.kind !== 'opaque';
-  if (feature.kind === 'opaque') {
-    $('feature-presets').append(element('span', 'preset-label', '目标监控预设 · 只读'));
-    for (const sample of state.samples.filter(item => featureForSample(item.path) === feature.id)) {
-      const button = element('button', `preset-choice${fileName(sample.path) === fileName(state.filename) ? ' active' : ''}`, fileName(sample.path).replace(/\.jx3dat$/i, ''));
-      button.type = 'button';
-      button.disabled = state.busy;
-      button.addEventListener('click', () => run(() => openSample(sample.path)));
-      $('feature-presets').append(button);
-    }
   }
 }
 
@@ -524,7 +509,7 @@ function visibleRecords() {
     const group = projectTypes(state.document.records).find(item => item.name === state.selectedType);
     return group ? matchingMembers(group, state.typeSearch || state.search, recordName).filter(record => !state.memberSearch || `${recordName(record)} ${record.id}`.toLowerCase().includes(state.memberSearch.toLowerCase())) : [];
   }
-  return (state.document?.records || []).filter((record) => (!state.category || String(record.category || '未分类') === state.category) && (!state.search || `${recordName(record)} ${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
+  return (state.document?.records || []).filter((record) => (!state.search || `${recordName(record)} ${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
 }
 
 function versionLabel(dataset = state) { return dataset.gameVersion ? `版本 ${dataset.gameVersion}` : '版本未标注'; }
@@ -587,20 +572,13 @@ function render() {
   const feature = featureById(state.featureId);
   renderFeatures();
   renderDatasets();
-  if ($('active-feature-label')) $('active-feature-label').textContent = feature.title;
   if ($('dataset-version')) $('dataset-version').textContent = doc ? versionLabel() : '新建或打开数据集';
   if ($('dataset-info-button')) $('dataset-info-button').disabled = !doc || state.busy;
-  const count = doc?.records.length || 0;
   $('breadcrumb-name').textContent = doc ? fileName(state.filename) : '未打开文件';
   $('breadcrumb-name').title = state.filename;
   $('dirty-dot').hidden = !state.dirty && ![...state.drafts].some(([key, draft]) => draftIsDirty(key, draft));
-  $('document-title').textContent = feature.title;
-  $('document-description').textContent = switching ? '正在切换工作区…' : doc ? fileName(state.filename) : '打开本地配置，或选择此功能的样本。';
-  $('format-badge').textContent = feature.kind === 'opaque' ? 'READ ONLY' : feature.badge;
   renderAvailability();
-  $('sidebar-count').textContent = count;
   $('document-meta').replaceChildren();
-  renderCategories();
   renderRecords();
   renderTypeWorkspace();
   renderInspector();
@@ -628,7 +606,7 @@ function renderAvailability() {
   if ($('add-type-button')) $('add-type-button').disabled = state.busy || !state.document?.writable;
   if ($('assign-member-button')) $('assign-member-button').disabled = state.busy || !state.document?.writable || !group;
   if ($('type-settings-button')) $('type-settings-button').disabled = state.busy || !state.document?.writable || !group || group.name === '' && !group.record;
-  for (const button of document.querySelectorAll('#sample-list button, #feature-presets button')) button.disabled = state.busy;
+  for (const button of document.querySelectorAll('#sample-list button')) button.disabled = state.busy;
 }
 
 function focusSearch() { (state.document?.kind === 'jx-buff' ? $('type-search') : $('search'))?.focus(); }
@@ -838,23 +816,6 @@ function assignMember() {
   modalMetadataRefresh = populate;
 }
 
-function renderCategories() {
-  const counts = new Map();
-  for (const record of state.document?.records || []) {
-    const name = String(record.category || '未分类');
-    counts.set(name, (counts.get(name) || 0) + 1);
-  }
-  $('category-count').textContent = counts.size;
-  $('category-list').replaceChildren();
-  for (const [name, count] of counts) {
-    const button = element('button', `category-item${state.category === name ? ' active' : ''}`, name);
-    button.append(element('span', '', count));
-    button.addEventListener('click', () => { state.category = name; renderCategories(); renderRecords(); });
-    $('category-list').append(button);
-  }
-  $('all-records').classList.toggle('selected', !state.category);
-}
-
 function renderSamples() {
   $('sample-list').replaceChildren();
   const samples = state.samples.filter(sample => featureForSample(sample.path) === state.featureId);
@@ -873,14 +834,12 @@ function renderRecords() {
   if (state.document?.kind === 'jx-buff') { renderTypeLists(); return; }
   const records = visibleRecords();
   $('records-body').replaceChildren();
-  $('list-summary').replaceChildren(document.createTextNode(state.category || '全部条目'), element('b', '', records.length));
   $('record-total').textContent = `${records.length} / ${state.document?.records.length || 0} 个条目`;
-  $('list-caption').textContent = state.search ? `搜索 “${state.search}”` : '选择条目查看详情';
   $('empty-state').hidden = records.length > 0;
   const empty = $('empty-state');
   if (state.document && !records.length) {
-    empty.querySelector('h3').textContent = state.document.kind === 'opaque' ? '当前文件以只读方式打开' : state.search || state.category ? '没有匹配的条目' : '这份配置还没有条目';
-    empty.querySelector('p').textContent = state.document.kind === 'opaque' ? '查看原始内容，或打开其他数据集。' : state.search || state.category ? '尝试其他关键词或切换分类。' : '创建第一条记录开始编辑。';
+    empty.querySelector('h3').textContent = state.document.kind === 'opaque' ? '当前文件以只读方式打开' : state.search ? '没有匹配的条目' : '这份配置还没有条目';
+    empty.querySelector('p').textContent = state.document.kind === 'opaque' ? '查看原始内容，或打开其他数据集。' : state.search ? '尝试其他关键词。' : '创建第一条记录开始编辑。';
     $('empty-open').hidden = true;
   } else {
     empty.querySelector('h3').textContent = '从一份配置开始';
@@ -899,7 +858,7 @@ function renderRecords() {
       state.detailOpen = true; state.tab = 'source'; renderInspector();
     });
     view.classList.add('empty-view-content'); empty.append(view);
-  } else if (state.document?.writable && !records.length && !state.search && !state.category) {
+  } else if (state.document?.writable && !records.length && !state.search) {
     const create = actionButton(kind === 'chat' ? '＋ 添加关键词' : '＋ 新建监控', '', addRecord);
     create.classList.add('empty-add', 'primary'); empty.append(create);
   }
@@ -1236,7 +1195,7 @@ function addRecord() {
     const result = await bridge.add(datasetPayload(fields));
     if (receive(result)) {
       state.selected = state.document.records.find((record) => !previous.has(record.key))?.key || state.selected;
-      state.category = null; state.search = ''; $('search').value = ''; state.tab = 'config';
+      state.search = ''; $('search').value = ''; state.tab = 'config';
       render(); closeModal(); toast('已添加条目。');
     }
   });
@@ -1261,7 +1220,7 @@ function reportProblem() {
 
 const open = () => run(async () => { await draftNotifications; return receive(await bridge.open(), true); });
 const save = () => run(async () => { if (state.document?.writable) { await draftNotifications; const result = await bridge.save(datasetPayload()); if (receive(result)) toast('配置已导出。'); } });
-for (const id of ['open-button', 'sidebar-open', 'empty-open']) $(id).addEventListener('click', open);
+for (const id of ['open-button', 'empty-open']) $(id).addEventListener('click', open);
 $('save-button').addEventListener('click', save);
 const undo = () => run(async () => {
   const previous = state.document;
@@ -1283,8 +1242,6 @@ $('detail-modal')?.addEventListener('cancel', event => { event.preventDefault();
 $('add-button').addEventListener('click', addRecord);
 $('report-nav').addEventListener('click', reportProblem);
 $('update-nav').addEventListener('click', checkUpdates);
-$('workspace-nav').addEventListener('click', focusSearch);
-$('all-records').addEventListener('click', () => { state.category = null; renderCategories(); renderRecords(); });
 $('search').addEventListener('input', (event) => { state.search = event.target.value; if (state.document?.kind === 'jx-buff') { state.typeSearch = state.search; if ($('type-search')) $('type-search').value = state.search; } renderRecords(); });
 for (const tab of ['config', 'box', 'source']) $(`${tab}-tab`).addEventListener('click', () => { state.tab = tab; renderInspector(); });
 $('modal-close').addEventListener('click', closeModal);
