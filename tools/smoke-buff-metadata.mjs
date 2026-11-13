@@ -68,7 +68,7 @@ try {
   await page.evaluate(async () => {const snapshot=await window.studio.openSample('chat'); window.testNextOpen=snapshot; window.studio.open=async()=>snapshot;});
   await page.locator('.inspector-close').click();
   await page.locator('#open-button').click();
-  await page.waitForFunction(() => document.querySelector('#document-title').textContent.includes('聊天'));
+  await page.waitForFunction(() => document.querySelector('#feature-tabs [aria-selected="true"]').textContent.includes('聊天'));
   await page.locator('#records-body tr').first().click();
   await page.evaluate(() => window.finishOldDocument());
   assert.equal(await page.locator('#selection-heading h3').innerText(), '聊天测试');

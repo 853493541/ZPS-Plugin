@@ -1,6 +1,6 @@
 {
   "name": "zps-studio",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "description": "MY and JX preset studio for Windows",
   "main": "app/desktop/main.cjs",
@@ -39,8 +39,8 @@
         "filter": [
           "SAMPLES.json",
           "**/*.jx3dat",
-          "**/\u771f\u4f20\uff08\u4ec5\uff09\u56e2\u961f\u6c14\u52b2.txt",
-          "**/\u63a8\u8350\u8bbe\u7f6e\u5173\u952e\u8bcd.txt"
+          "**/真传（仅）团队气劲.txt",
+          "**/推荐设置关键词.txt"
         ]
       }
     ],

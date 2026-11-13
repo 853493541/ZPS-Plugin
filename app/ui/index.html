@@ -12,29 +12,23 @@
     <aside class="sidebar" aria-label="功能导航">
       <div class="workspace-title"><div class="brand" aria-label="ZPS Studio">Z<span>·</span></div><div><h1>ZPS Studio</h1></div></div>
       <div id="feature-tabs" class="feature-tabs" role="tablist" aria-label="插件功能" aria-orientation="vertical"></div>
-      <button class="sidebar-open" id="sidebar-open">导入数据文件 <kbd>Ctrl O</kbd></button>
       <details class="sample-picker"><summary>打开配置样本</summary><div id="sample-list" class="sample-list"><p class="sidebar-hint">正在读取样本…</p></div></details>
-      <div hidden><button id="workspace-nav">工作区</button><button id="all-records">全部条目 <span id="sidebar-count"></span></button><span id="category-count"></span><div id="category-list"></div></div>
-      <div class="sidebar-footer"></div>
       <div class="sidebar-tools"><button id="update-nav" class="button subtle">检查更新</button><button id="report-nav" class="button subtle">反馈问题</button></div>
     </aside>
     <main class="workspace">
       <header class="topbar">
-        <div class="dataset-identity"><span id="active-feature-label"></span><div class="dataset-title-line"><h2 id="breadcrumb-name">未打开数据集</h2><i id="dirty-dot" hidden aria-label="未导出修改"></i></div><div class="dataset-subline"><span id="dataset-version">版本未标注</span><button class="identity-info" id="dataset-info-button" aria-label="查看数据集信息">文件信息</button></div></div>
+        <div class="dataset-identity"><div class="dataset-title-line"><h2 id="breadcrumb-name">未打开数据集</h2><i id="dirty-dot" hidden aria-label="未导出修改"></i></div><div class="dataset-subline"><span id="dataset-version">版本未标注</span><button class="identity-info" id="dataset-info-button" aria-label="查看数据集信息">文件信息</button></div></div>
         <div class="top-actions"><button class="button subtle" id="undo-button" disabled title="撤销上次修改">↶ <span>撤销</span></button><button class="button" id="new-button">＋ 新建数据集</button><button class="button" id="open-button">导入文件</button><button class="button primary" id="save-button" disabled>导出当前数据集</button></div>
       </header>
       <div id="dataset-tabs" class="dataset-tabs" role="tablist" aria-label="打开的数据集"></div>
       <aside id="update-banner" class="update-banner" role="status" hidden><span id="update-message"></span><button id="update-restart" class="button primary" hidden>安装</button></aside>
       <div id="feature-panels" class="feature-panels"></div>
       <div id="feature-workspace" class="feature-workspace">
-      <div class="content-heading" hidden><div><h2 id="document-title">配置库</h2><p id="document-description">在一个工作区内管理 MY 与 JX 配置。</p></div><span class="format-badge" id="format-badge">就绪</span></div>
-      <details class="workspace-help"><summary>导入说明</summary><div class="feature-guidance"><span id="feature-addon" class="feature-addon"></span><p id="feature-guidance"></p><p id="import-destination"></p><div id="feature-presets" class="feature-presets" hidden></div></div></details>
 
       <section id="type-workspace" class="type-workspace" aria-label="类型与 Buff" hidden></section>
       <section id="editor-grid" class="editor-grid">
         <section class="records-panel" aria-label="配置条目">
           <div class="records-toolbar"><label class="search-field"><span>⌕</span><input id="search" type="search" placeholder="搜索名称或 ID…" aria-label="搜索配置条目"><kbd>Ctrl K</kbd></label><button class="button add-button" id="add-button" disabled>＋ 添加条目</button></div>
-          <div class="list-summary"><span id="list-summary">全部条目 <b>0</b></span><span id="list-caption">选择条目查看详情</span></div>
           <div class="table-scroll"><table><thead><tr><th class="icon-column"></th><th>名称 / 标识</th><th>分类</th><th class="row-arrow"></th></tr></thead><tbody id="records-body"></tbody></table><div id="empty-state" class="empty-state"><div class="empty-symbol">▤</div><h3>从一份配置开始</h3><p>打开本地文件，或选择左侧样本。<br>支持 JX Buff、MY 团队配置与聊天配置。</p><button class="button" id="empty-open">打开配置文件</button></div></div>
           <footer class="table-footer"><span id="record-total">0 个条目</span></footer>
         </section>
