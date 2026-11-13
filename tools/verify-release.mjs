@@ -7,6 +7,7 @@ const { load } = require('js-yaml');
 const { updateFeed } = require('../app/services/release.cjs');
 const packageJson = JSON.parse(await fs.readFile('package.json', 'utf8'));
 if (JSON.stringify(packageJson.build.publish[0]) !== JSON.stringify(updateFeed)) throw new Error('Packaged and runtime update feeds differ');
+if (!(await fs.readFile(`docs/RELEASE_NOTES_${packageJson.version}.md`, 'utf8').catch(() => '')).trim()) throw new Error(`Missing docs/RELEASE_NOTES_${packageJson.version}.md`);
 const directory = process.argv[2] || 'dist';
 const metadata = load(await fs.readFile(path.join(directory, 'latest.yml'), 'utf8'));
 if (metadata.version !== packageJson.version || metadata.files?.length !== 1) throw new Error('Unexpected release version or asset count');
