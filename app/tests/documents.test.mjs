@@ -4,7 +4,8 @@ import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import iconv from 'iconv-lite';
-import { openDocument, editDocument, createDocument, addRecord } from '../core/documents.mjs';
+import { openDocument, editDocument, createDocument, addRecord, classStyleFields } from '../core/documents.mjs';
+import { typeSettings } from '../ui/jx-workspace.mjs';
 
 const root = fileURLToPath(new URL('../../samples/', import.meta.url));
 async function files(directory) {
@@ -186,4 +187,24 @@ test('UTF-8 BOM, mixed newlines and missing final newline survive unrelated chat
   const bytes = utf8('\uFEFFfirst\r\n\r\nsecond\nthird');
   const changed = editDocument(bytes, 'chat.txt', { key: 'line:2', fields: { keyword: 'changed' } });
   assert.equal(Buffer.from(changed).toString(), '\uFEFFfirst\r\n\r\nchanged\nthird');
+});
+
+test('type settings: new types take chosen settings and missing settings can be added', async () => {
+  assert.deepEqual(typeSettings.map(({ key, type, initial }) => ({ key, type, initial })), classStyleFields, 'UI type settings match the editor schema');
+  let bytes = addRecord(createDocument('jx-buff'), 'BuffData.jx3dat', { type: 'class', name: '山', bBorderEnable: false, nFont: 200 });
+  assert.deepEqual(openDocument(bytes, 'BuffData.jx3dat').records[0].fields, { bEnable: true, bBorderEnable: false, nBorder: 1, bFontEnable: true, nFont: 200 });
+  assert.throws(() => addRecord(bytes, 'BuffData.jx3dat', { type: 'class', name: '水', nFont: -1 }), /nFont/);
+
+  for (const source of ['return { tClass = { ["兰"] = { bEnable = true } }, tBuff = {} }', 'return {\n\ttClass = {\n\t\t["兰"] = {\n\t\t\tbEnable = true,\n\t\t},\n\t},\n\ttBuff = {},\n}']) {
+    const edited = editDocument(gbk(source), 'BuffData.jx3dat', { key: 'class:兰', fields: { bEnable: false, nBorder: 3, bFontEnable: true } });
+    assert.deepEqual(openDocument(edited, 'BuffData.jx3dat').records[0].fields, { bEnable: false, nBorder: 3, bFontEnable: true }, source);
+  }
+  assert.throws(() => editDocument(gbk('return { tClass = { ["兰"] = { bEnable = true } }, tBuff = {} }'), 'x.jx3dat', { key: 'class:兰', fields: { nBorder: 1.5 } }), /nBorder/);
+  assert.throws(() => editDocument(gbk('return { tClass = { ["兰"] = { bEnable = true } }, tBuff = {} }'), 'x.jx3dat', { key: 'class:兰', fields: { unknownSetting: 1 } }), /unknownSetting/);
+
+  const real = await sample('BuffData.jx3dat');
+  const partial = openDocument(real, 'BuffData.jx3dat').records.find(item => item.key.startsWith('class:') && !('nFont' in item.fields));
+  const filled = openDocument(editDocument(real, 'BuffData.jx3dat', { key: partial.key, fields: { nFont: 42 } }), 'BuffData.jx3dat');
+  assert.equal(filled.records.find(item => item.key === partial.key).fields.nFont, 42);
+  assert.equal(filled.records.length, openDocument(real, 'BuffData.jx3dat').records.length);
 });

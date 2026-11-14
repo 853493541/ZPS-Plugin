@@ -1,3 +1,11 @@
+export const typeSettings = [
+  { key: 'bEnable', type: 'boolean', label: '启用', initial: true },
+  { key: 'bBorderEnable', type: 'boolean', label: '启用自定义边框', initial: true },
+  { key: 'nBorder', type: 'number', label: '边框编号', initial: 1 },
+  { key: 'bFontEnable', type: 'boolean', label: '启用自定义字体', initial: true },
+  { key: 'nFont', type: 'number', label: '字体编号', initial: 159 },
+];
+
 export function typeLabel(name) {
   if (name === '') return '未分配类型';
   if (!name.trim()) return `空白类型（${name.length} 个空格）`;
