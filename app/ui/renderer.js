@@ -12,7 +12,7 @@ const formats = {
   chat: { add: { keyword: '' } },
   opaque: {},
 };
-const freshView = () => ({ datasetId: null, document: null, filename: '', source: null, gameVersion: '', revision: '', dirty: false, canUndo: false, selected: null, selectedType: null, typeSearch: '', memberSearch: '', detailOpen: false, search: '', tab: 'config', lookup: null, lookupClient: 'std', lookupLevel: '1', drafts: new Map() });
+const freshView = () => ({ datasetId: null, document: null, filename: '', source: null, gameVersion: '', revision: '', dirty: false, canUndo: false, selected: null, selectedType: null, typeSearch: '', detailOpen: false, search: '', tab: 'config', lookup: null, lookupClient: 'std', lookupLevel: '1', drafts: new Map() });
 const state = { ...freshView(), featureId: features[0].id, samples: [], datasets: [], busy: false };
 const views = new Map();
 const viewKey = (value = state) => value.datasetId || value.featureId;
@@ -819,7 +819,10 @@ function renderTypeHeader() {
   if (group.builtin) {
     const top = element('div', 'type-card-top');
     const title = element('div', 'type-card-title');
-    title.append(element('h2', '', group.name), element('p', 'muted-text', `插件内置类型 · 文件中 ${group.members.length} 个 Buff`));
+    const line = element('div', 'type-title-line');
+    const heading = element('h2', '', group.name); heading.id = 'type-name';
+    line.append(heading, element('span', 'type-count-badge', `${group.members.length} 个 Buff`));
+    title.append(line, element('p', 'muted-text', '插件内置类型'));
     top.append(title, assign);
     const note = element('div', 'type-card-note');
     note.append(element('span', '', group.shadow ? '文件里有同名的自定义类型，它的边框和字体设置会用在这些 Buff 上。' : '这是插件自带的类型，样式由插件决定。这里列出文件中放入它的 Buff。'));
@@ -834,21 +837,34 @@ function renderTypeHeader() {
   const locked = !state.document?.writable || state.busy;
   const top = element('div', 'type-card-top');
   const title = element('div', 'type-card-title');
+  const line = element('div', 'type-title-line');
+  const heading = element('h2', '', typeLabel(group.name)); heading.id = 'type-name';
+  line.append(heading);
   if (group.record) {
-    const name = element('input', 'type-name-input');
-    name.id = 'type-name-input'; name.value = group.name; name.disabled = locked;
-    name.setAttribute('aria-label', '类型名称');
-    name.addEventListener('keydown', event => {
-      if (event.key === 'Enter') { event.preventDefault(); name.blur(); }
-      if (event.key === 'Escape') { name.value = group.name; name.blur(); }
+    const pen = element('button', 'type-name-edit', '✎');
+    pen.id = 'type-name-edit'; pen.type = 'button'; pen.title = '重命名类型'; pen.setAttribute('aria-label', '重命名类型'); pen.disabled = locked;
+    pen.addEventListener('click', () => {
+      const name = element('input', 'type-name-input');
+      name.id = 'type-name-input'; name.value = group.name; name.setAttribute('aria-label', '类型名称');
+      let done = false;
+      const finish = commit => {
+        if (done) return; done = true;
+        if (commit && name.value && name.value !== group.name) { editType(group, { name: name.value }); return; }
+        if (commit && !name.value) toast('类型名称不能为空。');
+        renderTypeHeader();
+      };
+      name.addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); finish(true); }
+        if (event.key === 'Escape') { event.preventDefault(); finish(false); }
+      });
+      name.addEventListener('blur', () => finish(true));
+      heading.replaceWith(name); pen.hidden = true;
+      name.focus(); name.select();
     });
-    name.addEventListener('change', () => {
-      if (!name.value) { name.value = group.name; toast('类型名称不能为空。'); return; }
-      if (name.value !== group.name) editType(group, { name: name.value });
-    });
-    title.append(name);
-  } else title.append(element('h2', '', typeLabel(group.name)));
-  title.append(element('p', 'muted-text', `${group.members.length} 个 Buff`));
+    line.append(pen);
+  }
+  line.append(element('span', 'type-count-badge', `${group.members.length} 个 Buff`));
+  title.append(line);
   top.append(title, assign);
   header.replaceChildren(top);
   if (!group.record) {
@@ -889,11 +905,11 @@ function renderTypeHeader() {
     button.addEventListener('click', onClick);
     fonts.append(button);
   };
-  fontChoice('默认', fontOff, '使用插件默认字体', () => { if (!fontOff) editType(group, { bFontEnable: false }); });
+  fontChoice('无', fontOff, '不使用自定义字体', () => { if (!fontOff) editType(group, { bFontEnable: false }); });
   used.forEach((value, index) => {
     const active = !fontOff && fields.nFont === value;
     const count = typeGroups().filter(item => item.record?.fields.nFont === value).length;
-    fontChoice(`样式 ${index + 1}`, active, `字体编号 ${value} · 文件中 ${count} 个类型使用`, () => { if (!active) editType(group, { bFontEnable: true, nFont: value }); });
+    fontChoice(String(index + 1), active, `字体编号 ${value} · 文件中 ${count} 个类型使用`, () => { if (!active) editType(group, { bFontEnable: true, nFont: value }); });
   });
   settings.append(settingRow('文字字体', fonts));
   header.append(settings);
@@ -1015,49 +1031,78 @@ function addType(initial = '') {
   });
 }
 
+function lookupBuffById(id) {
+  const query = { client: state.lookupClient, level: 1, id: String(id) };
+  const key = metadataKey(query);
+  if (metadata.has(key)) return Promise.resolve(metadata.get(key));
+  return Promise.resolve(bridge.lookup(query)).then(result => {
+    const entry = matchedMetadata(query, result) || (Array.isArray(result?.list) && result.list.find(item => String(item.BuffID) === query.id) ? { item: result.list.find(item => String(item.BuffID) === query.id), result, query } : null);
+    if (entry && matchedMetadata(query, result)) metadata.set(key, entry);
+    return entry;
+  });
+}
+
 function assignMember() {
   if (!state.document?.writable) return;
   const group = currentType();
   if (!group) { addType(); return; }
-  const content = element('div');
-  content.append(element('p', 'modal-description', `将已有 Buff 移入“${typeLabel(group.name)}”，或输入新的数字 ID。已有 Buff 的其他配置保持原样。`));
-  const mode = element('select'); mode.setAttribute('aria-label', '添加方式');
-  for (const [value, label] of [['existing', '选择已有 Buff'], ['new', '输入 Buff ID']]) { const option = element('option', '', label); option.value = value; mode.append(option); }
-  const existing = element('select'); existing.setAttribute('aria-label', '选择已有 Buff');
-  const search = element('input'); search.type = 'search'; search.placeholder = '搜索已有 Buff 名称、ID 或类型'; search.setAttribute('aria-label', '搜索已有 Buff');
-  const populate = () => {
-    const value = existing.value;
-    const query = search.value.toLowerCase();
-    existing.replaceChildren();
-    for (const record of state.document.records.filter(record => record.key.startsWith('buff:') && record.fields.nClass !== group.name && `${recordName(record)} ${record.id} ${typeLabel(record.fields.nClass)}`.toLowerCase().includes(query))) {
-      const option = element('option', '', `${recordName(record)} · ID ${record.id} · ${typeLabel(record.fields.nClass)}`);
-      option.value = record.key; existing.append(option);
-    }
-    if ([...existing.options].some(option => option.value === value)) existing.value = value;
+  const content = element('div', 'add-buff');
+  content.append(element('p', 'modal-description', `输入 Buff ID，添加到“${typeLabel(group.name)}”。`));
+  const input = element('input', 'add-buff-id');
+  input.id = 'add-buff-id'; input.type = 'text'; input.inputMode = 'numeric'; input.placeholder = 'Buff ID'; input.setAttribute('aria-label', 'Buff ID'); input.autocomplete = 'off';
+  const preview = element('div', 'add-buff-preview'); preview.id = 'add-buff-preview'; preview.setAttribute('aria-live', 'polite');
+  content.append(input, preview);
+  let token = 0;
+  let timer = null;
+  const parse = () => {
+    const text = input.value.trim();
+    if (!text) return { empty: true };
+    if (!/^\d{1,12}$/.test(text) || !Number.isSafeInteger(Number(text))) return { error: 'Buff ID 只能是数字。' };
+    const id = Number(text);
+    return { id, existing: state.document.records.find(record => record.key === `buff:${id}`) };
   };
-  search.addEventListener('input', populate); populate();
-  const id = element('input'); id.type = 'text'; id.inputMode = 'numeric'; id.placeholder = '输入 Buff ID'; id.setAttribute('aria-label', '输入 Buff ID');
-  const update = () => { existing.hidden = mode.value !== 'existing'; search.hidden = existing.hidden; id.hidden = mode.value !== 'new'; };
-  mode.addEventListener('change', update);
-  if (!existing.children.length) mode.value = 'new';
-  update(); content.append(mode, search, existing, id);
-  showModal('添加 Buff 到此类型', content, '添加到类型', async () => {
-    await draftNotifications;
-    let result;
-    if (mode.value === 'existing') {
-      if (!existing.value) throw new Error('请选择已有 Buff，或改为输入 Buff ID。');
-      if (draftIsDirty(existing.value)) throw new Error('这个 Buff 有尚未应用的编辑，请先在详情中保存修改。');
-      result = await bridge.edit(datasetPayload({ key: existing.value, fields: { nClass: group.name } }));
-    } else {
-      if (!/^\d+$/.test(id.value) || !Number.isSafeInteger(Number(id.value))) throw new Error('Buff ID 需要为非负整数。');
-      const record = state.document.records.find(item => item.id === Number(id.value));
-      if (record && draftIsDirty(record.key)) throw new Error('这个 Buff 有尚未应用的编辑，请先在详情中保存修改。');
-      result = record ? await bridge.edit(datasetPayload({ key: record.key, fields: { nClass: group.name } })) : await bridge.add(datasetPayload({ id: Number(id.value), nClass: group.name }));
+  const paint = () => {
+    const current = ++token;
+    const parsed = parse();
+    preview.replaceChildren();
+    if (parsed.empty) return;
+    if (parsed.error) { preview.append(element('p', 'add-buff-status error', parsed.error)); return; }
+    const record = parsed.existing || { key: `buff:${parsed.id}`, id: parsed.id, name: `#${parsed.id}`, fields: {} };
+    const row = element('div', 'add-buff-row');
+    const name = element('strong', 'add-buff-name', parsed.existing ? recordName(parsed.existing) : '正在查询 JX3BOX…');
+    const copy = element('div', 'add-buff-copy');
+    copy.append(name, element('span', 'muted-text', `ID ${parsed.id}`));
+    row.append(recordGlyph(record), copy);
+    preview.append(row);
+    const owner = parsed.existing?.fields.nClass;
+    if (!parsed.existing) preview.append(element('p', 'add-buff-status ok', '尚未添加到任何类型，可以添加。'));
+    else if (owner === group.name) preview.append(element('p', 'add-buff-status', '已在当前类型中。'));
+    else {
+      const status = element('div', 'add-buff-status warn');
+      status.append(element('span', '', `已在类型“${typeLabel(owner)}”中。一个 Buff 只能属于一个类型。`));
+      const move = actionButton('移到此类型', 'add-buff-move', () => { closeModal(); moveBuff(parsed.existing.key, group.name); });
+      status.append(move);
+      preview.append(status);
     }
+    lookupBuffById(parsed.id).then(entry => {
+      if (current !== token) return;
+      const display = entry ? metadataDisplayName(entry.item).name : '';
+      name.textContent = display || (parsed.existing ? recordName(parsed.existing) : 'JX3BOX 未找到此 Buff');
+      if (entry) row.firstChild.replaceWith(recordGlyph(record, entry));
+    }).catch(() => { if (current === token && !parsed.existing) name.textContent = 'JX3BOX 暂时无法连接'; });
+  };
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(paint, 150); });
+  input.addEventListener('keydown', event => { if (event.key === 'Enter') { clearTimeout(timer); paint(); } });
+  showModal('添加 Buff', content, '添加', async () => {
+    clearTimeout(timer);
+    const parsed = parse();
+    if (parsed.empty || parsed.error) throw new Error(parsed.error || '请输入 Buff ID。');
+    if (parsed.existing) throw new Error(parsed.existing.fields.nClass === group.name ? '这个 Buff 已在当前类型中。' : `这个 Buff 已在类型“${typeLabel(parsed.existing.fields.nClass)}”中，可点击“移到此类型”。`);
+    await draftNotifications;
+    const result = await bridge.add(datasetPayload({ id: parsed.id, nClass: group.name }));
     if (result?.document) { state.typeSearch = ''; state.search = ''; }
-    if (receive(result)) { closeModal(); toast('Buff 已放入当前类型。可使用撤销恢复。'); }
+    if (receive(result)) { closeModal(); toast('Buff 已添加。可使用撤销恢复。'); }
   });
-  modalMetadataRefresh = populate;
 }
 
 function renderSamples() {

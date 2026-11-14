@@ -51,9 +51,9 @@ try {
   await page.locator('#add-type-button').click();
   await page.locator('#modal [name="name"]').fill('团队控制');
   await page.locator('#modal-submit').click();
-  await page.waitForFunction(() => document.querySelector('#type-name-input')?.value === '团队控制');
+  await page.waitForFunction(() => document.querySelector('#type-name')?.textContent === '团队控制');
   await page.locator('#assign-member-button').click();
-  await page.getByRole('textbox', { name: '输入 Buff ID', exact: true }).fill('12784');
+  await page.locator('#add-buff-id').fill('12784');
   await page.locator('#modal-submit').click();
   await page.waitForSelector('#type-members [data-key="buff:12784"]');
   await openBuff();
