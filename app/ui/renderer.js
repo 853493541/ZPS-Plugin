@@ -491,7 +491,7 @@ function receive(result, reset = false, restore = false) {
       if (next && state.drafts.has(previous.key)) state.drafts.set(previous.key, rebaseMembershipDraft(state.drafts.get(previous.key), previous, next));
     }
   }
-  Object.assign(state, { datasetId: result.datasetId || null, document: result.document || null, filename: result.filename || '', source: result.source || null, gameVersion: result.gameVersion || '', revision: result.revision || '', dirty: Boolean(result.dirty), canUndo: Boolean(result.canUndo) });
+  Object.assign(state, { datasetId: result.datasetId || null, document: result.document || null, filename: result.filename || '', source: result.source || null, gameVersion: result.gameVersion || '', locked: Boolean(result.locked), revision: result.revision || '', dirty: Boolean(result.dirty), canUndo: Boolean(result.canUndo) });
   if (!state.document) Object.assign(state, freshView(), { featureId });
   if (state.document && !state.document.records.some(record => record.key === state.selected)) {
     state.selected = state.document.records[0]?.key ?? null;
@@ -521,7 +521,7 @@ function visibleRecords() {
   return (state.document?.records || []).filter((record) => (!state.search || `${recordName(record)} ${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
 }
 
-function versionLabel(dataset = state) { return dataset.gameVersion ? `版本 ${dataset.gameVersion}` : ''; }
+function versionLabel(dataset = state) { return dataset.locked ? '🔒 内置样本' : dataset.gameVersion || ''; }
 
 function renderDatasets() {
   const tabs = $('dataset-tabs');
@@ -586,7 +586,7 @@ function datasetMenu(summary, x, y) {
   const menu = element('div', 'context-menu'); menu.id = 'context-menu'; menu.setAttribute('role', 'menu');
   const name = fileName(summary.filename);
   const items = [
-    ['复制为新版本…', false, () => duplicateDataset(summary)],
+    ['复制为新版本', false, () => duplicateDataset(summary)],
     ['导出', summary.datasetId !== viewKey() || !state.document?.writable || featureById(state.featureId).kind === 'opaque', () => save()],
     ['关闭', false, () => run(() => closeDataset(summary.datasetId))],
   ];
@@ -611,17 +611,32 @@ function datasetMenu(summary, x, y) {
 }
 
 function duplicateDataset(summary) {
-  const content = element('div');
-  content.append(element('p', 'modal-description', `复制“${fileName(summary.filename)}”当前的内容（含已应用的修改），在新标签中作为另一个版本编辑。原数据集保持不变。`));
-  const version = fieldInput('gameVersion', '');
-  version.querySelector('span').textContent = '新版本名称';
-  version.querySelector('input').placeholder = '例如：预案 B';
-  content.append(version);
-  showModal('复制为新版本', content, '复制', async () => {
+  run(async () => {
     await draftNotifications;
-    const result = await bridge.duplicate({ datasetId: summary.datasetId, gameVersion: version.querySelector('input').value.trim() });
-    if (receive(result, true)) { closeModal(); toast('已复制为新版本。'); }
+    const result = await bridge.duplicate({ datasetId: summary.datasetId });
+    if (receive(result, true)) toast(`已复制为“${result.gameVersion}”，可以开始编辑。点 ✎ 可命名。`);
   });
+}
+
+function renameVersion() {
+  const label = $('dataset-version');
+  if (!state.document || state.locked) return;
+  const input = element('input', 'version-input');
+  input.value = state.gameVersion; input.placeholder = '版本名称'; input.setAttribute('aria-label', '版本名称'); input.maxLength = 80;
+  let done = false;
+  const finish = commit => {
+    if (done) return; done = true;
+    input.replaceWith(label); $('version-edit').hidden = false;
+    if (!commit || input.value.trim() === state.gameVersion) return;
+    run(async () => { if (receive(await bridge.renameVersion({ datasetId: state.datasetId, gameVersion: input.value }))) toast('版本已命名。'); });
+  };
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); finish(true); }
+    if (event.key === 'Escape') { event.preventDefault(); finish(false); }
+  });
+  input.addEventListener('blur', () => finish(true));
+  label.replaceWith(input); $('version-edit').hidden = true;
+  input.focus(); input.select();
 }
 
 document.addEventListener('pointerdown', event => { if (!event.target.closest?.('#context-menu')) closeMenu(); });
@@ -651,7 +666,10 @@ function render() {
   const feature = featureById(state.featureId);
   renderFeatures();
   renderDatasets();
-  if ($('dataset-version')) { $('dataset-version').textContent = doc ? versionLabel() : '新建或打开数据集'; $('dataset-version').hidden = Boolean(doc) && !state.gameVersion; }
+  if ($('dataset-version')) { $('dataset-version').textContent = doc ? state.gameVersion || '' : '新建或打开数据集'; $('dataset-version').hidden = Boolean(doc) && !state.gameVersion; }
+  $('version-edit').hidden = !doc || state.locked;
+  $('version-edit').title = state.gameVersion ? '重命名此版本' : '命名此版本';
+  $('lock-bar').hidden = !doc || !state.locked;
   if ($('dataset-info-button')) $('dataset-info-button').disabled = !doc || state.busy;
   $('breadcrumb-name').textContent = doc ? fileName(state.filename) : '未打开文件';
   $('breadcrumb-name').title = state.filename;
@@ -679,7 +697,10 @@ function renderAvailability() {
   $('add-button').hidden = feature.kind === 'opaque';
   $('add-button').disabled = state.busy || !state.document?.writable || !format.add;
   $('search').disabled = switching;
-  for (const node of document.querySelectorAll('#type-workspace button, #type-workspace input')) node.disabled = state.busy || !state.document;
+  for (const node of document.querySelectorAll('#type-workspace button, #type-workspace input')) {
+    const editOnly = node.matches('.border-choice, .font-choice, .switch-option, .type-name-edit, #add-type-button, #assign-member-button, #type-settings-button');
+    node.disabled = state.busy || !state.document || editOnly && !state.document.writable;
+  }
   const group = currentType();
   if ($('add-type-button')) $('add-type-button').disabled = state.busy || !state.document?.writable;
   if ($('assign-member-button')) $('assign-member-button').disabled = state.busy || !state.document?.writable || !group;
@@ -1651,6 +1672,8 @@ async function refreshUpdateBanner() {
 
 
 $('settings-button').addEventListener('click', openSettings);
+$('version-edit').addEventListener('click', renameVersion);
+$('lock-copy').addEventListener('click', () => duplicateDataset({ datasetId: state.datasetId }));
 $('update-restart').addEventListener('click', () => run(async () => {
   if (updateActionBusy || updateView?.installRequested) return;
   updateActionBusy = true;

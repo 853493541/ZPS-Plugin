@@ -11,6 +11,10 @@ async function createFixture(t, response = 0) {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'zps-auto-update-'));
   t.after(() => fs.rm(temporary, { recursive: true, force: true }));
   const root = path.resolve(__dirname, '../..');
+  const sampleName = (await fs.readdir(path.join(root, 'samples'), { recursive: true })).find(name => name.endsWith('BuffData.jx3dat'));
+  const localFile = path.join(temporary, 'source', 'BuffData.jx3dat');
+  await fs.mkdir(path.dirname(localFile));
+  await fs.copyFile(path.join(root, 'samples', sampleName), localFile);
   const uiURL = pathToFileURL(path.join(root, 'app/ui/index.html')).href;
   const handlers = new Map(), appEvents = new Map();
   const installs = [], dialogs = [], exports = [];
@@ -30,6 +34,7 @@ async function createFixture(t, response = 0) {
     dialog: {
       showErrorBox: (_,message) => rejectReady(Error(message)),
       showMessageBox: async (_,options) => {dialogs.push(options);return{response};},
+      showOpenDialog: async () => ({ canceled: false, filePaths: [localFile] }),
       showSaveDialog: async (_, options) => { exports.push(options); return {canceled:false,filePath:path.join(temporary,path.basename(options.defaultPath))}; }
     },
     BrowserWindow: class {
@@ -64,7 +69,7 @@ const available = updater => updater.emit('update-available', { version: '0.1.5'
 const downloaded = updater => updater.emit('update-downloaded', { version: '0.1.5' });
 
 async function editBuff(invoke, datasetId) {
-  const snapshot = datasetId ? await invoke('activateDataset', datasetId) : await invoke('activateFeature', 'jx-buff');
+  const snapshot = datasetId ? await invoke('activateDataset', datasetId) : await invoke('open');
   const buff = snapshot.document.records.find(record => record.id);
   await invoke('edit', { datasetId: snapshot.datasetId, key: buff.key, fields: { nPower: 11 } });
   return snapshot;
@@ -110,7 +115,7 @@ for (const inactive of [false, true]) {
   for (const draft of [false, true]) {
     test(`${inactive ? 'inactive' : 'active'} dataset ${draft ? 'drafts' : 'edits'} block install inline without export`, async t => {
       const { updater, installs, dialogs, exports, invoke, temporary } = await createFixture(t);
-      const first = await invoke('activateFeature', 'jx-buff');
+      const first = await invoke('open');
       if (draft) await invoke('setDraftState', { datasetId: first.datasetId, dirty: true });
       else await editBuff(invoke, first.datasetId);
       let activeId = first.datasetId;
@@ -150,7 +155,7 @@ test('blocked install requires a new click after edits are resolved', async t =>
 for (const draft of [false, true]) {
   test(`${draft ? 'drafts' : 'edits'} created during download clear intent and require explicit retry`, async t => {
     const { updater, installs, dialogs, exports, invoke } = await createFixture(t);
-    const first = await invoke('activateFeature', 'jx-buff');
+    const first = await invoke('open');
     available(updater);
     await invoke('updates', 'install');
     if (draft) await invoke('setDraftState', { datasetId: first.datasetId, dirty: true });

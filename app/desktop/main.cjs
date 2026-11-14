@@ -206,7 +206,8 @@ async function start() {
     edit: change => mutate('editDocument', change),
     add: fields => mutate('addRecord', fields),
     undo: value => sessions.undo(datasetId(value)),
-    duplicate: value => sessions.duplicate(datasetId(value), value?.gameVersion ?? ''),
+    duplicate: value => sessions.duplicate(datasetId(value), value?.gameVersion),
+    renameVersion: value => sessions.renameVersion(datasetId(value), String(value?.gameVersion ?? '')),
     save: value => save(sessions.resolve(datasetId(value))), lookup: query => catalog.lookup(query), lookupCached: queries => catalog.lookupCached(queries), loadIcon: query => iconCache.load(query), updates
   };
   for (const [name, handler] of Object.entries(handlers)) {

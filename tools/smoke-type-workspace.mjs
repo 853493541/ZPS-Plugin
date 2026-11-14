@@ -22,6 +22,9 @@ try {
   assert.equal(await page.locator('#feature-tabs button').count(), 4);
   assert.ok(await page.locator('#type-list .type-name').first().evaluate(node => parseFloat(getComputedStyle(node).fontSize)) >= 16);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  assert.equal(await page.locator('#lock-bar').isVisible(), true, 'built-in sample opens locked');
+  await page.locator('#lock-copy').click();
+  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
 
   await page.locator('#type-search').fill('逃兵');
   await page.waitForFunction(() => document.querySelectorAll('#type-list .type-item').length === 1);

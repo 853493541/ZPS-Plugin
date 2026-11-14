@@ -291,18 +291,25 @@ test('explicit inactive mutations and export acknowledgements preserve active se
   for (const action of [() => sessions.resolve('missing'), () => sessions.undo('missing'), () => sessions.mutate('addRecord', {}, 'missing'), () => sessions.setDraftState({ datasetId: 'missing', dirty: true })]) assert.throws(action, /Unknown dataset/);
 });
 
-test('copy as a new version keeps applied edits, opens a separate dirty dataset and leaves the original alone', async () => {
+test('built-in samples are locked; copies open as numbered versions that can be edited and renamed', async () => {
   const sessions = store();
   const { bytes, filename } = await first('jx-buff');
-  const original = sessions.open(bytes, filename, { source: { kind: 'sample', key: 'buff', displayPath: filename } });
-  const edited = sessions.mutate('editDocument', { key: 'buff:244', fields: { nPower: 33 } }, original.datasetId);
-  const copy = sessions.duplicate(original.datasetId, '预案 B');
-  assert.notEqual(copy.datasetId, original.datasetId);
-  assert.equal(copy.gameVersion, '预案 B');
-  assert.equal(power(copy), 33, 'copy carries applied edits');
+  const sample = sessions.open(bytes, filename, { source: { kind: 'sample', key: 'buff', displayPath: filename } });
+  assert.equal(sample.locked, true);
+  assert.equal(sample.document.writable, false, 'sample document is read-only');
+  assert.throws(() => sessions.mutate('editDocument', { key: 'buff:244', fields: { nPower: 33 } }, sample.datasetId), /锁定/);
+  assert.throws(() => sessions.renameVersion(sample.datasetId, 'x'), /锁定/);
+  const copy = sessions.duplicate(sample.datasetId);
+  assert.equal(copy.gameVersion, '版本 2');
+  assert.equal(copy.locked, false);
+  assert.equal(copy.document.writable, true);
   assert.equal(copy.dirty, true, 'copy starts unexported');
-  sessions.mutate('editDocument', { key: 'buff:244', fields: { nPower: 44 } }, copy.datasetId);
-  assert.equal(power(sessions.activateDataset(original.datasetId)), 33, 'editing the copy leaves the original');
-  assert.equal(edited.datasetId, original.datasetId);
-  assert.throws(() => sessions.duplicate(original.datasetId, 'x'.repeat(81)), /version/);
+  const edited = sessions.mutate('editDocument', { key: 'buff:244', fields: { nPower: 33 } }, copy.datasetId);
+  assert.equal(power(edited), 33);
+  assert.equal(sessions.duplicate(copy.datasetId).gameVersion, '版本 3', 'next copy takes the next number');
+  assert.equal(power(sessions.duplicate(copy.datasetId)), 33, 'copy carries applied edits');
+  const renamed = sessions.renameVersion(copy.datasetId, '  预案 B ');
+  assert.equal(renamed.gameVersion, '预案 B');
+  assert.equal(power(sessions.activateDataset(sample.datasetId)), 10, 'sample stays unchanged');
+  assert.throws(() => sessions.renameVersion(copy.datasetId, 'x'.repeat(81)), /version/);
 });

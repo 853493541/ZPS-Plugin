@@ -141,6 +141,9 @@ try {
     const snapshot = await page.evaluate(file => window.studio.openSample(file), sample.path);
     const row = snapshot.document.records.find(record => record.id);
     assert.ok(row);
+    assert.equal(snapshot.document.writable, false, 'Packaged sample must open locked');
+    const copy = await page.evaluate(datasetId => window.studio.duplicate({datasetId}), snapshot.datasetId);
+    assert.equal(copy.document.writable, true, 'A copy of the sample must be editable');
     await page.evaluate(key => window.studio.edit({key, fields: {nPower: 11}}), row.key);
     const exported = path.join(root, '保留 导出.jx3dat');
     await app.evaluate(({dialog}, file) => { dialog.showSaveDialog = async () => ({canceled: false, filePath: file}); }, exported);
