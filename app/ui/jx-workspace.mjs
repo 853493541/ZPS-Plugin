@@ -6,6 +6,14 @@ export const typeSettings = [
   { key: 'nFont', type: 'number', label: '字体编号', initial: 159 },
 ];
 
+export const borderNumbers = [1, 7, 9, 10, 11, 12, 13, 14, 45];
+
+export function borderPreview(enabled, number) {
+  if (enabled !== true) return { kind: 'off' };
+  if (!borderNumbers.includes(number)) return { kind: 'unknown', number };
+  return { kind: 'image', number, src: `borders/border_${number}.png` };
+}
+
 export function typeLabel(name) {
   if (name === '') return '未分配类型';
   if (!name.trim()) return `空白类型（${name.length} 个空格）`;

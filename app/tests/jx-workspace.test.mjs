@@ -99,3 +99,15 @@ test('type rename rebases untouched draft membership while keeping other edits',
   const explicitMove = { values: { nClass: '孤' }, fields: { nClass: '孤' } };
   assert.equal(rebaseMembershipDraft(explicitMove, previous, next), explicitMove);
 });
+
+test('border previews cover exactly the bundled border images', async () => {
+  const { borderNumbers, borderPreview } = await import('../ui/jx-workspace.mjs');
+  const directory = fileURLToPath(new URL('../ui/borders/', import.meta.url));
+  const files = (await readdir(directory)).filter(name => name.endsWith('.png')).sort();
+  assert.deepEqual(files, borderNumbers.map(number => `border_${number}.png`).sort(), 'every listed border has an image and every image is listed');
+  for (const file of files) assert.deepEqual([...(await readFile(path.join(directory, file))).subarray(1, 4)], [...Buffer.from('PNG')], `${file} is a PNG`);
+  assert.deepEqual(borderPreview(true, 45), { kind: 'image', number: 45, src: 'borders/border_45.png' });
+  assert.deepEqual(borderPreview(true, 61), { kind: 'unknown', number: 61 });
+  assert.deepEqual(borderPreview(false, 45), { kind: 'off' });
+  assert.deepEqual(borderPreview(undefined, 45), { kind: 'off' });
+});
