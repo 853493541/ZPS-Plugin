@@ -18,5 +18,6 @@ contextBridge.exposeInMainWorld('studio', Object.freeze({
   loadIcon: query => invoke('loadIcon', query),
   updates: action => invoke('updates', action),
   undo: value => invoke('undo', value),
-  duplicate: value => invoke('duplicate', value)
+  duplicate: value => invoke('duplicate', value),
+  renameVersion: value => invoke('renameVersion', value)
 }));

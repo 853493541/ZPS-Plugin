@@ -12,8 +12,9 @@ export function createFeatureSessions({ codec, featureById, featureForKind }) {
     if (!session) throw new Error(id === undefined ? '请先打开或新建数据。' : 'Unknown dataset');
     return session;
   }
+  const locked = session => session.source.kind === 'sample';
   const summary = session => ({
-    datasetId: session.datasetId, filename: session.filename, source: { ...session.source },
+    datasetId: session.datasetId, filename: session.filename, source: { ...session.source }, locked: locked(session),
     gameVersion: session.gameVersion, dirty: session.dirty, hasDrafts: session.draftDirty,
     revision: createHash('sha256').update(session.bytes).digest('hex').slice(0, 12)
   });
@@ -21,14 +22,23 @@ export function createFeatureSessions({ codec, featureById, featureForKind }) {
     const session = active();
     return session ? {
       ...summary(session), featureId: session.featureId,
-      document: codec.openDocument(session.bytes, session.filename),
+      document: (document => locked(session) ? { ...document, writable: false } : document)(codec.openDocument(session.bytes, session.filename)),
       canUndo: session.undo.length > 0,
       datasets: [...sessions.values()].filter(item => item.featureId === activeFeatureId).map(summary)
     } : activeFeatureId ? { featureId: activeFeatureId, datasetId: null, document: null, filename: '', dirty: false, hasDrafts: false, canUndo: false, datasets: [] } : null;
   };
+  function validVersion(gameVersion) {
+    if (typeof gameVersion !== 'string' || gameVersion.length > 80 || /[\x00-\x1f]/.test(gameVersion)) throw new Error('Invalid game version label');
+    return gameVersion;
+  }
+  function nextVersion(original) {
+    const taken = [...sessions.values()].filter(item => item.featureId === original.featureId && item.filename === original.filename)
+      .map(item => /^版本 (\d+)$/.exec(item.gameVersion)?.[1]).filter(Boolean).map(Number);
+    return `版本 ${Math.max(1, ...taken) + 1}`;
+  }
   function prepare(bytes, filename, { dirty = false, source = { kind: 'new', key: randomUUID(), displayPath: filename }, gameVersion = '' } = {}) {
     if (typeof filename !== 'string' || !filename.trim() || filename.length > 255 || /[\x00-\x1f]/.test(filename)) throw new Error('Invalid dataset filename');
-    if (typeof gameVersion !== 'string' || gameVersion.length > 80 || /[\x00-\x1f]/.test(gameVersion)) throw new Error('Invalid game version label');
+    validVersion(gameVersion);
     if (!source || !['file', 'sample', 'new'].includes(source.kind) || typeof source.key !== 'string' || !source.key || typeof source.displayPath !== 'string') throw new Error('Invalid dataset source');
     const buffer = outputBytes(bytes);
     const name = path.basename(filename);
@@ -81,9 +91,15 @@ export function createFeatureSessions({ codec, featureById, featureForKind }) {
       const session = prepare(bytes, filename, options);
       return install(existing(session) || session);
     },
-    duplicate(id, gameVersion = '') {
+    duplicate(id, gameVersion) {
       const original = resolve(id);
-      return install(prepare(original.bytes, original.filename, { dirty: true, gameVersion }));
+      return install(prepare(original.bytes, original.filename, { dirty: true, gameVersion: gameVersion ? validVersion(gameVersion) : nextVersion(original) }));
+    },
+    renameVersion(id, gameVersion) {
+      const session = resolve(id);
+      if (locked(session)) throw new Error('内置样本已锁定。请先复制再修改。');
+      session.gameVersion = validVersion(gameVersion.trim());
+      return select(session);
     },
     openMany(entries) {
       if (!Array.isArray(entries) || !entries.length) throw new Error('No datasets selected');
@@ -112,6 +128,7 @@ export function createFeatureSessions({ codec, featureById, featureForKind }) {
     },
     mutate(operation, value, datasetId) {
       const session = resolve(datasetId);
+      if (locked(session)) throw new Error('内置样本已锁定。请先复制再修改。');
       const bytes = outputBytes(codec[operation](session.bytes, session.filename, value));
       const document = codec.openDocument(bytes, session.filename);
       if (featureForKind(document.kind) !== session.featureId) throw new Error('An edit cannot change document kind');

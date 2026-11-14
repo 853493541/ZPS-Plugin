@@ -29,6 +29,9 @@ try {
   if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /剑心|BUFF/i);
+  assert.equal(await page.locator('#lock-bar').isVisible(), true, 'built-in sample opens locked');
+  await page.locator('#lock-copy').click();
+  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
   await page.locator('#type-search').fill('12784');
   await page.locator('#type-list .type-item').first().click();
   await page.locator('#type-members .type-member-row').click();
@@ -52,6 +55,8 @@ try {
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#sample-list').innerText(), /真传（仅）团队气劲/);
   assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /团队气劲/);
+  await page.locator('#lock-copy').click();
+  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
   await page.locator('#search').fill('弹跳');
   const teamKey = await page.locator('#records-body tr').first().getAttribute('data-key');
   await page.locator('#records-body tr').first().click();
@@ -76,6 +81,8 @@ try {
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#sample-list').innerText(), /推荐设置关键词/);
   assert.equal(await page.locator('#box-tab').isVisible(), false);
+  await page.locator('#lock-copy').click();
+  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
   const chatKey = await page.locator('#records-body tr').first().getAttribute('data-key');
   await page.locator('#records-body tr').first().click();
   await page.locator('[name="keyword"]').fill('聊天测试关键词');
@@ -101,8 +108,11 @@ try {
   await page.locator('#sample-list button').click();
   await page.waitForFunction(() => !document.querySelector('#new-button').disabled);
   assert.equal(await page.locator('#dataset-tabs .dataset-tab').count(), datasetsBefore, 'opening the same sample must reuse the dataset');
+  await page.waitForFunction(() => document.querySelector('#lock-bar') && !document.querySelector('#lock-bar').hidden);
+  await page.locator('#dataset-tabs .dataset-tab', { hasText: '版本 2' }).click();
+  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden && document.querySelectorAll('#type-members .type-member-row').length === 1);
   await page.locator('#type-members .type-member-row').click();
-  assert.equal(await page.locator('[name="nPower"]').inputValue(), '13', 'reopening a sample must preserve its draft');
+  assert.equal(await page.locator('[name="nPower"]').inputValue(), '13', 'the copy keeps its draft');
   await page.locator('.inspector-close').click();
   const cancelClose = page.waitForEvent('dialog').then(dialog => dialog.dismiss());
   await page.locator('.dataset-tab-item').filter({ has: page.locator('.dataset-tab[aria-selected="true"]') }).locator('.dataset-tab').click({ button: 'right' });

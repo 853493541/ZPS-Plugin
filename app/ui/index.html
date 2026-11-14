@@ -17,10 +17,11 @@
     </aside>
     <main class="workspace">
       <header class="topbar">
-        <div class="dataset-identity"><div class="dataset-title-line"><h2 id="breadcrumb-name">未打开数据集</h2><i id="dirty-dot" hidden aria-label="未导出修改"></i></div><div class="dataset-subline"><span id="dataset-version">版本未标注</span><button class="identity-info" id="dataset-info-button" aria-label="查看数据集信息">文件信息</button></div></div>
+        <div class="dataset-identity"><div class="dataset-title-line"><h2 id="breadcrumb-name">未打开数据集</h2><i id="dirty-dot" hidden aria-label="未导出修改"></i></div><div class="dataset-subline"><span id="dataset-version"></span><button class="version-edit" id="version-edit" type="button" title="命名此版本" aria-label="命名此版本" hidden>✎</button><button class="identity-info" id="dataset-info-button" aria-label="查看数据集信息">文件信息</button></div></div>
         <div class="top-actions"><button class="button subtle" id="undo-button" disabled title="撤销上次修改">↶ <span>撤销</span></button><button class="button" id="new-button">＋ 新建数据集</button><button class="button" id="open-button">导入文件</button><button class="button primary" id="save-button" disabled>导出当前数据集</button></div>
       </header>
       <div id="dataset-tabs" class="dataset-tabs" role="tablist" aria-label="打开的数据集"></div>
+      <div id="lock-bar" class="lock-bar" role="status" hidden><span>🔒 内置样本只读。复制后即可编辑。</span><button id="lock-copy" class="button primary" type="button">复制</button></div>
       <div id="feature-panels" class="feature-panels"></div>
       <div id="feature-workspace" class="feature-workspace">
 

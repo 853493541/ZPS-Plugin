@@ -16,8 +16,6 @@ try {
   await page.goto(url);
   await page.waitForSelector('.type-item');
   const snapshot = async () => (await (await page.request.post(new URL('/preview-api/activateFeature', url).href, { data: { payload: 'jx-buff' } })).json()).result;
-  const original = await snapshot();
-  const datasetA = original.datasetId;
   const tab = id => page.locator(`.dataset-tab-item[data-dataset-id="${id}"] .dataset-tab`);
   const closeTab = id => ({ click: async () => { await page.locator(`.dataset-tab-item[data-dataset-id="${id}"] .dataset-tab`).click({ button: 'right' }); await page.getByRole('menuitem', { name: '关闭' }).click(); } });
   async function selectDataset(id) {
@@ -33,6 +31,12 @@ try {
   assert.equal(await page.locator('#breadcrumb-name').innerText(), 'BuffData.jx3dat');
   assert.equal(await page.locator('#dataset-version').isHidden(), true, 'no version placeholder');
   assert.equal(await page.locator('.dataset-close').count(), 0, 'tabs have no close button');
+  assert.equal(await page.locator('#lock-bar').isVisible(), true, 'built-in sample opens locked');
+  await page.locator('#lock-copy').click();
+  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
+  assert.equal(await page.locator('#dataset-version').innerText(), '版本 2', 'copy is named 版本 2');
+  const original = await snapshot();
+  const datasetA = original.datasetId;
   await openBuff();
   await page.locator('[name="nPower"]').fill('71');
   await page.keyboard.press('Escape');
@@ -46,7 +50,7 @@ try {
   const datasetB = current.datasetId;
   assert.notEqual(datasetA, datasetB);
   assert.equal(current.gameVersion, '预案 B');
-  assert.equal(await page.locator('#dataset-version').innerText(), '版本 预案 B');
+  assert.equal(await page.locator('#dataset-version').innerText(), '预案 B');
   assert.equal(current.document.records.length, 0);
   await page.locator('#add-type-button').click();
   await page.locator('#modal [name="name"]').fill('团队控制');
@@ -103,6 +107,8 @@ try {
   await page.keyboard.press('Escape');
   const discardedA = page.waitForEvent('dialog').then(dialog => dialog.accept());
   await closeTab(datasetA).click(); await discardedA;
+  await page.waitForFunction(() => document.querySelectorAll('.dataset-tab').length === 1);
+  await page.locator('.dataset-tab').click({ button: 'right' }); await page.getByRole('menuitem', { name: '关闭' }).click();
   await page.waitForFunction(() => document.querySelectorAll('.dataset-tab').length === 0);
   assert.equal(await page.locator('#empty-create').isVisible(), true);
   assert.equal(await page.locator('#feature-tab-jx-buff').getAttribute('aria-selected'), 'true');
