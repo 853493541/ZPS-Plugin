@@ -50,7 +50,7 @@ try {
   await page.locator('#add-type-button').click();
   await page.locator('#modal [name="name"]').fill('团队控制');
   await page.locator('#modal-submit').click();
-  await page.waitForFunction(() => document.querySelector('#type-detail-header h2')?.textContent === '团队控制');
+  await page.waitForFunction(() => document.querySelector('#type-name-input')?.value === '团队控制');
   await page.locator('#assign-member-button').click();
   await page.getByRole('textbox', { name: '输入 Buff ID', exact: true }).fill('12784');
   await page.locator('#modal-submit').click();
