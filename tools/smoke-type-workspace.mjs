@@ -26,7 +26,7 @@ try {
   await page.locator('#type-search').fill('逃兵');
   await page.waitForFunction(() => document.querySelectorAll('#type-list .type-item').length === 1);
   await page.locator('#type-list .type-item').click();
-  const originalType = await page.locator('#type-detail-header h2').innerText();
+  const originalType = await page.locator('#type-name-input').inputValue();
   assert.match(await page.locator('#type-members').innerText(), /逃兵/);
   await page.locator('.type-member-row').click();
   await page.locator('[name="nPower"]').fill('13');
@@ -55,7 +55,7 @@ try {
   await page.locator('#add-type-button').click();
   await page.locator('#modal [name="name"]').fill('草稿目标');
   await page.locator('#modal-submit').click();
-  await page.waitForFunction(() => document.querySelector('#type-detail-header h2')?.textContent === '草稿目标');
+  await page.waitForFunction(() => document.querySelector('#type-name-input')?.value === '草稿目标');
   await page.locator('#type-search').fill('12784');
   await page.locator('#type-list .type-item').click();
   await page.locator('.type-member-row').click();
@@ -64,11 +64,9 @@ try {
   await page.locator('.inspector-close').click();
   await page.locator('#type-search').fill('草稿目标');
   await page.locator('#type-list .type-item').click();
-  await page.locator('#type-settings-button').click();
-  await page.locator('#inspector-content [name="name"]').fill('草稿新目标');
-  await page.getByRole('button', { name: '保存条目修改' }).click();
-  await page.waitForFunction(() => document.querySelector('#type-detail-header h2')?.textContent === '草稿新目标');
-  await page.locator('.inspector-close').click();
+  await page.locator('#type-name-input').fill('草稿新目标');
+  await page.locator('#type-name-input').press('Enter');
+  await page.waitForFunction(() => document.querySelector('#type-name-input')?.value === '草稿新目标' && !document.querySelector('#type-name-input').disabled);
   await page.locator('#type-search').fill('12784');
   await page.locator('#type-list .type-item').click();
   await page.locator('.type-member-row').click();
@@ -82,7 +80,7 @@ try {
   await page.locator('#add-type-button').click();
   await page.locator('#modal [name="name"]').fill('工作流测试');
   await page.locator('#modal-submit').click();
-  await page.waitForFunction(() => document.querySelector('#type-detail-header h2')?.textContent === '工作流测试');
+  await page.waitForFunction(() => document.querySelector('#type-name-input')?.value === '工作流测试');
   await page.locator('#assign-member-button').click();
   await page.getByRole('searchbox', { name: '搜索已有 Buff', exact: true }).fill('12784');
   const picker = page.getByRole('combobox', { name: '选择已有 Buff', exact: true });
@@ -90,13 +88,11 @@ try {
   await page.locator('#modal-submit').click();
   await page.waitForSelector('#type-members [data-key="buff:12784"]');
   assert.match(await page.locator('#type-detail-header').innerText(), /1 个 Buff/);
-  await page.locator('#type-settings-button').click();
-  await page.locator('#inspector-content [name="name"]').fill('工作流重命名');
-  await page.getByRole('button', { name: '保存条目修改' }).click();
-  await page.waitForFunction(() => document.querySelector('#type-detail-header h2')?.textContent === '工作流重命名');
+  await page.locator('#type-name-input').fill('工作流重命名');
+  await page.locator('#type-name-input').press('Enter');
+  await page.waitForFunction(() => document.querySelector('#type-name-input')?.value === '工作流重命名' && !document.querySelector('#type-name-input').disabled);
   current = await snapshot();
   assert.equal(current.document.records.find(record => record.id === 12784).fields.nClass, '工作流重命名');
-  await page.locator('.inspector-close').click();
   await page.locator('#type-members [data-key="buff:12784"]').click();
   await page.locator('[name="nClass"]').selectOption('');
   await page.getByRole('button', { name: '保存条目修改' }).click();

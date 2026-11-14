@@ -605,7 +605,6 @@ function renderAvailability() {
   const group = currentType();
   if ($('add-type-button')) $('add-type-button').disabled = state.busy || !state.document?.writable;
   if ($('assign-member-button')) $('assign-member-button').disabled = state.busy || !state.document?.writable || !group;
-  if ($('type-settings-button')) $('type-settings-button').disabled = state.busy || !state.document?.writable || !group || group.name === '' && !group.record;
   for (const button of document.querySelectorAll('#sample-list button')) button.disabled = state.busy;
 }
 
@@ -658,26 +657,144 @@ function renderTypeWorkspace() {
   renderAvailability();
 }
 
+function editType(group, fields) {
+  return run(async () => {
+    await draftNotifications;
+    const result = await bridge.edit(datasetPayload({ key: group.record.key, fields }));
+    if (result?.document && Object.hasOwn(fields, 'name')) {
+      for (const [key, draft] of state.drafts) {
+        if (draft.values.nClass === group.name) state.drafts.set(key, { ...draft, values: { ...draft.values, nClass: fields.name }, fields: draft.fields ? { ...draft.fields, nClass: fields.name } : null });
+      }
+      if (state.selectedType === group.name) state.selectedType = fields.name;
+    }
+    if (receive(result)) toast('类型已更新。导出配置以写入文件。');
+  });
+}
+
+function typeSwitch(label, value, onChange, disabled) {
+  const wrap = element('div', 'type-switch');
+  wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', label);
+  for (const [option, text] of [[true, '开启'], [false, '关闭']]) {
+    const button = element('button', `switch-option${value === option ? ' active' : ''}`, text);
+    button.type = 'button'; button.disabled = disabled;
+    button.setAttribute('aria-pressed', String(value === option));
+    button.addEventListener('click', () => { if (value !== option) onChange(option); });
+    wrap.append(button);
+  }
+  return wrap;
+}
+
+function numberSetting(label, value, onCommit, disabled) {
+  const input = element('input', 'type-number');
+  input.type = 'number'; input.min = '0'; input.step = '1'; input.placeholder = '未设置';
+  input.value = value === undefined ? '' : String(value);
+  input.disabled = disabled; input.setAttribute('aria-label', label);
+  const commit = () => {
+    const text = input.value.trim();
+    if (text === (value === undefined ? '' : String(value))) return;
+    const number = Number(text);
+    if (text === '' || !Number.isSafeInteger(number) || number < 0) { input.value = value === undefined ? '' : String(value); toast(`${label}需要非负整数。`); return; }
+    onCommit(number);
+  };
+  input.addEventListener('change', commit);
+  input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); input.blur(); } });
+  return input;
+}
+
+function settingRow(label, hint, ...controls) {
+  const row = element('div', 'type-setting-row');
+  const heading = element('div', 'type-setting-label');
+  heading.append(element('strong', '', label));
+  if (hint) { heading.append(element('small', '', hint)); heading.title = hint; }
+  const body = element('div', 'type-setting-controls');
+  body.append(...controls);
+  row.append(heading, body);
+  return row;
+}
+
+function memberIcon(record, fields) {
+  const wrap = element('span', 'member-icon');
+  wrap.append(recordGlyph(record));
+  const preview = borderPreview(fields?.bBorderEnable, fields?.nBorder);
+  if (preview.kind === 'image') { const image = element('img', 'member-border'); image.src = preview.src; image.alt = ''; image.draggable = false; wrap.append(image); }
+  return wrap;
+}
+
 function renderTypeHeader() {
   if (!$('type-detail-header')) return;
   const group = currentType();
-  const heading = element('div');
-  const title = element('div', 'type-title');
-  if (group) title.append(borderSwatch(group.record?.fields.bBorderEnable, group.record?.fields.nBorder, 'medium'));
-  title.append(element('h2', '', group ? typeLabel(group.name) : '先添加一个类型'));
-  heading.append(title, element('p', 'muted-text', group ? `${group.members.length} 个 Buff${!group.record && group.name !== '' ? ' · 由 Buff 引用的类型，尚无样式配置' : ''}` : '类型用来组织 Buff，并管理共同的显示样式。'));
-  const actions = element('div', 'type-actions');
-  const settings = actionButton(group?.record ? '类型样式与名称' : '创建类型样式', 'type-settings-button', () => {
-    if (!group) return;
-    if (!group.record) { addType(group.name); return; }
-    openDetail(group.record);
-  });
-  settings.disabled = !group || group.name === '' && !group.record || !state.document?.writable;
+  const header = $('type-detail-header');
   const assign = actionButton('＋ 添加 Buff', 'assign-member-button', assignMember);
   assign.disabled = !group || !state.document?.writable;
-  actions.append(settings, assign);
-  $('type-detail-header').replaceChildren(heading, actions);
-  $('member-search').hidden = !group;
+  if (!group) {
+    const intro = element('div', 'type-card-title');
+    intro.append(element('h2', '', '先添加一个类型'), element('p', 'muted-text', '类型用来组织 Buff，并决定它们在游戏里的边框和字体。'));
+    header.replaceChildren(intro, assign);
+    $('member-search').hidden = true;
+    return;
+  }
+  $('member-search').hidden = false;
+  const fields = group.record?.fields || {};
+  const locked = !state.document?.writable || state.busy;
+  const top = element('div', 'type-card-top');
+  const title = element('div', 'type-card-title');
+  if (group.record) {
+    const name = element('input', 'type-name-input');
+    name.id = 'type-name-input'; name.value = group.name; name.disabled = locked;
+    name.setAttribute('aria-label', '类型名称');
+    name.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); name.blur(); }
+      if (event.key === 'Escape') { name.value = group.name; name.blur(); }
+    });
+    name.addEventListener('change', () => {
+      if (!name.value) { name.value = group.name; toast('类型名称不能为空。'); return; }
+      if (name.value !== group.name) editType(group, { name: name.value });
+    });
+    title.append(name);
+  } else title.append(element('h2', '', typeLabel(group.name)));
+  title.append(element('p', 'muted-text', `${group.members.length} 个 Buff`));
+  top.append(title, assign);
+  header.replaceChildren(top);
+  if (!group.record) {
+    const note = element('div', 'type-card-note');
+    if (group.name === '') note.append(element('span', '', '这些 Buff 没有指定类型，所以没有边框和字体设置。把它们移入某个类型即可套用该类型的样式。'));
+    else {
+      note.append(element('span', '', '有 Buff 引用了这个类型，但文件里还没有它的样式设置。'));
+      const create = actionButton('创建样式设置', 'type-settings-button', () => addType(group.name));
+      create.disabled = locked;
+      note.append(create);
+    }
+    header.append(note);
+    return;
+  }
+  const settings = element('div', 'type-card-settings');
+  settings.append(settingRow('启用', '关闭后该类型的提示不显示', typeSwitch('启用', fields.bEnable, value => editType(group, { bEnable: value }), locked)));
+  const borders = element('div', 'border-choices');
+  const off = element('button', `border-choice${fields.bBorderEnable !== true ? ' active' : ''}`);
+  off.type = 'button'; off.disabled = locked; off.title = '不使用自定义边框';
+  off.append(borderSwatch(false), element('span', '', '无'));
+  off.addEventListener('click', () => { if (fields.bBorderEnable !== false) editType(group, { bBorderEnable: false }); });
+  borders.append(off);
+  for (const value of borderNumbers) {
+    const active = fields.bBorderEnable === true && fields.nBorder === value;
+    const button = element('button', `border-choice${active ? ' active' : ''}`);
+    button.type = 'button'; button.dataset.border = value; button.disabled = locked; button.title = `边框 ${value}`;
+    button.append(borderSwatch(true, value), element('span', '', String(value)));
+    button.addEventListener('click', () => { if (!active) editType(group, { bBorderEnable: true, nBorder: value }); });
+    borders.append(button);
+  }
+  const otherBorder = numberSetting('边框编号', fields.nBorder, value => editType(group, { nBorder: value }), locked);
+  const other = element('label', 'border-other');
+  other.append(element('span', '', '编号'), otherBorder);
+  const borderHint = fields.bBorderEnable === true && !borderNumbers.includes(fields.nBorder) ? `边框 ${fields.nBorder ?? '未设置'} 暂无预览图` : '下方 Buff 图标显示的就是这个边框';
+  settings.append(settingRow('图标边框', borderHint, borders, other));
+  const font = element('div', 'font-setting');
+  font.append(typeSwitch('自定义字体', fields.bFontEnable, value => editType(group, { bFontEnable: value }), locked));
+  const fontNumber = element('label', 'border-other');
+  fontNumber.append(element('span', '', '字体编号'), numberSetting('字体编号', fields.nFont, value => editType(group, { nFont: value }), locked));
+  font.append(fontNumber);
+  settings.append(settingRow('文字字体', '字体编号对应游戏字体样式，暂无预览', font));
+  header.append(settings);
 }
 
 function renderTypeLists(changedKey) {
@@ -721,7 +838,7 @@ function renderTypeLists(changedKey) {
       open.type = 'button';
       open.append(copy, element('span', 'member-arrow', '›'));
       open.addEventListener('click', () => openDetail(record));
-      row.append(recordGlyph(record), open);
+      row.append(memberIcon(record, currentType()?.record?.fields), open);
       members.append(row);
     }
     if (!records.length) members.append(element('p', 'type-empty', !currentType() ? '添加类型后，就可以放入 Buff。' : state.memberSearch || state.typeSearch ? '当前类型中没有匹配的 Buff。' : '此类型还没有 Buff。点击“＋ 添加 Buff”开始。'));
@@ -1047,14 +1164,7 @@ function renderInspector() {
   const originalFields = record.key.startsWith('class:') ? { name: record.name, ...record.fields } : record.fields;
   const advanced = element('details', 'advanced-fields');
   advanced.append(element('summary', '', record.key.startsWith('class:') ? '高级样式与原始字段' : '高级字段'));
-  const isType = record.key.startsWith('class:');
-  if (isType) {
-    form.append(fieldInput('name', record.name, { readonly: !state.document.writable }));
-    for (const setting of typeSettings) form.append(typeSettingInput(setting, record.fields[setting.key], !state.document.writable));
-    attachBorderPicker(form);
-  }
   for (const [key, value] of Object.entries(originalFields || {})) {
-    if (isType && (key === 'name' || typeSettings.some(setting => setting.key === key))) continue;
     const input = jx && key === 'nClass' ? membershipField(value) : fieldInput(key, value, { readonly: !state.document.writable || key === 'raw' || value !== null && typeof value === 'object' && key !== 'tLevel' });
     (fieldLabels[key] && key !== 'raw' ? form : advanced).append(input);
   }
@@ -1089,17 +1199,6 @@ function renderInspector() {
       if (result?.document) {
         const current = state.drafts.get(record.key);
         if (current && JSON.stringify(current.values) === JSON.stringify(submitted)) state.drafts.delete(record.key);
-        if (Object.hasOwn(fields, 'name') && record.key.startsWith('class:')) {
-          for (const [key, draft] of state.drafts) {
-            if (draft.values.nClass === record.name) state.drafts.set(key, { ...draft, values: { ...draft.values, nClass: fields.name }, fields: draft.fields ? { ...draft.fields, nClass: fields.name } : null });
-          }
-          state.selected = `class:${fields.name}`;
-          if (state.selectedType === record.name) state.selectedType = fields.name;
-          if (state.drafts.has(record.key)) {
-            state.drafts.set(state.selected, state.drafts.get(record.key));
-            state.drafts.delete(record.key);
-          }
-        }
       }
       if (receive(result)) toast('条目已更新。导出配置以写入文件。');
     });
