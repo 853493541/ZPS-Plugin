@@ -2,6 +2,10 @@ import { features, featureById, featureForKind, featureForSample } from './featu
 import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft, typeSettings, borderNumbers, borderPreview, typeTabs, enabledLevels } from './jx-workspace.mjs';
 
 const $ = (id) => document.getElementById(id);
+const themes = [['light', '浅色'], ['dark', '深色'], ['system', '跟随系统']];
+function storedTheme() { try { const value = localStorage.getItem('zps-theme'); return themes.some(([key]) => key === value) ? value : 'system'; } catch { return 'system'; } }
+function applyTheme(value) { document.documentElement.dataset.theme = value; }
+applyTheme(storedTheme());
 const formats = {
   'jx-buff': { add: { id: '', nClass: '', nPower: 10, tLevel: { 0: true, 1: true } } },
   'my-team': { add: { reference: '', color: '#FFFFFFFF', label: '', priority: 9 } },
@@ -559,6 +563,22 @@ function renderDatasets() {
   if (focusedId) [...tabs.children].find(item => item.dataset.datasetId === focusedId)?.querySelector('.dataset-tab')?.focus({ preventScroll: true });
 }
 
+function openSettings() {
+  const content = element('div');
+  content.append(element('strong', '', '外观'));
+  const choices = element('div', 'theme-choices');
+  const paint = () => { for (const button of choices.children) { const active = button.dataset.theme === storedTheme(); button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active)); } };
+  for (const [key, label] of themes) {
+    const button = element('button', 'theme-choice', label);
+    button.type = 'button'; button.dataset.theme = key;
+    button.addEventListener('click', () => { try { localStorage.setItem('zps-theme', key); } catch {} applyTheme(key); paint(); });
+    choices.append(button);
+  }
+  content.append(choices);
+  paint();
+  showModal('设置', content);
+}
+
 function closeMenu() { $('context-menu')?.remove(); }
 
 function datasetMenu(summary, x, y) {
@@ -767,23 +787,6 @@ function typeSwitch(label, value, onChange, disabled) {
   return wrap;
 }
 
-function numberSetting(label, value, onCommit, disabled) {
-  const input = element('input', 'type-number');
-  input.type = 'number'; input.min = '0'; input.step = '1'; input.placeholder = '未设置';
-  input.value = value === undefined ? '' : String(value);
-  input.disabled = disabled; input.setAttribute('aria-label', label);
-  const commit = () => {
-    const text = input.value.trim();
-    if (text === (value === undefined ? '' : String(value))) return;
-    const number = Number(text);
-    if (text === '' || !Number.isSafeInteger(number) || number < 0) { input.value = value === undefined ? '' : String(value); toast(`${label}需要非负整数。`); return; }
-    onCommit(number);
-  };
-  input.addEventListener('change', commit);
-  input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); input.blur(); } });
-  return input;
-}
-
 function settingRow(label, ...controls) {
   const row = element('div', 'type-setting-row');
   row.append(element('strong', 'type-setting-label', label));
@@ -887,14 +890,10 @@ function renderTypeHeader() {
     fonts.append(button);
   };
   fontChoice('默认', fontOff, '使用插件默认字体', () => { if (!fontOff) editType(group, { bFontEnable: false }); });
-  for (const value of used) {
+  used.forEach((value, index) => {
     const active = !fontOff && fields.nFont === value;
     const count = typeGroups().filter(item => item.record?.fields.nFont === value).length;
-    fontChoice(`样式 ${value}`, active, `字体样式 ${value} · 文件中 ${count} 个类型使用`, () => { if (!active) editType(group, { bFontEnable: true, nFont: value }); });
-  }
-  fontChoice('其他…', false, '输入其他字体样式编号', () => {
-    const input = numberSetting('字体样式编号', undefined, value => editType(group, { bFontEnable: true, nFont: value }), !state.document?.writable || state.busy);
-    fonts.lastChild.replaceWith(input); input.focus();
+    fontChoice(`样式 ${index + 1}`, active, `字体编号 ${value} · 文件中 ${count} 个类型使用`, () => { if (!active) editType(group, { bFontEnable: true, nFont: value }); });
   });
   settings.append(settingRow('文字字体', fonts));
   header.append(settings);
@@ -1606,6 +1605,7 @@ async function refreshUpdateBanner() {
 }
 
 
+$('settings-button').addEventListener('click', openSettings);
 $('update-restart').addEventListener('click', () => run(async () => {
   if (updateActionBusy || updateView?.installRequested) return;
   updateActionBusy = true;
