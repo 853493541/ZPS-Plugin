@@ -174,7 +174,7 @@ td { height: 76px; border-bottom: 1px solid #edf1f3; overflow: hidden; white-spa
 .lookup-source { margin-top: 15px; font-size: 12px; color: #71858d; }
 .warning-box { background: #fff7e3; border: 1px solid #e8dbb6; color: #826324; padding: 12px; font-size: 13px; line-height: 1.8; border-radius: 6px; margin: 14px 0; }
 dialog { border: 1px solid #d2dfe3; border-radius: 12px; padding: 28px; width: 560px; color: var(--ink); background: var(--panel); box-shadow: 0 25px 80px #182d3533; max-height: 90vh; }
-dialog::backdrop { background: #142e3a66; backdrop-filter: blur(2px); }
+dialog::backdrop { background: #142e3a66; }
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
 .modal-header h2 { font-size: 24px; }
 .eyebrow { display: none; }

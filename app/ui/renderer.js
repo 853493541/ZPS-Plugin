@@ -1239,6 +1239,17 @@ $('undo-button').addEventListener('click', undo);
 $('new-button').addEventListener('click', newDocument);
 $('dataset-info-button')?.addEventListener('click', datasetInfo);
 $('detail-modal')?.addEventListener('cancel', event => { event.preventDefault(); closeDetail(); });
+function closeOnOutsideClick(dialog, close) {
+  const outside = event => {
+    const box = dialog.getBoundingClientRect();
+    return event.target === dialog && (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom);
+  };
+  let pressedOutside = false;
+  dialog.addEventListener('pointerdown', event => { pressedOutside = outside(event); });
+  dialog.addEventListener('click', event => { if (pressedOutside && outside(event)) close(); pressedOutside = false; });
+}
+closeOnOutsideClick($('detail-modal'), () => closeDetail());
+closeOnOutsideClick($('modal'), closeModal);
 $('add-button').addEventListener('click', addRecord);
 $('report-nav').addEventListener('click', reportProblem);
 $('update-nav').addEventListener('click', checkUpdates);
