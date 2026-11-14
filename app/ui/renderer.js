@@ -1,5 +1,5 @@
 import { features, featureById, featureForKind, featureForSample } from './features.mjs';
-import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft, typeSettings } from './jx-workspace.mjs';
+import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft, typeSettings, borderNumbers, borderPreview } from './jx-workspace.mjs';
 
 const $ = (id) => document.getElementById(id);
 const formats = {
@@ -662,7 +662,10 @@ function renderTypeHeader() {
   if (!$('type-detail-header')) return;
   const group = currentType();
   const heading = element('div');
-  heading.append(element('h2', '', group ? typeLabel(group.name) : '先添加一个类型'), element('p', 'muted-text', group ? `${group.members.length} 个 Buff${!group.record && group.name !== '' ? ' · 由 Buff 引用的类型，尚无样式配置' : ''}` : '类型用来组织 Buff，并管理共同的显示样式。'));
+  const title = element('div', 'type-title');
+  if (group) title.append(borderSwatch(group.record?.fields.bBorderEnable, group.record?.fields.nBorder, 'medium'));
+  title.append(element('h2', '', group ? typeLabel(group.name) : '先添加一个类型'));
+  heading.append(title, element('p', 'muted-text', group ? `${group.members.length} 个 Buff${!group.record && group.name !== '' ? ' · 由 Buff 引用的类型，尚无样式配置' : ''}` : '类型用来组织 Buff，并管理共同的显示样式。'));
   const actions = element('div', 'type-actions');
   const settings = actionButton(group?.record ? '类型样式与名称' : '创建类型样式', 'type-settings-button', () => {
     if (!group) return;
@@ -691,7 +694,7 @@ function renderTypeLists(changedKey) {
     const button = element('button', `type-item${group.name === state.selectedType ? ' active' : ''}`);
     button.type = 'button'; button.dataset.type = group.name;
     button.setAttribute('aria-pressed', String(group.name === state.selectedType));
-    button.append(element('span', 'type-name', typeLabel(group.name)), element('span', 'type-count', group.members.length));
+    button.append(borderSwatch(group.record?.fields.bBorderEnable, group.record?.fields.nBorder), element('span', 'type-name', typeLabel(group.name)), element('span', 'type-count', group.members.length));
     button.addEventListener('click', () => { state.selectedType = group.name; state.detailOpen = false; state.memberSearch = ''; $('member-search').value = ''; renderTypeHeader(); renderTypeLists(); renderInspector(); });
     list.append(button);
   }
@@ -763,6 +766,7 @@ function addType(initial = '') {
   const settings = element('div', 'type-settings');
   for (const setting of typeSettings) settings.append(typeSettingInput(setting, setting.initial));
   content.append(field, settings);
+  attachBorderPicker(settings);
   showModal('新建类型', content, '创建类型', async () => {
     const name = field.querySelector('input').value;
     if (!name) throw new Error('请输入类型名称。');
@@ -927,6 +931,52 @@ function typeSettingInput(setting, value, readonly = false) {
   return field;
 }
 
+function borderSwatch(enabled, number, size = 'small') {
+  const preview = borderPreview(enabled, number);
+  const swatch = element('span', `border-swatch ${size} ${preview.kind}`);
+  if (preview.kind === 'image') {
+    const image = element('img'); image.src = preview.src; image.alt = ''; image.draggable = false;
+    swatch.append(image);
+    swatch.title = `边框 ${preview.number}`;
+  } else if (preview.kind === 'unknown') {
+    swatch.append(element('span', '', String(preview.number ?? '?')));
+    swatch.title = preview.number === undefined ? '边框已启用，未设置编号' : `边框 ${preview.number} 暂无预览图`;
+  } else swatch.title = '未启用自定义边框';
+  return swatch;
+}
+
+function attachBorderPicker(container) {
+  const number = container.querySelector('[name=nBorder]');
+  const enabled = container.querySelector('[name=bBorderEnable]');
+  if (!number || !enabled) return;
+  const panel = element('div', 'border-picker');
+  const current = element('div', 'border-current');
+  const choices = element('div', 'border-choices');
+  const update = () => {
+    const value = number.value.trim() === '' ? undefined : Number(number.value);
+    const preview = borderPreview(enabled.value === 'true', value);
+    current.replaceChildren(borderSwatch(enabled.value === 'true', value, 'large'), element('span', 'muted-text', preview.kind === 'image' ? `边框 ${preview.number}` : preview.kind === 'unknown' ? (value === undefined ? '已启用，未设置编号' : `边框 ${value} 暂无预览图`) : '未启用自定义边框'));
+    for (const button of choices.children) button.classList.toggle('active', preview.kind === 'image' && Number(button.dataset.border) === value);
+  };
+  for (const value of borderNumbers) {
+    const button = element('button', 'border-choice');
+    button.type = 'button'; button.dataset.border = value; button.title = `边框 ${value}`;
+    button.disabled = number.readOnly || enabled.disabled;
+    button.append(borderSwatch(true, value), element('span', '', String(value)));
+    button.addEventListener('click', () => {
+      number.value = String(value); enabled.value = 'true';
+      number.dispatchEvent(new Event('input', { bubbles: true }));
+      update();
+    });
+    choices.append(button);
+  }
+  panel.append(current, choices);
+  number.closest('.field').after(panel);
+  number.addEventListener('input', update);
+  enabled.addEventListener('change', update);
+  update();
+}
+
 function formValues(form) {
   const fields = {};
   for (const input of form.querySelectorAll('[name]')) {
@@ -1001,6 +1051,7 @@ function renderInspector() {
   if (isType) {
     form.append(fieldInput('name', record.name, { readonly: !state.document.writable }));
     for (const setting of typeSettings) form.append(typeSettingInput(setting, record.fields[setting.key], !state.document.writable));
+    attachBorderPicker(form);
   }
   for (const [key, value] of Object.entries(originalFields || {})) {
     if (isType && (key === 'name' || typeSettings.some(setting => setting.key === key))) continue;
