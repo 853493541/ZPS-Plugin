@@ -9,7 +9,7 @@ const url = process.env.PREVIEW_URL || 'http://127.0.0.1:4183';
 const errors = [];
 let dialogs = 0;
 await fs.mkdir('artifacts', { recursive: true });
-async function scenario(initial, test) {
+async function scenario(initial, test, { visible = true } = {}) {
   const page = await browser.newPage({ viewport: { width: 1050, height: 760 } });
   page.setDefaultTimeout(5000);
   page.on('pageerror', error => errors.push(error.message));
@@ -49,7 +49,7 @@ async function scenario(initial, test) {
   try {
     await page.goto(url);
     await page.waitForFunction(() => window.updateTest.calls.includes('status'));
-    await page.locator('#update-banner').waitFor();
+    if (visible) await page.locator('#update-banner').waitFor();
     await test(page);
     assert.equal(await page.locator('dialog[open]').count(), 0, 'updates must remain inline');
     assert.equal(dialogs, 0, 'updates must not create native dialogs');
@@ -133,7 +133,7 @@ try {
   }
   console.log('PASS edits and drafts block inline, same Install button retries after resolution');
 
-  for (const version of ['0.1.5', undefined]) {
+  for (const version of ['0.1.5']) {
     await scenario({ status: 'error', version, message: '网络中断，请重试。' }, async page => {
       assert.equal(await button(page).innerText(), '重试');
       await page.evaluate(() => { window.updateTest.checkResult = { status: 'available', version: '0.1.5', installRequested: false }; });
@@ -146,7 +146,7 @@ try {
       assert.equal(await installs(page), 1, 'a fresh Install click arms consent after error');
     });
   }
-  console.log('PASS errors with/without version recheck and require fresh Install consent');
+  console.log('PASS errors for a known version recheck and require fresh Install consent');
 
   await scenario({ status: 'ready', version: '0.1.5', installRequested: true }, async page => {
     await refresh(page, { status: 'error', version: '0.1.5', message: '下载失败', installRequested: false });
@@ -157,34 +157,30 @@ try {
     assert.equal(await installs(page), 0, 'an error must not carry old consent into the fresh check');
   });
 
-  for (const action of ['install', 'check']) {
+  for (const action of ['install']) {
     await scenario({ status: 'available', version: '0.1.5' }, async page => {
       await page.evaluate(() => { window.updateTest.holdStatus = true; window.dispatchEvent(new Event('focus')); });
       await page.waitForFunction(() => window.updateTest.statusHeld);
-      if (action === 'install') { await button(page).click(); await pending(page); }
-      else {
-        await page.evaluate(() => { window.updateTest.checkResult = { status: 'downloading', version: '0.1.6', installRequested: true }; });
-        await page.locator('#update-nav').click();
-        await pending(page);
-      }
+      await button(page).click(); await pending(page);
       await page.evaluate(() => window.updateTest.releaseStatus());
       // Drain browser tasks after the older status promise resolves.
       await page.clock.runFor(50);
       assert.equal(await button(page).isDisabled(), true, 'status started before an action cannot overwrite its accepted result');
       assert.match(await button(page).innerText(), /准备中|正在安装/);
-      assert.equal(await installs(page), action === 'install' ? 1 : 0);
+      assert.equal(await installs(page), 1);
     });
   }
-  console.log('PASS held old status cannot overwrite completed Install or manual check');
+  console.log('PASS held old status cannot overwrite a completed Install');
 
-  await scenario({ status: 'available', version: '0.1.5' }, async page => {
-    await page.locator('#update-nav').click();
-    await page.waitForFunction(() => window.updateTest.calls.includes('check'));
-    assert.equal(await page.locator('dialog[open]').count(), 0);
-    assert.equal(await installs(page), 0);
-    assert.equal(await page.locator('#update-banner').isHidden(), true);
-  });
+  for (const state of [{ status: 'current' }, { status: 'checking' }, { status: 'unavailable' }, { status: 'error', message: '网络中断' }]) {
+    await scenario(state, async page => {
+      await page.clock.runFor(50);
+      assert.equal(await page.locator('#update-banner').isHidden(), true, `${state.status} without a new version shows nothing`);
+      assert.equal(await page.locator('.sidebar button', { hasText: /检查更新|反馈问题/ }).count(), 0, 'manual check and report buttons are gone');
+    }, { visible: false });
+  }
+  console.log('PASS bottom left stays empty without a new version');
   assert.deepEqual(errors, []);
   assert.equal(dialogs, 0);
-  console.log('PASS manual check stays inline; no browser errors or update dialogs');
+  console.log('PASS no browser errors or update dialogs');
 } finally { await browser.close(); }

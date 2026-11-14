@@ -111,3 +111,19 @@ test('border previews cover exactly the bundled border images', async () => {
   assert.deepEqual(borderPreview(false, 45), { kind: 'off' });
   assert.deepEqual(borderPreview(undefined, 45), { kind: 'off' });
 });
+
+test('default and custom type tabs split the sample by the addon built-in names', async () => {
+  const { builtinTypes, typeTabs, enabledLevels } = await import('../ui/jx-workspace.mjs');
+  const lang = iconv.decode(await readFile(fileURLToPath(new URL('../../vendor/interface/JX/JX_0Base/lang/zhcn.lang', import.meta.url))), 'gbk');
+  const declared = [...lang.matchAll(/\['buff_[a-z]+'\]\s*=\s*'([^']+)'/g)].map(match => match[1]);
+  assert.deepEqual(builtinTypes, declared, 'built-in names come from the JX language file in order');
+  const groups = projectTypes(open(sampleBytes).records);
+  const { custom, builtin } = typeTabs(groups);
+  assert.equal(builtin.length, 22);
+  assert.ok(custom.every(group => group.record || !builtinTypes.includes(group.name)));
+  assert.equal(custom.filter(group => group.record).length, groups.filter(group => group.record).length, 'every file-defined type is custom');
+  const silence = builtin.find(group => group.name === '沉默');
+  assert.ok(silence.shadow, 'a same-name custom type is reported');
+  assert.deepEqual(enabledLevels({ 1: true, 0: true, 9: false, 10: true }), [0, 1, 10]);
+  assert.deepEqual(enabledLevels(undefined), []);
+});

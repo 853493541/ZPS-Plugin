@@ -6,6 +6,22 @@ export const typeSettings = [
   { key: 'nFont', type: 'number', label: '字体编号', initial: 159 },
 ];
 
+export const builtinTypes = ['眩晕', '沉默', '锁足', '减伤', '爆发', '免控', '击倒', '定身', '无敌', '缴械', '闪避', '反弹', '减疗', '移速', '减速', '不死', '平沙', '禁疗', '封轻功', '瞬发', '恐惧', '免封'];
+
+export function typeTabs(groups) {
+  const custom = groups.filter(group => group.record || !builtinTypes.includes(group.name));
+  const builtin = builtinTypes.map(name => {
+    const group = groups.find(item => item.name === name);
+    return { name, builtin: true, record: null, members: group?.members || [], shadow: group?.record || null };
+  });
+  return { custom, builtin };
+}
+
+export function enabledLevels(tLevel) {
+  if (!tLevel || typeof tLevel !== 'object') return [];
+  return Object.entries(tLevel).filter(([, on]) => on === true).map(([level]) => Number(level)).sort((x, y) => x - y);
+}
+
 export const borderNumbers = [1, 7, 9, 10, 11, 12, 13, 14, 45];
 
 export function borderPreview(enabled, number) {

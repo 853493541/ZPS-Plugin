@@ -62,10 +62,6 @@ try {
  await app.evaluate(({dialog},file)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:file});},teamFile);
  await page.evaluate(()=>window.studio.save());
  assert.equal(openDocument(await fs.readFile(teamFile),teamFile).records.length,1);
- const reportFile=path.join(temporary,'问题 报告.json');
- await app.evaluate(({dialog},file)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:file});},reportFile);
- await page.evaluate(()=>window.studio.report('Test reproduction description'));
- const report=JSON.parse(await fs.readFile(reportFile,'utf8'));assert.equal(report.description,'Test reproduction description');assert.equal(report.filename,undefined);
  assert.deepEqual(errors,[]);
  if(installed){
   const userData=await app.evaluate(({app})=>app.getPath('userData'));
@@ -75,11 +71,11 @@ try {
   assert.equal(await app.evaluate(({app})=>app.getPath('userData')),userData);
   assert.equal(await fs.readFile(probeFile,'utf8'),'preserve-on-uninstall');
   if(process.env.ZPS_SMOKE_STATE){
-   const retainedFiles=await Promise.all([probeFile,destination,teamFile,reportFile,path.join(temporary,backups[0])].map(async file=>({path:file,sha256:createHash('sha256').update(await fs.readFile(file)).digest('hex')})));
+   const retainedFiles=await Promise.all([probeFile,destination,teamFile,path.join(temporary,backups[0])].map(async file=>({path:file,sha256:createHash('sha256').update(await fs.readFile(file)).digest('hex')})));
    await fs.writeFile(process.env.ZPS_SMOKE_STATE,JSON.stringify({probeFile,retainedFiles}));
   }
  }
- console.log('PASS native Electron preload, actual samples, edit, undo, Chinese paths, overwrite backup, reopen export, independent datasets/drafts/undo, MY creation, local report'+(installed?', installed restart and retained user data':''));
+ console.log('PASS native Electron preload, actual samples, edit, undo, Chinese paths, overwrite backup, reopen export, independent datasets/drafts/undo, MY creation'+(installed?', installed restart and retained user data':''));
 } finally {
  if(app){await app.evaluate(({dialog})=>{dialog.showMessageBox=async()=>({response:1});}).catch(()=>{});await app.close();}
  if(!process.env.ZPS_SMOKE_DATA_DIR)await fs.rm(temporary,{recursive:true,force:true});

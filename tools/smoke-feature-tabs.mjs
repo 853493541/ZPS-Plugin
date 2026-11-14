@@ -105,7 +105,8 @@ try {
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '13', 'reopening a sample must preserve its draft');
   await page.locator('.inspector-close').click();
   const cancelClose = page.waitForEvent('dialog').then(dialog => dialog.dismiss());
-  await page.locator('.dataset-tab-item').filter({ has: page.locator('.dataset-tab[aria-selected="true"]') }).locator('.dataset-close').click();
+  await page.locator('.dataset-tab-item').filter({ has: page.locator('.dataset-tab[aria-selected="true"]') }).locator('.dataset-tab').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '关闭' }).click();
   await cancelClose;
   assert.equal(await page.locator('#dataset-tabs .dataset-tab').count(), datasetsBefore, 'canceling dataset close must retain the dataset');
   await page.locator('#type-members .type-member-row').click();
