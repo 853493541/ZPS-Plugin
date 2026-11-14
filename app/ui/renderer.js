@@ -1,5 +1,5 @@
 import { features, featureById, featureForKind, featureForSample } from './features.mjs';
-import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft, typeSettings, borderNumbers, borderPreview } from './jx-workspace.mjs';
+import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft, typeSettings, borderNumbers, borderPreview, typeTabs, enabledLevels } from './jx-workspace.mjs';
 
 const $ = (id) => document.getElementById(id);
 const formats = {
@@ -228,9 +228,14 @@ function recordName(record) {
   return item ? metadataDisplayName(item).name : record?.name || (record?.id !== undefined ? `#${record.id}` : record?.key || '条目详情');
 }
 
+function buffIdLabel(record) {
+  const levels = state.document?.kind === 'jx-buff' ? enabledLevels(record.fields?.tLevel) : [];
+  return levels.length ? [record.id, ...levels].join(',') : `ID ${record.id}`;
+}
+
 function recordSubtitle(record) {
   const item = recordMetadata(record)?.item;
-  return `${record.id !== undefined ? `ID ${record.id}` : record.key}${metadataDisplayName(item).internal ? ' · 内部名' : ''}`;
+  return `${record.id !== undefined ? buffIdLabel(record) : record.key}${metadataDisplayName(item).internal ? ' · 内部名' : ''}`;
 }
 
 const pendingIcons = new Map();
@@ -319,7 +324,7 @@ function recordGlyph(record, entry = recordMetadata(record), big = false) {
 function renderSelectionHeading() {
   const record = selectedRecord();
   const entry = recordMetadata(record);
-  $('selection-heading').replaceChildren(recordGlyph(record, entry, true), element('h3', '', recordName(record)), element('p', '', record ? record.id !== undefined ? `BUFF ID ${record.id}` : entry ? `BUFF ID ${entry.item.BuffID} · ${record.key}` : record.key : '从配置库中选择一个条目'));
+  $('selection-heading').replaceChildren(recordGlyph(record, entry, true), element('h3', '', recordName(record)), element('p', '', record ? record.id !== undefined ? `BUFF ${buffIdLabel(record)}` : entry ? `BUFF ID ${entry.item.BuffID} · ${record.key}` : record.key : '从配置库中选择一个条目'));
   if (entry) $('selection-heading').append(element('p', 'metadata-source', `JX3BOX · ${entry.query.client} · 等级 ${entry.query.level}${metadataDisplayName(entry.item).internal ? ' · 内部名' : ''}${entry.result.stale ? ' · 离线缓存' : entry.result.source === 'cache' ? ' · 缓存' : ''}`));
 }
 
@@ -507,12 +512,12 @@ function textValue(value) { return value === null ? 'null' : typeof value === 'o
 function visibleRecords() {
   if (state.document?.kind === 'jx-buff') {
     const group = projectTypes(state.document.records).find(item => item.name === state.selectedType);
-    return group ? matchingMembers(group, state.typeSearch || state.search, recordName).filter(record => !state.memberSearch || `${recordName(record)} ${record.id}`.toLowerCase().includes(state.memberSearch.toLowerCase())) : [];
+    return group ? matchingMembers(group, state.typeSearch || state.search, recordName) : [];
   }
   return (state.document?.records || []).filter((record) => (!state.search || `${recordName(record)} ${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
 }
 
-function versionLabel(dataset = state) { return dataset.gameVersion ? `版本 ${dataset.gameVersion}` : '版本未标注'; }
+function versionLabel(dataset = state) { return dataset.gameVersion ? `版本 ${dataset.gameVersion}` : ''; }
 
 function renderDatasets() {
   const tabs = $('dataset-tabs');
@@ -541,13 +546,67 @@ function renderDatasets() {
       if (next === undefined) return;
       event.preventDefault(); activateDataset(summaries[next].datasetId, true);
     });
-    const close = actionButton('×', '', () => run(() => closeDataset(summary.datasetId)));
-    close.className = 'dataset-close'; close.setAttribute('aria-label', `关闭 ${fileName(summary.filename)}`); close.disabled = state.busy;
+    button.addEventListener('contextmenu', event => { event.preventDefault(); datasetMenu(summary, event.clientX, event.clientY); });
+    button.addEventListener('keydown', event => {
+      if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+      event.preventDefault();
+      const box = button.getBoundingClientRect();
+      datasetMenu(summary, box.left + 12, box.bottom + 4);
+    });
     button.disabled = state.busy && !switching;
-    item.append(button, close); tabs.append(item);
+    item.append(button); tabs.append(item);
   }
   if (focusedId) [...tabs.children].find(item => item.dataset.datasetId === focusedId)?.querySelector('.dataset-tab')?.focus({ preventScroll: true });
 }
+
+function closeMenu() { $('context-menu')?.remove(); }
+
+function datasetMenu(summary, x, y) {
+  closeMenu();
+  const menu = element('div', 'context-menu'); menu.id = 'context-menu'; menu.setAttribute('role', 'menu');
+  const name = fileName(summary.filename);
+  const items = [
+    ['复制为新版本…', false, () => duplicateDataset(summary)],
+    ['导出', summary.datasetId !== viewKey() || !state.document?.writable || featureById(state.featureId).kind === 'opaque', () => save()],
+    ['关闭', false, () => run(() => closeDataset(summary.datasetId))],
+  ];
+  for (const [label, disabled, action] of items) {
+    const item = element('button', 'context-item', label);
+    item.type = 'button'; item.setAttribute('role', 'menuitem'); item.disabled = disabled || state.busy;
+    item.addEventListener('click', () => { closeMenu(); action(); });
+    menu.append(item);
+  }
+  menu.setAttribute('aria-label', name);
+  document.body.append(menu);
+  const box = menu.getBoundingClientRect();
+  menu.style.left = `${Math.max(4, Math.min(x, innerWidth - box.width - 4))}px`;
+  menu.style.top = `${Math.max(4, Math.min(y, innerHeight - box.height - 4))}px`;
+  menu.querySelector('button:not(:disabled)')?.focus();
+  menu.addEventListener('keydown', event => {
+    const buttons = [...menu.querySelectorAll('button:not(:disabled)')];
+    const index = buttons.indexOf(document.activeElement);
+    if (event.key === 'Escape') { event.preventDefault(); closeMenu(); }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); buttons[(index + (event.key === 'ArrowDown' ? 1 : buttons.length - 1)) % buttons.length]?.focus(); }
+  });
+}
+
+function duplicateDataset(summary) {
+  const content = element('div');
+  content.append(element('p', 'modal-description', `复制“${fileName(summary.filename)}”当前的内容（含已应用的修改），在新标签中作为另一个版本编辑。原数据集保持不变。`));
+  const version = fieldInput('gameVersion', '');
+  version.querySelector('span').textContent = '新版本名称';
+  version.querySelector('input').placeholder = '例如：预案 B';
+  content.append(version);
+  showModal('复制为新版本', content, '复制', async () => {
+    await draftNotifications;
+    const result = await bridge.duplicate({ datasetId: summary.datasetId, gameVersion: version.querySelector('input').value.trim() });
+    if (receive(result, true)) { closeModal(); toast('已复制为新版本。'); }
+  });
+}
+
+document.addEventListener('pointerdown', event => { if (!event.target.closest?.('#context-menu')) closeMenu(); });
+window.addEventListener('blur', closeMenu);
+window.addEventListener('resize', closeMenu);
 
 function datasetInfo() {
   if (!state.document) return;
@@ -555,7 +614,7 @@ function datasetInfo() {
   const sourceLabels = { file: '本地文件', sample: '内置样本', new: '新建数据集' };
   const rows = [
     ['文件名', fileName(state.filename)],
-    ['数据版本', state.gameVersion || '版本未标注'],
+    ['数据版本', state.gameVersion || '未标注'],
     ['来源', sourceLabels[state.source?.kind] || '未记录'],
     ['原始路径', state.source?.kind === 'new' ? '在工作区内新建' : state.source?.displayPath || state.filename || '未记录'],
     ['导入位置', featureById(state.featureId).importPath],
@@ -572,7 +631,7 @@ function render() {
   const feature = featureById(state.featureId);
   renderFeatures();
   renderDatasets();
-  if ($('dataset-version')) $('dataset-version').textContent = doc ? versionLabel() : '新建或打开数据集';
+  if ($('dataset-version')) { $('dataset-version').textContent = doc ? versionLabel() : '新建或打开数据集'; $('dataset-version').hidden = Boolean(doc) && !state.gameVersion; }
   if ($('dataset-info-button')) $('dataset-info-button').disabled = !doc || state.busy;
   $('breadcrumb-name').textContent = doc ? fileName(state.filename) : '未打开文件';
   $('breadcrumb-name').title = state.filename;
@@ -590,7 +649,6 @@ function renderAvailability() {
   const feature = featureById(state.featureId);
   const format = formats[feature.kind];
   for (const button of document.querySelectorAll('.dataset-tab')) button.disabled = state.busy && !switching;
-  for (const button of document.querySelectorAll('.dataset-close')) button.disabled = state.busy;
   if ($('dataset-info-button')) $('dataset-info-button').disabled = !state.document || state.busy;
   $('save-button').disabled = state.busy || !state.document?.writable || feature.kind === 'opaque';
   $('undo-button').disabled = state.busy || !state.canUndo;
@@ -611,7 +669,8 @@ function renderAvailability() {
 function focusSearch() { (state.document?.kind === 'jx-buff' ? $('type-search') : $('search'))?.focus(); }
 
 function typeGroups() { return projectTypes(state.document?.records); }
-function currentType() { return typeGroups().find(group => group.name === state.selectedType); }
+function tabGroups() { const tabs = typeTabs(typeGroups()); return state.typeTab === 'builtin' ? tabs.builtin : tabs.custom; }
+function currentType() { return tabGroups().find(group => group.name === state.selectedType); }
 
 function actionButton(label, id, action) {
   const button = element('button', 'button', label);
@@ -632,29 +691,53 @@ function renderTypeWorkspace() {
     const master = element('aside', 'type-master');
     const heading = element('div', 'type-master-header');
     heading.append(element('h3', '', '类型'), actionButton('＋ 新建类型', 'add-type-button', addType));
+    const tabs = element('div', 'type-tabs'); tabs.id = 'type-tabs'; tabs.setAttribute('role', 'tablist');
+    for (const [tab, label] of [['builtin', '默认'], ['custom', '自定义']]) {
+      const button = element('button', 'type-tab', label);
+      button.type = 'button'; button.dataset.tab = tab; button.setAttribute('role', 'tab');
+      button.addEventListener('click', () => { if (state.typeTab === tab) return; state.typeTab = tab; state.selectedType = null; state.detailOpen = false; renderTypeWorkspace(); renderInspector(); });
+      tabs.append(button);
+    }
     const search = element('input', 'type-search');
     search.id = 'type-search'; search.type = 'search'; search.placeholder = '搜索类型、Buff 名称或 ID';
     search.setAttribute('aria-label', '搜索类型、Buff 名称或 ID');
     search.addEventListener('input', () => { state.typeSearch = search.value; state.search = ''; renderTypeLists(); });
     const list = element('div', 'type-list'); list.id = 'type-list'; list.setAttribute('aria-label', '类型列表');
-    master.append(heading, search, list);
+    master.append(heading, tabs, search, list);
     const detail = element('section', 'type-detail');
     const header = element('header', 'type-detail-header'); header.id = 'type-detail-header';
-    const memberSearch = element('input', 'member-search');
-    memberSearch.id = 'member-search'; memberSearch.type = 'search'; memberSearch.placeholder = '在当前类型中搜索 Buff';
-    memberSearch.setAttribute('aria-label', '在当前类型中搜索 Buff');
-    memberSearch.addEventListener('input', () => { state.memberSearch = memberSearch.value; renderTypeLists(); });
     const members = element('div', 'type-member-list'); members.id = 'type-members';
-    detail.append(header, memberSearch, members);
+    detail.append(header, members);
     workspace.replaceChildren(master, detail);
   }
-  const groups = typeGroups();
+  if (state.typeTab !== 'builtin') state.typeTab = 'custom';
+  const tabs = typeTabs(typeGroups());
+  for (const button of $('type-tabs').children) {
+    const active = button.dataset.tab === state.typeTab;
+    button.classList.toggle('active', active); button.setAttribute('aria-selected', String(active));
+    button.textContent = `${button.dataset.tab === 'builtin' ? '默认' : '自定义'} ${tabs[button.dataset.tab].length}`;
+  }
+  $('add-type-button').hidden = state.typeTab === 'builtin';
+  const groups = tabGroups();
   if (!groups.some(group => group.name === state.selectedType)) state.selectedType = groups[0]?.name ?? null;
   $('type-search').value = state.typeSearch;
-  $('member-search').value = state.memberSearch;
   renderTypeHeader();
   renderTypeLists();
   renderAvailability();
+}
+
+function moveBuff(key, name) {
+  const record = state.document?.records.find(item => item.key === key);
+  if (!record || record.fields.nClass === name) return;
+  run(async () => {
+    await draftNotifications;
+    const result = await bridge.edit(datasetPayload({ key, fields: { nClass: name } }));
+    if (result?.document) {
+      const draft = state.drafts.get(key);
+      if (draft) state.drafts.set(key, rebaseMembershipDraft(draft, record, { ...record, fields: { ...record.fields, nClass: name } }));
+    }
+    if (receive(result)) toast(`${recordName(record)} 已移入“${typeLabel(name)}”。`);
+  });
 }
 
 function editType(group, fields) {
@@ -701,14 +784,12 @@ function numberSetting(label, value, onCommit, disabled) {
   return input;
 }
 
-function settingRow(label, hint, ...controls) {
+function settingRow(label, ...controls) {
   const row = element('div', 'type-setting-row');
-  const heading = element('div', 'type-setting-label');
-  heading.append(element('strong', '', label));
-  if (hint) { heading.append(element('small', '', hint)); heading.title = hint; }
+  row.append(element('strong', 'type-setting-label', label));
   const body = element('div', 'type-setting-controls');
   body.append(...controls);
-  row.append(heading, body);
+  row.append(body);
   return row;
 }
 
@@ -730,10 +811,22 @@ function renderTypeHeader() {
     const intro = element('div', 'type-card-title');
     intro.append(element('h2', '', '先添加一个类型'), element('p', 'muted-text', '类型用来组织 Buff，并决定它们在游戏里的边框和字体。'));
     header.replaceChildren(intro, assign);
-    $('member-search').hidden = true;
     return;
   }
-  $('member-search').hidden = false;
+  if (group.builtin) {
+    const top = element('div', 'type-card-top');
+    const title = element('div', 'type-card-title');
+    title.append(element('h2', '', group.name), element('p', 'muted-text', `插件内置类型 · 文件中 ${group.members.length} 个 Buff`));
+    top.append(title, assign);
+    const note = element('div', 'type-card-note');
+    note.append(element('span', '', group.shadow ? '文件里有同名的自定义类型，它的边框和字体设置会用在这些 Buff 上。' : '这是插件自带的类型，样式由插件决定。这里列出文件中放入它的 Buff。'));
+    if (group.shadow) {
+      const jump = actionButton(`编辑自定义“${group.name}”`, '', () => { state.typeTab = 'custom'; state.selectedType = group.name; renderTypeWorkspace(); });
+      note.append(jump);
+    }
+    header.replaceChildren(top, note);
+    return;
+  }
   const fields = group.record?.fields || {};
   const locked = !state.document?.writable || state.busy;
   const top = element('div', 'type-card-top');
@@ -768,32 +861,42 @@ function renderTypeHeader() {
     return;
   }
   const settings = element('div', 'type-card-settings');
-  settings.append(settingRow('启用', '关闭后该类型的提示不显示', typeSwitch('启用', fields.bEnable, value => editType(group, { bEnable: value }), locked)));
+  settings.append(settingRow('启用', typeSwitch('启用', fields.bEnable, value => editType(group, { bEnable: value }), locked)));
   const borders = element('div', 'border-choices');
-  const off = element('button', `border-choice${fields.bBorderEnable !== true ? ' active' : ''}`);
-  off.type = 'button'; off.disabled = locked; off.title = '不使用自定义边框';
-  off.append(borderSwatch(false), element('span', '', '无'));
-  off.addEventListener('click', () => { if (fields.bBorderEnable !== false) editType(group, { bBorderEnable: false }); });
-  borders.append(off);
-  for (const value of borderNumbers) {
-    const active = fields.bBorderEnable === true && fields.nBorder === value;
+  const choice = (enabled, number, active, title, change) => {
     const button = element('button', `border-choice${active ? ' active' : ''}`);
-    button.type = 'button'; button.dataset.border = value; button.disabled = locked; button.title = `边框 ${value}`;
-    button.append(borderSwatch(true, value), element('span', '', String(value)));
-    button.addEventListener('click', () => { if (!active) editType(group, { bBorderEnable: true, nBorder: value }); });
+    button.type = 'button'; button.disabled = locked; button.title = title; button.setAttribute('aria-label', title);
+    button.setAttribute('aria-pressed', String(active));
+    if (number !== undefined) button.dataset.border = number;
+    button.append(borderSwatch(enabled, number, 'medium'));
+    button.addEventListener('click', () => { if (!active) editType(group, change); });
     borders.append(button);
+  };
+  choice(false, undefined, fields.bBorderEnable !== true, '不使用边框', { bBorderEnable: false });
+  for (const value of borderNumbers) choice(true, value, fields.bBorderEnable === true && fields.nBorder === value, `边框 ${value}`, { bBorderEnable: true, nBorder: value });
+  if (fields.bBorderEnable === true && !borderNumbers.includes(fields.nBorder)) choice(true, fields.nBorder, true, `边框 ${fields.nBorder ?? '未设置'}（暂无预览图）`, {});
+  settings.append(settingRow('图标边框', borders));
+  const fonts = element('div', 'font-choices');
+  const used = [...new Set(typeGroups().map(item => item.record?.fields.nFont).filter(Number.isSafeInteger))].sort((x, y) => x - y);
+  if (Number.isSafeInteger(fields.nFont) && !used.includes(fields.nFont)) used.push(fields.nFont);
+  const fontOff = fields.bFontEnable !== true;
+  const fontChoice = (text, active, title, onClick) => {
+    const button = element('button', `font-choice${active ? ' active' : ''}`, text);
+    button.type = 'button'; button.disabled = locked; button.title = title; button.setAttribute('aria-pressed', String(active));
+    button.addEventListener('click', onClick);
+    fonts.append(button);
+  };
+  fontChoice('默认', fontOff, '使用插件默认字体', () => { if (!fontOff) editType(group, { bFontEnable: false }); });
+  for (const value of used) {
+    const active = !fontOff && fields.nFont === value;
+    const count = typeGroups().filter(item => item.record?.fields.nFont === value).length;
+    fontChoice(`样式 ${value}`, active, `字体样式 ${value} · 文件中 ${count} 个类型使用`, () => { if (!active) editType(group, { bFontEnable: true, nFont: value }); });
   }
-  const otherBorder = numberSetting('边框编号', fields.nBorder, value => editType(group, { nBorder: value }), locked);
-  const other = element('label', 'border-other');
-  other.append(element('span', '', '编号'), otherBorder);
-  const borderHint = fields.bBorderEnable === true && !borderNumbers.includes(fields.nBorder) ? `边框 ${fields.nBorder ?? '未设置'} 暂无预览图` : '下方 Buff 图标显示的就是这个边框';
-  settings.append(settingRow('图标边框', borderHint, borders, other));
-  const font = element('div', 'font-setting');
-  font.append(typeSwitch('自定义字体', fields.bFontEnable, value => editType(group, { bFontEnable: value }), locked));
-  const fontNumber = element('label', 'border-other');
-  fontNumber.append(element('span', '', '字体编号'), numberSetting('字体编号', fields.nFont, value => editType(group, { nFont: value }), locked));
-  font.append(fontNumber);
-  settings.append(settingRow('文字字体', '字体编号对应游戏字体样式，暂无预览', font));
+  fontChoice('其他…', false, '输入其他字体样式编号', () => {
+    const input = numberSetting('字体样式编号', undefined, value => editType(group, { bFontEnable: true, nFont: value }), !state.document?.writable || state.busy);
+    fonts.lastChild.replaceWith(input); input.focus();
+  });
+  settings.append(settingRow('文字字体', fonts));
   header.append(settings);
 }
 
@@ -805,14 +908,26 @@ function renderTypeLists(changedKey) {
   const list = $('type-list');
   const members = $('type-members');
   const scroll = [list.scrollTop, members.scrollTop];
-  const groups = searchTypes(typeGroups(), state.typeSearch || state.search, recordName);
+  const groups = searchTypes(tabGroups(), state.typeSearch || state.search, recordName);
   list.replaceChildren();
   for (const group of groups) {
     const button = element('button', `type-item${group.name === state.selectedType ? ' active' : ''}`);
     button.type = 'button'; button.dataset.type = group.name;
     button.setAttribute('aria-pressed', String(group.name === state.selectedType));
     button.append(borderSwatch(group.record?.fields.bBorderEnable, group.record?.fields.nBorder), element('span', 'type-name', typeLabel(group.name)), element('span', 'type-count', group.members.length));
-    button.addEventListener('click', () => { state.selectedType = group.name; state.detailOpen = false; state.memberSearch = ''; $('member-search').value = ''; renderTypeHeader(); renderTypeLists(); renderInspector(); });
+    button.addEventListener('dragover', event => {
+      if (!state.document?.writable || !event.dataTransfer.types.includes('application/x-zps-buff')) return;
+      event.preventDefault(); event.dataTransfer.dropEffect = 'move'; button.classList.add('drop-target');
+    });
+    button.addEventListener('dragleave', () => button.classList.remove('drop-target'));
+    button.addEventListener('drop', event => {
+      button.classList.remove('drop-target');
+      const key = event.dataTransfer.getData('application/x-zps-buff');
+      if (!key) return;
+      event.preventDefault();
+      moveBuff(key, group.name);
+    });
+    button.addEventListener('click', () => { state.selectedType = group.name; state.detailOpen = false; renderTypeHeader(); renderTypeLists(); renderInspector(); });
     list.append(button);
   }
   if (!groups.length) list.append(element('p', 'type-empty', '没有匹配的类型或 Buff。'));
@@ -836,12 +951,18 @@ function renderTypeLists(changedKey) {
       copy.append(element('span', 'record-name', recordName(record)), element('span', 'record-id', recordSubtitle(record)));
       const open = element('button', 'type-member-open');
       open.type = 'button';
-      open.append(copy, element('span', 'member-arrow', '›'));
+      open.append(memberIcon(record, currentType()?.record?.fields || currentType()?.shadow?.fields), copy);
       open.addEventListener('click', () => openDetail(record));
-      row.append(memberIcon(record, currentType()?.record?.fields), open);
+      if (state.document?.writable) {
+        row.draggable = true;
+        row.title = '拖到左侧类型即可移入该类型';
+        row.addEventListener('dragstart', event => { event.dataTransfer.setData('application/x-zps-buff', record.key); event.dataTransfer.effectAllowed = 'move'; row.classList.add('dragging'); });
+        row.addEventListener('dragend', () => row.classList.remove('dragging'));
+      }
+      row.append(open);
       members.append(row);
     }
-    if (!records.length) members.append(element('p', 'type-empty', !currentType() ? '添加类型后，就可以放入 Buff。' : state.memberSearch || state.typeSearch ? '当前类型中没有匹配的 Buff。' : '此类型还没有 Buff。点击“＋ 添加 Buff”开始。'));
+    if (!records.length) members.append(element('p', 'type-empty', !currentType() ? '添加类型后，就可以放入 Buff。' : state.typeSearch ? '当前类型中没有匹配的 Buff。' : '此类型还没有 Buff。点击“＋ 添加 Buff”开始。'));
   }
   list.scrollTop = scroll[0]; members.scrollTop = scroll[1];
   if (focusedType !== undefined) [...list.children].find(node => node.dataset.type === focusedType)?.focus({ preventScroll: true });
@@ -890,7 +1011,7 @@ function addType(initial = '') {
     const values = formValues(settings);
     await draftNotifications;
     const result = await bridge.add(datasetPayload({ type: 'class', name, ...values }));
-    if (result?.document) { state.selectedType = name; state.typeSearch = ''; state.search = ''; state.memberSearch = ''; }
+    if (result?.document) { state.selectedType = name; state.typeTab = 'custom'; state.typeSearch = ''; state.search = ''; }
     if (receive(result)) { closeModal(); toast('类型已创建。'); }
   });
 }
@@ -934,7 +1055,7 @@ function assignMember() {
       if (record && draftIsDirty(record.key)) throw new Error('这个 Buff 有尚未应用的编辑，请先在详情中保存修改。');
       result = record ? await bridge.edit(datasetPayload({ key: record.key, fields: { nClass: group.name } })) : await bridge.add(datasetPayload({ id: Number(id.value), nClass: group.name }));
     }
-    if (result?.document) { state.typeSearch = ''; state.search = ''; state.memberSearch = ''; }
+    if (result?.document) { state.typeSearch = ''; state.search = ''; }
     if (receive(result)) { closeModal(); toast('Buff 已放入当前类型。可使用撤销恢复。'); }
   });
   modalMetadataRefresh = populate;
@@ -1386,21 +1507,6 @@ function addRecord() {
   });
 }
 
-function reportProblem() {
-  const content = element('div');
-  content.append(element('p', 'modal-description', '描述遇到的问题和重现步骤。反馈会导出到本地文件，由你检查后自行提交。'));
-  const field = fieldInput('问题描述', '');
-  const original = field.querySelector('input');
-  const input = element('textarea'); input.rows = 6; input.placeholder = '发生了什么？你期望看到什么？'; input.required = true;
-  original.replaceWith(input);
-  content.append(field);
-  showModal('导出问题反馈', content, '导出反馈', async () => {
-    if (!input.value.trim()) throw new Error('请先填写问题描述。');
-    const result = await bridge.report(input.value.trim());
-    if (!result || result.canceled || result.cancelled) return;
-    closeModal(); toast('问题反馈已导出到本地。');
-  });
-}
 
 
 const open = () => run(async () => { await draftNotifications; return receive(await bridge.open(), true); });
@@ -1436,8 +1542,6 @@ function closeOnOutsideClick(dialog, close) {
 closeOnOutsideClick($('detail-modal'), () => closeDetail());
 closeOnOutsideClick($('modal'), closeModal);
 $('add-button').addEventListener('click', addRecord);
-$('report-nav').addEventListener('click', reportProblem);
-$('update-nav').addEventListener('click', checkUpdates);
 $('search').addEventListener('input', (event) => { state.search = event.target.value; if (state.document?.kind === 'jx-buff') { state.typeSearch = state.search; if ($('type-search')) $('type-search').value = state.search; } renderRecords(); });
 for (const tab of ['config', 'box', 'source']) $(`${tab}-tab`).addEventListener('click', () => { state.tab = tab; renderInspector(); });
 $('modal-close').addEventListener('click', closeModal);
@@ -1471,7 +1575,6 @@ run(async () => {
 let updateBannerBusy = false;
 let updateActionBusy = false;
 let updateActionEpoch = 0;
-let manualUpdateCheck = false;
 let updateView = null;
 
 function renderUpdateBanner(result) {
@@ -1479,7 +1582,7 @@ function renderUpdateBanner(result) {
   const status = result?.status;
   const known = ['available', 'downloading', 'ready'].includes(status);
   const retry = status === 'error';
-  const show = known || retry || manualUpdateCheck && status === 'checking';
+  const show = known || retry && result.version !== undefined;
   $('update-banner').hidden = !show;
   const button = $('update-restart');
   button.hidden = !known && !retry;
@@ -1489,11 +1592,6 @@ function renderUpdateBanner(result) {
   else if (retry) $('update-message').textContent = result.message || '更新未完成，请重试。';
   else if (result?.installRequested) $('update-message').textContent = status === 'ready' ? '正在更新，即将重新打开应用。' : `正在下载 ${result.progress || 0}%，完成后自动更新并重启。`;
   else if (known) $('update-message').textContent = `发现新版本${result.version ? ` ${result.version}` : ''}`;
-  else if (status === 'checking') $('update-message').textContent = '正在检查更新…';
-  if (manualUpdateCheck && ['current', 'unavailable', 'error'].includes(status)) {
-    manualUpdateCheck = false;
-    if (!retry) toast(status === 'current' ? '当前已是最新版本。' : result.message || '当前环境不支持更新。');
-  }
 }
 
 async function refreshUpdateBanner() {
@@ -1507,15 +1605,6 @@ async function refreshUpdateBanner() {
   finally { updateBannerBusy = false; }
 }
 
-async function checkUpdates() {
-  if (updateActionBusy) return;
-  updateActionBusy = true;
-  updateActionEpoch++;
-  manualUpdateCheck = true;
-  try { renderUpdateBanner(await bridge.updates('check')); }
-  catch (error) { renderUpdateBanner({ status: 'error', message: error.message || '检查更新未完成，请重试。' }); }
-  finally { updateActionBusy = false; if (updateView) renderUpdateBanner(updateView); }
-}
 
 $('update-restart').addEventListener('click', () => run(async () => {
   if (updateActionBusy || updateView?.installRequested) return;
@@ -1525,7 +1614,6 @@ $('update-restart').addEventListener('click', () => run(async () => {
   try {
     await draftNotifications;
     const action = updateView?.status === 'error' ? 'check' : 'install';
-    if (action === 'check') manualUpdateCheck = true;
     renderUpdateBanner(await bridge.updates(action));
   } catch (error) { renderUpdateBanner({ status: 'error', message: error.message || '更新未完成，请重试。' }); }
   finally { updateActionBusy = false; if (updateView) renderUpdateBanner(updateView); }

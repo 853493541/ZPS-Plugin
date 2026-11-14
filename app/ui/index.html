@@ -13,7 +13,7 @@
       <div class="workspace-title"><div class="brand" aria-label="ZPS Studio">Z<span>·</span></div><div><h1>ZPS Studio</h1></div></div>
       <div id="feature-tabs" class="feature-tabs" role="tablist" aria-label="插件功能" aria-orientation="vertical"></div>
       <details class="sample-picker"><summary>打开配置样本</summary><div id="sample-list" class="sample-list"><p class="sidebar-hint">正在读取样本…</p></div></details>
-      <div class="sidebar-tools"><button id="update-nav" class="button subtle">检查更新</button><button id="report-nav" class="button subtle">反馈问题</button></div>
+      <aside id="update-banner" class="update-banner" role="status" hidden><span id="update-message"></span><button id="update-restart" class="button primary" hidden>安装</button></aside>
     </aside>
     <main class="workspace">
       <header class="topbar">
@@ -21,7 +21,6 @@
         <div class="top-actions"><button class="button subtle" id="undo-button" disabled title="撤销上次修改">↶ <span>撤销</span></button><button class="button" id="new-button">＋ 新建数据集</button><button class="button" id="open-button">导入文件</button><button class="button primary" id="save-button" disabled>导出当前数据集</button></div>
       </header>
       <div id="dataset-tabs" class="dataset-tabs" role="tablist" aria-label="打开的数据集"></div>
-      <aside id="update-banner" class="update-banner" role="status" hidden><span id="update-message"></span><button id="update-restart" class="button primary" hidden>安装</button></aside>
       <div id="feature-panels" class="feature-panels"></div>
       <div id="feature-workspace" class="feature-workspace">
 

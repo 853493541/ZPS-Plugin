@@ -158,16 +158,6 @@ async function updates(action = 'status') {
   } catch { updateFailed('更新操作未完成。请检查网络并重新检查更新。'); }
   return publicUpdateState();
 }
-async function report(text) {
-  const categories = { timeout: /timeout|timed out|超时/i, network: /network|fetch|网络/i, format: /parse|format|编码|格式/i, update: /updat|更新/i };
-  const input = typeof text === 'string' ? text.slice(0, 2000) : '';
-  const error = Object.keys(categories).find(key => categories[key].test(input)) || 'unspecified';
-  const payload = { version: app.getVersion(), platform: process.platform, error, description: input };
-  const { canceled, filePath } = await dialog.showSaveDialog(win, { title: '导出本地问题报告', defaultPath: 'zps-report.json', filters: [{ name: 'JSON', extensions: ['json'] }] });
-  if (canceled || !filePath) return null;
-  await atomicExport(filePath, Buffer.from(JSON.stringify(payload, null, 2) + '\n'));
-  return { exported: true };
-}
 async function start() {
   codec = await import('../core/documents.mjs');
   featureRegistry = await import('../ui/features.mjs');
@@ -215,7 +205,8 @@ async function start() {
     edit: change => mutate('editDocument', change),
     add: fields => mutate('addRecord', fields),
     undo: value => sessions.undo(datasetId(value)),
-    save: value => save(sessions.resolve(datasetId(value))), lookup: query => catalog.lookup(query), lookupCached: queries => catalog.lookupCached(queries), loadIcon: query => iconCache.load(query), updates, report
+    duplicate: value => sessions.duplicate(datasetId(value), value?.gameVersion ?? ''),
+    save: value => save(sessions.resolve(datasetId(value))), lookup: query => catalog.lookup(query), lookupCached: queries => catalog.lookupCached(queries), loadIcon: query => iconCache.load(query), updates
   };
   for (const [name, handler] of Object.entries(handlers)) {
     ipcMain.handle(`studio:${name}`, (event, payload) => {

@@ -81,6 +81,10 @@ export function createFeatureSessions({ codec, featureById, featureForKind }) {
       const session = prepare(bytes, filename, options);
       return install(existing(session) || session);
     },
+    duplicate(id, gameVersion = '') {
+      const original = resolve(id);
+      return install(prepare(original.bytes, original.filename, { dirty: true, gameVersion }));
+    },
     openMany(entries) {
       if (!Array.isArray(entries) || !entries.length) throw new Error('No datasets selected');
       const prepared = entries.map(({ bytes, filename, ...options }) => prepare(bytes, filename, options));

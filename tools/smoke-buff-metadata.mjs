@@ -41,7 +41,7 @@ try {
   await page.locator('#type-list .type-item').first().click();
   await page.waitForFunction(() => document.querySelector('#type-members .record-name')?.textContent === '逃兵');
   await page.locator('#type-search').fill('逃兵');
-  const buff = page.locator('#type-members .type-member-row').filter({ hasText: 'ID 12784' });
+  const buff = page.locator('#type-members .type-member-row').filter({ hasText: '12784' });
   assert.equal(await buff.locator('.record-name').innerText(), '逃兵');
   await buff.click();
   assert.equal(await page.locator('#selection-heading h3').innerText(), '逃兵');

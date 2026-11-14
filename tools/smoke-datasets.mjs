@@ -19,7 +19,7 @@ try {
   const original = await snapshot();
   const datasetA = original.datasetId;
   const tab = id => page.locator(`.dataset-tab-item[data-dataset-id="${id}"] .dataset-tab`);
-  const closeTab = id => page.locator(`.dataset-tab-item[data-dataset-id="${id}"] .dataset-close`);
+  const closeTab = id => ({ click: async () => { await page.locator(`.dataset-tab-item[data-dataset-id="${id}"] .dataset-tab`).click({ button: 'right' }); await page.getByRole('menuitem', { name: '关闭' }).click(); } });
   async function selectDataset(id) {
     await tab(id).click();
     await page.waitForFunction(id => document.querySelector(`.dataset-tab-item[data-dataset-id="${id}"] .dataset-tab`)?.getAttribute('aria-selected') === 'true', id);
@@ -31,7 +31,8 @@ try {
     await page.waitForSelector('#detail-modal[open]');
   }
   assert.equal(await page.locator('#breadcrumb-name').innerText(), 'BuffData.jx3dat');
-  assert.equal(await page.locator('#dataset-version').innerText(), '版本未标注');
+  assert.equal(await page.locator('#dataset-version').isHidden(), true, 'no version placeholder');
+  assert.equal(await page.locator('.dataset-close').count(), 0, 'tabs have no close button');
   await openBuff();
   await page.locator('[name="nPower"]').fill('71');
   await page.keyboard.press('Escape');

@@ -78,12 +78,12 @@ const methods = {
   edit: change => mutate('editDocument', change),
   add: fields => mutate('addRecord', fields),
   undo: value => sessions.undo(datasetId(value)),
+  duplicate: value => sessions.duplicate(datasetId(value), value?.gameVersion ?? ''),
   save: () => { throw Error('Native export is available in the desktop app. Browser preview never writes source files.'); },
   lookup: query => catalog.lookup(query),
   lookupCached: queries => catalog.lookupCached(queries),
   loadIcon: query => iconCache.load(query),
-  updates: () => ({ status: 'unavailable', message: 'Updates are available in an installed Windows release.' }),
-  report: () => { throw Error('Local diagnostic export is available in the desktop app.'); }
+  updates: () => ({ status: 'unavailable', message: 'Updates are available in an installed Windows release.' })
 };
 const bridgeScript = `window.studio ||= Object.freeze(Object.fromEntries(${JSON.stringify(Object.keys(methods))}.map(method => [method, async payload => {
   let discardToken;
