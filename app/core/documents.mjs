@@ -170,6 +170,21 @@ function inspect(bytes, filename) {
   return { ...base, kind: 'chat', lines, records: lines.flatMap((line, index) => line.raw.trim() ? [{ key: `line:${index}`, name: line.raw, fields: { keyword: line.raw } }] : []) };
 }
 
+export const classStyleFields = [
+  { key: 'bEnable', type: 'boolean', initial: true },
+  { key: 'bBorderEnable', type: 'boolean', initial: true },
+  { key: 'nBorder', type: 'number', initial: 1 },
+  { key: 'bFontEnable', type: 'boolean', initial: true },
+  { key: 'nFont', type: 'number', initial: 159 },
+];
+
+function classStyleValue(key, value) {
+  const field = classStyleFields.find(item => item.key === key);
+  if (!field) return undefined;
+  if (typeof value !== field.type || field.type === 'number' && (!Number.isSafeInteger(value) || value < 0)) fail(`类型设置 ${key} 的值无效。`);
+  return value;
+}
+
 export function openDocument(bytes, filename = '') {
   const { root, classes, buffs, lines, ...document } = inspect(bytes, filename);
   return document;
@@ -221,6 +236,7 @@ export function editDocument(bytes, filename, change) {
   if (document.kind === 'jx-buff') {
     const isClass = change.key.startsWith('class:');
     const sourceEntry = entry(isClass ? document.classes : document.buffs, isClass ? record.name : record.id);
+    const missing = [];
     for (const [key, value] of Object.entries(fields)) {
       if (isClass && key === 'name') {
         if (typeof value !== 'string' || !value || document.categories.includes(value) && value !== record.name) fail('分类名不能为空或重复。');
@@ -234,6 +250,7 @@ export function editDocument(bytes, filename, change) {
       }
       const actualKey = key === 'category' ? 'nClass' : key;
       const node = entry(sourceEntry.node, actualKey)?.node;
+      if (isClass && !node && classStyleValue(actualKey, value) !== undefined) { missing.push([actualKey, value]); continue; }
       if (!isClass && actualKey === 'tLevel') {
         const levels = levelEntries(value);
         if (!node?.entries) fail('条目不存在可编辑的等级表。');
@@ -249,7 +266,14 @@ export function editDocument(bytes, filename, change) {
       if (!node || node.entries) fail(`字段 ${actualKey} 不存在或不是可编辑的标量。`);
       if (typeof value !== typeof node.value || value === null) fail(`字段 ${actualKey} 的类型不正确。`);
       if (actualKey === 'nPower' && (!Number.isFinite(value) || value < 0)) fail('优先级应为非负数值。');
+      if (isClass) classStyleValue(actualKey, value);
       if (value !== node.value) patches.push({ ...node, text: literal(value) });
+    }
+    if (missing.length) {
+      const table = sourceEntry.node;
+      const final = table.entries.at(-1);
+      if (final && !final.separator) patches.push({ start: final.node.end, end: final.node.end, text: ',' });
+      patches.push({ start: table.end - 1, end: table.end - 1, text: missing.map(([key, value]) => `\t${key} = ${literal(value)},\n\t\t`).join('') });
     }
   } else {
     const index = Number(change.key.slice(5));
@@ -286,7 +310,7 @@ export function addRecord(bytes, filename, fields) {
     if (fields.type === 'class') {
       const name = fields.name;
       if (typeof name !== 'string' || !name || document.categories.includes(name)) fail('分类名不能为空或重复。');
-      const value = `{ bEnable = true, bBorderEnable = true, bFontEnable = true, nBorder = 1, nFont = 159, }`;
+      const value = `{ ${classStyleFields.map(({ key, initial }) => `${key} = ${literal(own(fields, key) ? classStyleValue(key, fields[key]) : initial)}`).join(', ')}, }`;
       return insertLua(document, document.classes, `[${literal(name)}] = ${value}`, bytes);
     }
     const { id, nClass = fields.category ?? '', nPower = 10, tLevel = { 0: true } } = fields;

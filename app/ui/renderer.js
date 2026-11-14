@@ -1,5 +1,5 @@
 import { features, featureById, featureForKind, featureForSample } from './features.mjs';
-import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft } from './jx-workspace.mjs';
+import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft, typeSettings } from './jx-workspace.mjs';
 
 const $ = (id) => document.getElementById(id);
 const formats = {
@@ -758,14 +758,17 @@ function membershipField(value) {
 function addType(initial = '') {
   if (!state.document?.writable) return;
   const content = element('div');
-  content.append(element('p', 'modal-description', '创建一个类型。名称按原样保存；类型样式可在创建后编辑。'));
+  content.append(element('p', 'modal-description', '创建一个类型并设置它的显示样式。名称按原样保存，之后仍可修改。'));
   const field = fieldInput('name', typeof initial === 'string' ? initial : '');
-  content.append(field);
+  const settings = element('div', 'type-settings');
+  for (const setting of typeSettings) settings.append(typeSettingInput(setting, setting.initial));
+  content.append(field, settings);
   showModal('新建类型', content, '创建类型', async () => {
     const name = field.querySelector('input').value;
     if (!name) throw new Error('请输入类型名称。');
+    const values = formValues(settings);
     await draftNotifications;
-    const result = await bridge.add(datasetPayload({ type: 'class', name }));
+    const result = await bridge.add(datasetPayload({ type: 'class', name, ...values }));
     if (result?.document) { state.selectedType = name; state.typeSearch = ''; state.search = ''; state.memberSearch = ''; }
     if (receive(result)) { closeModal(); toast('类型已创建。'); }
   });
@@ -899,10 +902,36 @@ function fieldInput(key, value, options = {}) {
   return field;
 }
 
+function typeSettingInput(setting, value, readonly = false) {
+  const field = element('label', 'field');
+  field.append(element('span', '', setting.label));
+  const unset = value === undefined;
+  let input;
+  if (setting.type === 'boolean') {
+    input = element('select');
+    for (const [optionValue, text] of [...(unset ? [['', '未设置']] : []), ['true', '开启'], ['false', '关闭']]) {
+      const option = element('option', '', text); option.value = optionValue; input.append(option);
+    }
+    input.disabled = readonly;
+  } else {
+    input = element('input'); input.type = 'number'; input.min = '0'; input.step = '1';
+    input.placeholder = '未设置';
+    input.readOnly = readonly;
+  }
+  input.name = setting.key;
+  input.dataset.valueType = setting.type;
+  if (unset) input.dataset.optional = 'true';
+  input.value = unset ? '' : String(value);
+  field.append(input);
+  if (unset) field.append(element('small', '', '文件中没有此项。设置后会写入该类型。'));
+  return field;
+}
+
 function formValues(form) {
   const fields = {};
   for (const input of form.querySelectorAll('[name]')) {
     let value = input.value;
+    if (input.dataset.optional && value.trim() === '') continue;
     if (input.dataset.valueType === 'number') {
       if (value.trim() === '' || !Number.isFinite(Number(value))) throw new Error(`${input.name} 需要有效数字。`);
       value = Number(value);
@@ -968,7 +997,13 @@ function renderInspector() {
   const originalFields = record.key.startsWith('class:') ? { name: record.name, ...record.fields } : record.fields;
   const advanced = element('details', 'advanced-fields');
   advanced.append(element('summary', '', record.key.startsWith('class:') ? '高级样式与原始字段' : '高级字段'));
+  const isType = record.key.startsWith('class:');
+  if (isType) {
+    form.append(fieldInput('name', record.name, { readonly: !state.document.writable }));
+    for (const setting of typeSettings) form.append(typeSettingInput(setting, record.fields[setting.key], !state.document.writable));
+  }
   for (const [key, value] of Object.entries(originalFields || {})) {
+    if (isType && (key === 'name' || typeSettings.some(setting => setting.key === key))) continue;
     const input = jx && key === 'nClass' ? membershipField(value) : fieldInput(key, value, { readonly: !state.document.writable || key === 'raw' || value !== null && typeof value === 'object' && key !== 'tLevel' });
     (fieldLabels[key] && key !== 'raw' ? form : advanced).append(input);
   }
