@@ -21,9 +21,11 @@ test('desktop IPC adds independent datasets, exports inactive targets and guards
   let closed = false;
   let readyResolve, readyReject;
   const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
+  const menus = [];
   const electron = {
     app: { isPackaged: false, whenReady: () => Promise.resolve(), on() {}, quit() {}, getPath: () => temporary },
     ipcMain: { handle: (name, handler) => handlers.set(name, handler) },
+    Menu: { setApplicationMenu: menu => menus.push(menu) },
     net: { fetch: async () => { throw new Error('No network needed'); } },
     dialog: {
       showMessageBox: async (_, options) => { dialogs.push(options); return { response: discardResponse }; },
@@ -50,6 +52,7 @@ test('desktop IPC adds independent datasets, exports inactive targets and guards
   await ready;
   const event = { sender: window.webContents, senderFrame: window.webContents.mainFrame };
   const invoke = (name, payload) => handlers.get(`studio:${name}`)(event, payload);
+  assert.deepEqual(menus, [null], 'the default Electron menu bar is removed');
   const samples = await invoke('samples');
   const jx = await invoke('activateFeature', 'jx-buff');
   const buff = jx.document.records.find(record => record.id === 12784);

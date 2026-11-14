@@ -26,6 +26,7 @@ async function createFixture(t, response = 0) {
     app: { isPackaged: true, whenReady: () => Promise.resolve(), on: (event,handler) => appEvents.set(event,handler), getPath: () => temporary, quit(){} },
     net: {fetch: async () => {throw Error('No network needed');}},
     ipcMain: {handle: (name,handler) => handlers.set(name,handler)},
+    Menu: {setApplicationMenu() {}},
     dialog: {
       showErrorBox: (_,message) => rejectReady(Error(message)),
       showMessageBox: async (_,options) => {dialogs.push(options);return{response};},

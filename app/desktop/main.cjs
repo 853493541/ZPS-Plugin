@@ -1,5 +1,5 @@
 'use strict';
-const { app, BrowserWindow, ipcMain, dialog, net } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, net, Menu } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -167,6 +167,7 @@ async function start() {
   sampleList = Object.keys(manifest.files).filter(file => /\.jx3dat$/i.test(file) || /团队气劲\/[^/]+\.txt$/.test(file) || /推荐设置关键词\.txt$/.test(file)).map(file => ({ path: file, name: file, filename: path.basename(file), ...(manifest.files[file].modifiedAt ? { modifiedAt: manifest.files[file].modifiedAt } : {}) }));
   catalog = createCatalog({ fetch: (...args) => net.fetch(...args), cacheDir: path.join(app.getPath('userData'), 'buff-cache') });
   iconCache = createIconCache({ fetch: (...args) => net.fetch(...args), cacheDir: path.join(app.getPath('userData'), 'icon-cache') });
+  Menu.setApplicationMenu(null);
   win = new BrowserWindow({ width: 1360, height: 900, minWidth: 1000, minHeight: 680, title: 'ZPS 数据工坊', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());

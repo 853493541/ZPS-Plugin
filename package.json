@@ -1,6 +1,6 @@
 {
   "name": "zps-studio",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "description": "MY and JX preset studio for Windows",
   "main": "app/desktop/main.cjs",
