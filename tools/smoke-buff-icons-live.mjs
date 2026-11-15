@@ -27,8 +27,8 @@ try {
   assert.equal(await page.locator('#detail-modal').evaluate(node => node.open && node.matches(':modal')), true);
   await page.waitForFunction(() => document.querySelector('#selection-heading img')?.naturalWidth === 48);
   assert.equal(await page.locator('#selection-heading h3').innerText(), '逃兵');
-  assert.equal(await page.locator('#dirty-dot').isHidden(), true);
-  assert.equal(await page.locator('#undo-button').isDisabled(), true);
+  assert.equal(!(await page.locator('.dataset-tab.active.dirty').count()), true);
+  assert.equal((await page.evaluate(() => document.body.dataset.canUndo !== 'true')), true);
   await fs.mkdir('artifacts', { recursive: true });
   await page.screenshot({ path: 'artifacts/buff-names-icons.png', fullPage: true });
   await page.locator('#box-tab').click();

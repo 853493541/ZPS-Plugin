@@ -46,8 +46,8 @@ try {
   assert.ok(requests > initialRequests, 'retry must issue a new image request after a failure');
   assert.equal(await page.locator('#selection-heading h3').innerText(), '逃兵');
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '12', 'icon retry must preserve typed form values');
-  assert.equal(await page.locator('#dirty-dot').isVisible(), true, 'unapplied draft must stay marked after icon retry');
-  assert.equal(await page.locator('#undo-button').isDisabled(), true);
+  assert.equal(Boolean(await page.locator('.dataset-tab.active.dirty').count()), true, 'unapplied draft must stay marked after icon retry');
+  assert.equal((await page.evaluate(() => document.body.dataset.canUndo !== 'true')), true);
   await page.locator('[name="nPower"]').fill('10');
   await page.locator('.inspector-close').click();
   await page.locator('#type-search').fill('12724');
