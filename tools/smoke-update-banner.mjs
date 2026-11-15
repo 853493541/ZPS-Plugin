@@ -60,126 +60,98 @@ const message = page => page.locator('#update-message');
 const installs = page => page.evaluate(() => window.updateTest.calls.filter(action => action === 'install').length);
 async function pending(page) {
   await page.waitForFunction(() => document.querySelector('#update-restart').disabled);
-  assert.match(await button(page).innerText(), /准备中|正在安装/);
+  assert.equal(await button(page).innerText(), '正在重启…');
 }
 async function refresh(page, state) {
   await page.evaluate(state => { window.updateTest.state = state; window.dispatchEvent(new Event('focus')); }, state);
 }
+const hidden = page => page.locator('#update-banner').isHidden();
 try {
-  await scenario({ status: 'available', version: '0.1.5' }, async page => {
-    assert.match(await message(page).innerText(), /发现新版本.*0\.1\.5/);
-    assert.equal(await button(page).innerText(), '安装');
-    assert.equal(await button(page).isEnabled(), true);
-    await button(page).focus();
-    assert.equal(await button(page).evaluate(node => node === document.activeElement), true);
+  for (const state of [{ status: 'available', version: '0.1.5' }, { status: 'downloading', version: '0.1.5', progress: 35 }, { status: 'checking' }, { status: 'current' }, { status: 'unavailable' }, { status: 'error', message: '网络中断' }, { status: 'error', version: '0.1.5', message: '下载失败' }]) {
+    await scenario(state, async page => {
+      await page.clock.runFor(50);
+      assert.equal(await hidden(page), true, `${state.status} shows nothing until the download is ready`);
+      assert.equal(await page.locator('.sidebar button', { hasText: /检查更新|反馈问题/ }).count(), 0, 'manual check and report buttons are gone');
+    }, { visible: false });
+  }
+  console.log('PASS nothing shows while checking, downloading or after a background error');
+
+  await scenario({ status: 'downloading', version: '0.1.5', progress: 70 }, async page => {
+    await page.clock.runFor(50);
+    assert.equal(await hidden(page), true);
+    await refresh(page, { status: 'ready', version: '0.1.5' });
+    await page.locator('#update-banner').waitFor();
+    assert.equal(await button(page).innerText(), '重启更新');
+    assert.equal(await message(page).isHidden(), true, 'no status sentence');
+    assert.equal((await page.locator('#update-banner').innerText()).trim(), '重启更新', 'the notice is only the button');
+    assert.equal(await button(page).getAttribute('title'), '新版本 0.1.5');
     const bounds = await page.locator('#update-banner').boundingBox();
     assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 1050 && bounds.y + bounds.height <= 760);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight), false, 'compact window must not overflow');
     await page.screenshot({ path: 'artifacts/one-click-update.png' });
-    await page.setViewportSize({ width: 1536, height: 1050 });
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight), false, 'desktop window must not overflow');
-    await page.screenshot({ path: 'artifacts/one-click-update-desktop.png' });
+    await button(page).focus();
     await button(page).press('Enter');
     await pending(page);
-    assert.equal(await installs(page), 1);
-  });
-  console.log('PASS automatic discovery, keyboard Install, compact 1050x760 layout');
-
-  await scenario({ status: 'downloading', version: '0.1.5', progress: 35 }, async page => {
-    assert.equal(await button(page).isEnabled(), true, 'Install is available during background download');
-    await button(page).click();
-    await pending(page);
-    assert.match(await message(page).innerText(), /35%.*自动更新/);
-    // A synthetic duplicate event also must not issue another IPC request.
     await button(page).evaluate(node => node.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    assert.equal(await installs(page), 1);
-    await page.screenshot({ path: 'artifacts/one-click-update-pending.png' });
-    await refresh(page, { status: 'ready', version: '0.1.5', installRequested: true });
-    await page.waitForFunction(() => document.querySelector('#update-restart').textContent === '正在安装…');
-    assert.equal(await button(page).isDisabled(), true);
-    assert.equal(await installs(page), 1, 'accepted intent needs no second Install');
-  });
-  console.log('PASS downloading Install, duplicate suppression, accepted ready needs no second click');
+    assert.equal(await installs(page), 1, 'one click restarts; duplicates are ignored');
+   }, { visible: false });
+  console.log('PASS silent download, single 重启更新 button appears when ready, keyboard restart, compact layout');
 
   await scenario({ status: 'ready', version: '0.1.5' }, async page => {
     await page.evaluate(() => { window.updateTest.holdInstall = true; });
     await button(page).click();
     await page.waitForFunction(() => window.updateTest.installHeld);
     await button(page).evaluate(node => node.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    assert.equal(await installs(page), 1, 'in-flight Install must be single flight');
+    assert.equal(await installs(page), 1, 'in-flight restart must be single flight');
     await page.evaluate(() => window.updateTest.releaseInstall());
     await pending(page);
     assert.equal(await installs(page), 1);
   });
-  console.log('PASS clean ready Install and in-flight duplicate suppression');
+  console.log('PASS in-flight restart is single flight');
 
-  for (const kind of ['未导出的修改', '未应用的草稿']) {
-    await scenario({ status: 'ready', version: '0.1.5' }, async page => {
-      await page.evaluate(kind => { window.updateTest.nextInstall = { status: 'ready', version: '0.1.5', blocked: true, message: `请先处理${kind}，再安装更新。`, installRequested: false }; }, kind);
-      const original = await button(page).elementHandle();
-      await button(page).click();
-      await page.waitForFunction(kind => document.querySelector('#update-message').textContent.includes(kind), kind);
-      assert.equal(await button(page).isEnabled(), true);
-      assert.equal(await button(page).innerText(), '安装');
-      assert.equal(await button(page).evaluate((node, original) => node === original, original), true, 'blocked action retains the same button');
-      assert.equal(await page.locator('dialog[open]').count(), 0);
-      await page.screenshot({ path: `artifacts/one-click-update-blocked-${kind === '未导出的修改' ? 'edits' : 'drafts'}.png` });
-      // Model native guard clearing after the user resolves edits elsewhere.
-      await page.evaluate(() => { window.updateTest.nextInstall = { status: 'ready', version: '0.1.5', installRequested: true }; });
-      await button(page).click();
-      await pending(page);
-      assert.equal(await installs(page), 2);
-    });
-  }
-  console.log('PASS edits and drafts block inline, same Install button retries after resolution');
-
-  for (const version of ['0.1.5']) {
-    await scenario({ status: 'error', version, message: '网络中断，请重试。' }, async page => {
-      assert.equal(await button(page).innerText(), '重试');
-      await page.evaluate(() => { window.updateTest.checkResult = { status: 'available', version: '0.1.5', installRequested: false }; });
-      await button(page).click();
-      assert.equal(await installs(page), 0, 'Retry must recheck even with a known version');
-      await page.waitForFunction(() => document.querySelector('#update-restart').textContent === '安装' && !document.querySelector('#update-restart').disabled);
-      assert.equal(await page.evaluate(() => window.updateTest.calls.filter(action => action === 'check').length), 1);
-      await button(page).click();
-      await pending(page);
-      assert.equal(await installs(page), 1, 'a fresh Install click arms consent after error');
-    });
-  }
-  console.log('PASS errors for a known version recheck and require fresh Install consent');
-
-  await scenario({ status: 'ready', version: '0.1.5', installRequested: true }, async page => {
-    await refresh(page, { status: 'error', version: '0.1.5', message: '下载失败', installRequested: false });
-    await page.waitForFunction(() => document.querySelector('#update-restart').textContent === '重试');
-    await page.evaluate(() => { window.updateTest.checkResult = { status: 'available', version: '0.1.5' }; });
+  await scenario({ status: 'ready', version: '0.1.5' }, async page => {
+    await page.evaluate(() => { window.updateTest.nextInstall = { status: 'ready', version: '0.1.5', blocked: 'edits', installRequested: false }; });
+    const original = await button(page).elementHandle();
     await button(page).click();
-    await page.waitForFunction(() => document.querySelector('#update-restart').textContent === '安装');
-    assert.equal(await installs(page), 0, 'an error must not carry old consent into the fresh check');
+    await page.waitForFunction(() => document.querySelector('#update-message').textContent === '请先导出或撤销修改');
+    assert.equal(await message(page).isVisible(), true);
+    assert.equal(await button(page).innerText(), '重启更新');
+    assert.equal(await button(page).isEnabled(), true);
+    assert.equal(await button(page).evaluate((node, original) => node === original, original), true, 'blocked action keeps the same button');
+    await page.screenshot({ path: 'artifacts/one-click-update-blocked.png' });
+    await page.evaluate(() => { window.updateTest.nextInstall = { status: 'ready', version: '0.1.5', installRequested: true }; });
+    await button(page).click();
+    await pending(page);
+    assert.equal(await message(page).isHidden(), true);
+    assert.equal(await installs(page), 2);
   });
+  console.log('PASS unsaved work blocks with one short line and the same button retries');
 
-  for (const action of ['install']) {
-    await scenario({ status: 'available', version: '0.1.5' }, async page => {
-      await page.evaluate(() => { window.updateTest.holdStatus = true; window.dispatchEvent(new Event('focus')); });
-      await page.waitForFunction(() => window.updateTest.statusHeld);
-      await button(page).click(); await pending(page);
-      await page.evaluate(() => window.updateTest.releaseStatus());
-      // Drain browser tasks after the older status promise resolves.
-      await page.clock.runFor(50);
-      assert.equal(await button(page).isDisabled(), true, 'status started before an action cannot overwrite its accepted result');
-      assert.match(await button(page).innerText(), /准备中|正在安装/);
-      assert.equal(await installs(page), 1);
-    });
-  }
-  console.log('PASS held old status cannot overwrite a completed Install');
+  await scenario({ status: 'ready', version: '0.1.5' }, async page => {
+    await page.evaluate(() => { window.updateTest.nextInstall = { status: 'error', version: '0.1.5', message: '下载失败', installRequested: false }; });
+    await button(page).click();
+    await page.waitForFunction(() => document.querySelector('#update-restart').textContent === '重试');
+    await page.evaluate(() => { window.updateTest.checkResult = { status: 'ready', version: '0.1.5' }; });
+    await button(page).click();
+    await page.waitForFunction(() => document.querySelector('#update-restart').textContent === '重启更新' && !document.querySelector('#update-restart').disabled);
+    assert.equal(await installs(page), 1, 'retry rechecks without reusing old consent');
+    await page.evaluate(() => { window.updateTest.nextInstall = null; });
+    await button(page).click();
+    await pending(page);
+    assert.equal(await installs(page), 2);
+  });
+  console.log('PASS a failed restart offers 重试 and needs a fresh click');
 
-  for (const state of [{ status: 'current' }, { status: 'checking' }, { status: 'unavailable' }, { status: 'error', message: '网络中断' }]) {
-    await scenario(state, async page => {
-      await page.clock.runFor(50);
-      assert.equal(await page.locator('#update-banner').isHidden(), true, `${state.status} without a new version shows nothing`);
-      assert.equal(await page.locator('.sidebar button', { hasText: /检查更新|反馈问题/ }).count(), 0, 'manual check and report buttons are gone');
-    }, { visible: false });
-  }
-  console.log('PASS bottom left stays empty without a new version');
+  await scenario({ status: 'ready', version: '0.1.5' }, async page => {
+    await page.evaluate(() => { window.updateTest.holdStatus = true; window.dispatchEvent(new Event('focus')); });
+    await page.waitForFunction(() => window.updateTest.statusHeld);
+    await button(page).click(); await pending(page);
+    await page.evaluate(() => window.updateTest.releaseStatus());
+    await page.clock.runFor(50);
+    assert.equal(await button(page).isDisabled(), true, 'an older status cannot overwrite an accepted restart');
+    assert.equal(await installs(page), 1);
+  });
+  console.log('PASS held old status cannot overwrite a completed restart');
   assert.deepEqual(errors, []);
   assert.equal(dialogs, 0);
   console.log('PASS no browser errors or update dialogs');

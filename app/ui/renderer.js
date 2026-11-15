@@ -1642,21 +1642,21 @@ let updateActionBusy = false;
 let updateActionEpoch = 0;
 let updateView = null;
 
+let installAttempted = false;
+
 function renderUpdateBanner(result) {
   updateView = result;
   const status = result?.status;
-  const known = ['available', 'downloading', 'ready'].includes(status);
-  const retry = status === 'error';
-  const show = known || retry && result.version !== undefined;
-  $('update-banner').hidden = !show;
+  const ready = status === 'ready';
+  const retry = status === 'error' && installAttempted;
+  $('update-banner').hidden = !ready && !retry;
   const button = $('update-restart');
-  button.hidden = !known && !retry;
+  button.hidden = !ready && !retry;
   button.disabled = updateActionBusy || Boolean(result?.installRequested);
-  button.textContent = result?.installRequested ? status === 'ready' ? '正在安装…' : '准备中…' : retry ? '重试' : '安装';
-  if (result?.blocked) $('update-message').textContent = result.message || '请先保存或撤销修改，再安装更新。';
-  else if (retry) $('update-message').textContent = result.message || '更新未完成，请重试。';
-  else if (result?.installRequested) $('update-message').textContent = status === 'ready' ? '正在更新，即将重新打开应用。' : `正在下载 ${result.progress || 0}%，完成后自动更新并重启。`;
-  else if (known) $('update-message').textContent = `发现新版本${result.version ? ` ${result.version}` : ''}`;
+  button.textContent = result?.installRequested ? '正在重启…' : retry ? '重试' : '重启更新';
+  button.title = result?.version ? `新版本 ${result.version}` : '';
+  $('update-message').textContent = result?.blocked ? '请先导出或撤销修改' : '';
+  $('update-message').hidden = !result?.blocked;
 }
 
 async function refreshUpdateBanner() {
@@ -1682,6 +1682,7 @@ $('update-restart').addEventListener('click', () => run(async () => {
   try {
     await draftNotifications;
     const action = updateView?.status === 'error' ? 'check' : 'install';
+    if (action === 'install') installAttempted = true;
     renderUpdateBanner(await bridge.updates(action));
   } catch (error) { renderUpdateBanner({ status: 'error', message: error.message || '更新未完成，请重试。' }); }
   finally { updateActionBusy = false; if (updateView) renderUpdateBanner(updateView); }
