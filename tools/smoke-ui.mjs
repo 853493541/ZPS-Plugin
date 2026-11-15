@@ -35,7 +35,7 @@ async function lookup() {
  await raw.locator('summary').click();
  assert.deepEqual(JSON.parse(await raw.locator('.raw-data').innerText()),result.raw);
  assert.equal(await page.locator('.warning-box').count(),0);
- assert.equal(await page.locator('#dirty-dot').isHidden(),true);assert.equal(await page.locator('#undo-button').isDisabled(),true);
+ assert.equal(!(await page.locator('.dataset-tab.active.dirty').count()),true);assert.equal((await page.evaluate(() => document.body.dataset.canUndo !== 'true')),true);
  const unchanged=await page.request.post(new URL('/preview-api/undo',page.url()).href,{data:{}});
  assert.equal(unchanged.status(),200);assert.deepEqual((await unchanged.json()).result,original,'metadata must not change the preset, dirty flag, or undo history');
  return result;
@@ -45,12 +45,12 @@ const cached=await lookup();assert.equal(cached.source,'cache');assert.equal(cac
 await page.locator('#config-tab').click();
 await page.locator('[name="nPower"]').fill('11');
 await page.getByRole('button',{name:'保存条目修改'}).click();
-await page.waitForFunction(()=>document.querySelector('[name="nPower"]')?.value==='11'&&!document.querySelector('#undo-button').disabled);
+await page.waitForFunction(()=>document.querySelector('[name="nPower"]')?.value==='11'&&document.body.dataset.canUndo === 'true');
 await page.locator('.inspector-close').click();
-await page.locator('#undo-button').click();await page.locator('#type-members .type-member-row').click();await page.waitForFunction(()=>document.querySelector('[name="nPower"]')?.value==='10');
+await page.evaluate(() => document.activeElement?.blur()); await page.keyboard.press('Control+z');await page.locator('#type-members .type-member-row').click();await page.waitForFunction(()=>document.querySelector('[name="nPower"]')?.value==='10');
 await page.locator('.inspector-close').click();
 await page.locator('#feature-tabs [data-feature="my-team"]').click();await page.waitForFunction(()=>document.querySelector('#feature-tabs [data-feature="my-team"]')?.getAttribute('aria-selected')==='true');
-await page.locator('#new-button').click();await page.locator('#modal [name="filename"]').fill('测试团队气劲.txt');await page.locator('#modal [name="gameVersion"]').fill('烟雾测试');await page.locator('#modal-submit').click();
+await page.locator('#add-dataset').click(); await page.getByRole('menuitem', { name: '新建数据集' }).click();await page.locator('#modal [name="filename"]').fill('测试团队气劲.txt');await page.locator('#modal [name="gameVersion"]').fill('烟雾测试');await page.locator('#modal-submit').click();
 await page.waitForFunction(()=>document.querySelector('#feature-tabs [aria-selected="true"]').textContent.includes('团队气劲'));
 await page.locator('#add-button').click();await page.locator('#modal [name="reference"]').fill('测试气劲|lv1');await page.locator('#modal-submit').click();
 await page.waitForSelector('#records-body tr');assert.match(await page.locator('#records-body').innerText(),/测试气劲/);

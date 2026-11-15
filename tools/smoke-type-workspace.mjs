@@ -22,9 +22,10 @@ try {
   assert.equal(await page.locator('#feature-tabs button').count(), 4);
   assert.ok(await page.locator('#type-list .type-name').first().evaluate(node => parseFloat(getComputedStyle(node).fontSize)) >= 16);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-  assert.equal(await page.locator('#lock-bar').isVisible(), true, 'built-in sample opens locked');
-  await page.locator('#lock-copy').click();
-  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
+  assert.equal(await page.locator('#assign-member-button').isDisabled(), true, 'built-in sample opens locked');
+  await page.locator('.dataset-tab.active').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
 
   await page.locator('#type-search').fill('逃兵');
   await page.waitForFunction(() => document.querySelectorAll('#type-list .type-item').length === 1);
@@ -41,7 +42,7 @@ try {
   await page.locator('.type-member-row').click();
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '13', 'closing and returning must preserve unapplied draft');
   await page.getByRole('button', { name: '保存条目修改' }).click();
-  await page.waitForFunction(() => !document.querySelector('#undo-button').disabled);
+  await page.waitForFunction(() => document.body.dataset.canUndo === 'true');
   await page.locator('[name="nClass"]').selectOption('沉默');
   await page.getByRole('button', { name: '保存条目修改' }).click();
   await page.waitForFunction(() => !document.querySelector('#modal')?.open && document.querySelector('[name="nClass"]')?.value === '沉默');
@@ -50,7 +51,7 @@ try {
   assert.equal(current.document.records.find(record => record.id === 12784).fields.nClass, '沉默');
   assert.equal(current.document.records.find(record => record.id === 12784).fields.nPower, 13);
   await page.locator('.inspector-close').click();
-  await page.locator('#undo-button').click();
+  await page.evaluate(() => document.activeElement?.blur()); await page.keyboard.press('Control+z');
   await page.locator('.type-member-row').click();
   await page.waitForFunction(type => document.querySelector('[name="nClass"]')?.value === type, originalType);
   await page.locator('.inspector-close').click();
@@ -108,7 +109,7 @@ try {
   assert.equal(current.document.records.find(record => record.id === 12784).fields.nClass, '');
   assert.equal(current.document.records.filter(record => record.key.startsWith('buff:')).length, 177, 'remove membership must retain rule');
   await page.locator('.inspector-close').click();
-  await page.locator('#undo-button').click();
+  await page.evaluate(() => document.activeElement?.blur()); await page.keyboard.press('Control+z');
   await page.waitForFunction(() => document.querySelector('.type-count-badge')?.textContent.startsWith('1 个 Buff'));
   await fs.mkdir('artifacts', { recursive: true });
   await page.screenshot({ path: 'artifacts/type-workspace.png' });

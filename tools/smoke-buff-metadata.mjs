@@ -45,8 +45,8 @@ try {
   assert.equal(await buff.locator('.record-name').innerText(), '逃兵');
   await buff.click();
   assert.equal(await page.locator('#selection-heading h3').innerText(), '逃兵');
-  assert.equal(await page.locator('#dirty-dot').isHidden(), true);
-  assert.equal(await page.locator('#undo-button').isDisabled(), true);
+  assert.equal(!(await page.locator('.dataset-tab.active.dirty').count()), true);
+  assert.equal((await page.evaluate(() => document.body.dataset.canUndo !== 'true')), true);
   await page.waitForFunction(() => typeof window.finishDelayedMetadata === 'function');
   await page.locator('[name="nPower"]').fill('123');
   await page.evaluate(() => window.finishDelayedMetadata());
@@ -67,7 +67,7 @@ try {
   assert.equal(await disclosure.locator('summary').evaluate(node => node === document.activeElement), true, 'unrelated metadata must preserve details focus');
   await page.evaluate(async () => {const snapshot=await window.studio.openSample('chat'); window.testNextOpen=snapshot; window.studio.open=async()=>snapshot;});
   await page.locator('.inspector-close').click();
-  await page.locator('#open-button').click();
+  await page.locator('#add-dataset').click(); await page.getByRole('menuitem', { name: '导入文件' }).click();
   await page.waitForFunction(() => document.querySelector('#feature-tabs [aria-selected="true"]').textContent.includes('聊天'));
   await page.locator('#records-body tr').first().click();
   await page.evaluate(() => window.finishOldDocument());

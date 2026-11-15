@@ -31,7 +31,6 @@ function draftIsDirty(key, draft = state.drafts.get(key)) {
 
 function syncDraftState() {
   const dirty = [...state.drafts].some(([key, draft]) => draftIsDirty(key, draft));
-  $('dirty-dot').hidden = !state.dirty && !dirty;
   renderDatasets();
   if (!state.document || typeof bridge.setDraftState !== 'function') return;
   const payload = datasetPayload({ featureId: state.featureId, dirty });
@@ -521,7 +520,7 @@ function visibleRecords() {
   return (state.document?.records || []).filter((record) => (!state.search || `${recordName(record)} ${record.name} ${record.id ?? ''} ${record.key} ${JSON.stringify(record.fields)}`.toLowerCase().includes(state.search.toLowerCase())));
 }
 
-function versionLabel(dataset = state) { return dataset.locked ? '🔒 内置样本' : dataset.gameVersion || ''; }
+function versionLabel(dataset = state) { return dataset.gameVersion || ''; }
 
 function renderDatasets() {
   const tabs = $('dataset-tabs');
@@ -533,15 +532,18 @@ function renderDatasets() {
     const item = element('div', 'dataset-tab-item');
     item.dataset.datasetId = summary.datasetId;
     const button = element('button', `dataset-tab${summary.datasetId === viewKey() ? ' active' : ''}`);
+    button.dataset.datasetId = summary.datasetId;
     button.type = 'button'; button.setAttribute('role', 'tab');
     button.setAttribute('aria-selected', String(summary.datasetId === viewKey()));
     button.tabIndex = summary.datasetId === viewKey() ? 0 : -1;
     const dirty = summary.datasetId === viewKey() ? state.dirty || [...state.drafts].some(([key, draft]) => draftIsDirty(key, draft)) : summary.dirty || summary.hasDrafts;
+    button.classList.toggle('dirty', Boolean(dirty));
     button.append(element('span', 'dataset-tab-name', `${fileName(summary.filename)}${dirty ? ' ·' : ''}`));
-    const duplicates = summaries.filter(item => fileName(item.filename) === fileName(summary.filename)).length > 1;
+    const duplicates = summaries.filter(item => fileName(item.filename) === fileName(summary.filename) && versionLabel(item) === versionLabel(summary)).length > 1;
     const sourcePath = summary.source?.displayPath || summary.filename;
     const parent = duplicates ? summary.source?.kind === 'new' ? '新建' : String(sourcePath || '').replace(/[\\/][^\\/]+$/, '') : '';
-    button.append(element('span', 'dataset-tab-secondary', [versionLabel(summary), parent].filter(Boolean).join(' · ')));
+    const secondary = versionLabel(summary) || parent;
+    if (secondary) button.append(element('span', 'dataset-tab-secondary', secondary));
     button.title = [sourcePath, versionLabel(summary), dirty ? '有未导出或未应用的修改' : ''].filter(Boolean).join('\n');
     button.addEventListener('click', () => activateDataset(summary.datasetId));
     button.addEventListener('keydown', event => {
@@ -582,21 +584,34 @@ function openSettings() {
 function closeMenu() { $('context-menu')?.remove(); }
 
 function datasetMenu(summary, x, y) {
+  const active = summary.datasetId === viewKey();
+  showMenu(fileName(summary.filename), [
+    ['复制为新版本', false, () => duplicateDataset(summary)],
+    ['重命名版本', !active || summary.locked, () => renameVersion()],
+    ['导出', !active || !state.document?.writable || featureById(state.featureId).kind === 'opaque', () => save()],
+    ['文件信息', !active, () => datasetInfo()],
+    ['关闭', false, () => run(() => closeDataset(summary.datasetId))],
+  ], x, y);
+}
+
+function addMenu() {
+  const box = $('add-dataset').getBoundingClientRect();
+  showMenu('新建或导入', [
+    ['新建数据集', !formats[featureById(state.featureId).kind].add, () => newDocument()],
+    ['导入文件', false, () => open()],
+  ], box.left, box.bottom + 4);
+}
+
+function showMenu(label, items, x, y) {
   closeMenu();
   const menu = element('div', 'context-menu'); menu.id = 'context-menu'; menu.setAttribute('role', 'menu');
-  const name = fileName(summary.filename);
-  const items = [
-    ['复制为新版本', false, () => duplicateDataset(summary)],
-    ['导出', summary.datasetId !== viewKey() || !state.document?.writable || featureById(state.featureId).kind === 'opaque', () => save()],
-    ['关闭', false, () => run(() => closeDataset(summary.datasetId))],
-  ];
-  for (const [label, disabled, action] of items) {
-    const item = element('button', 'context-item', label);
+  for (const [text, disabled, action] of items) {
+    const item = element('button', 'context-item', text);
     item.type = 'button'; item.setAttribute('role', 'menuitem'); item.disabled = disabled || state.busy;
     item.addEventListener('click', () => { closeMenu(); action(); });
     menu.append(item);
   }
-  menu.setAttribute('aria-label', name);
+  menu.setAttribute('aria-label', label);
   document.body.append(menu);
   const box = menu.getBoundingClientRect();
   menu.style.left = `${Math.max(4, Math.min(x, innerWidth - box.width - 4))}px`;
@@ -614,19 +629,20 @@ function duplicateDataset(summary) {
   run(async () => {
     await draftNotifications;
     const result = await bridge.duplicate({ datasetId: summary.datasetId });
-    if (receive(result, true)) toast(`已复制为“${result.gameVersion}”，可以开始编辑。点 ✎ 可命名。`);
+    if (receive(result, true)) toast(`已复制为“${result.gameVersion}”，可以开始编辑。右键标签可重命名。`);
   });
 }
 
 function renameVersion() {
-  const label = $('dataset-version');
-  if (!state.document || state.locked) return;
+  const item = document.querySelector(`.dataset-tab-item[data-dataset-id="${viewKey()}"]`);
+  const tab = item?.querySelector('.dataset-tab');
+  if (!tab || !state.document || state.locked) return;
   const input = element('input', 'version-input');
   input.value = state.gameVersion; input.placeholder = '版本名称'; input.setAttribute('aria-label', '版本名称'); input.maxLength = 80;
   let done = false;
   const finish = commit => {
     if (done) return; done = true;
-    input.replaceWith(label); $('version-edit').hidden = false;
+    input.remove(); tab.hidden = false;
     if (!commit || input.value.trim() === state.gameVersion) return;
     run(async () => { if (receive(await bridge.renameVersion({ datasetId: state.datasetId, gameVersion: input.value }))) toast('版本已命名。'); });
   };
@@ -635,7 +651,7 @@ function renameVersion() {
     if (event.key === 'Escape') { event.preventDefault(); finish(false); }
   });
   input.addEventListener('blur', () => finish(true));
-  label.replaceWith(input); $('version-edit').hidden = true;
+  tab.hidden = true; item.append(input);
   input.focus(); input.select();
 }
 
@@ -666,14 +682,6 @@ function render() {
   const feature = featureById(state.featureId);
   renderFeatures();
   renderDatasets();
-  if ($('dataset-version')) { $('dataset-version').textContent = doc ? state.gameVersion || '' : '新建或打开数据集'; $('dataset-version').hidden = Boolean(doc) && !state.gameVersion; }
-  $('version-edit').hidden = !doc || state.locked;
-  $('version-edit').title = state.gameVersion ? '重命名此版本' : '命名此版本';
-  $('lock-bar').hidden = !doc || !state.locked;
-  if ($('dataset-info-button')) $('dataset-info-button').disabled = !doc || state.busy;
-  $('breadcrumb-name').textContent = doc ? fileName(state.filename) : '未打开文件';
-  $('breadcrumb-name').title = state.filename;
-  $('dirty-dot').hidden = !state.dirty && ![...state.drafts].some(([key, draft]) => draftIsDirty(key, draft));
   renderAvailability();
   $('document-meta').replaceChildren();
   renderRecords();
@@ -687,11 +695,8 @@ function renderAvailability() {
   const feature = featureById(state.featureId);
   const format = formats[feature.kind];
   for (const button of document.querySelectorAll('.dataset-tab')) button.disabled = state.busy && !switching;
-  if ($('dataset-info-button')) $('dataset-info-button').disabled = !state.document || state.busy;
-  $('save-button').disabled = state.busy || !state.document?.writable || feature.kind === 'opaque';
-  $('undo-button').disabled = state.busy || !state.canUndo;
-  $('new-button').textContent = '＋ 新建数据集';
-  $('new-button').disabled = state.busy || !format.add;
+  document.body.dataset.canUndo = String(!state.busy && state.canUndo);
+  $('add-dataset').disabled = state.busy && !switching;
   $('add-button').textContent = feature.kind === 'jx-buff' ? '＋ 添加 Buff' : feature.kind === 'chat' ? '＋ 添加关键词' : '＋ 新建监控';
   if ($('empty-create')) $('empty-create').disabled = state.busy || !format.add;
   $('add-button').hidden = feature.kind === 'opaque';
@@ -1576,8 +1581,8 @@ function addRecord() {
 
 const open = () => run(async () => { await draftNotifications; return receive(await bridge.open(), true); });
 const save = () => run(async () => { if (state.document?.writable) { await draftNotifications; const result = await bridge.save(datasetPayload()); if (receive(result)) toast('配置已导出。'); } });
-for (const id of ['open-button', 'empty-open']) $(id).addEventListener('click', open);
-$('save-button').addEventListener('click', save);
+$('empty-open').addEventListener('click', open);
+$('add-dataset').addEventListener('click', addMenu);
 const undo = () => run(async () => {
   const previous = state.document;
   const drafts = new Map(state.drafts);
@@ -1591,9 +1596,6 @@ const undo = () => run(async () => {
   }
   receive(result);
 });
-$('undo-button').addEventListener('click', undo);
-$('new-button').addEventListener('click', newDocument);
-$('dataset-info-button')?.addEventListener('click', datasetInfo);
 $('detail-modal')?.addEventListener('cancel', event => { event.preventDefault(); closeDetail(); });
 function closeOnOutsideClick(dialog, close) {
   const outside = event => {
@@ -1672,8 +1674,6 @@ async function refreshUpdateBanner() {
 
 
 $('settings-button').addEventListener('click', openSettings);
-$('version-edit').addEventListener('click', renameVersion);
-$('lock-copy').addEventListener('click', () => duplicateDataset({ datasetId: state.datasetId }));
 $('update-restart').addEventListener('click', () => run(async () => {
   if (updateActionBusy || updateView?.installRequested) return;
   updateActionBusy = true;

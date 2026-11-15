@@ -23,15 +23,15 @@ try {
     await page.waitForFunction(id => {
       const tab = document.querySelector(`#feature-tabs [data-feature="${id}"]`);
       const panel = tab && document.getElementById(tab.getAttribute('aria-controls'));
-      return tab?.getAttribute('aria-selected') === 'true' && panel?.getAttribute('aria-busy') === 'false' && document.querySelector('#breadcrumb-name')?.textContent !== '未打开文件';
+      return tab?.getAttribute('aria-selected') === 'true' && panel?.getAttribute('aria-busy') === 'false' && Boolean(document.querySelector('.dataset-tab.active'));
     }, id);
   }
   if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /剑心|BUFF/i);
-  assert.equal(await page.locator('#lock-bar').isVisible(), true, 'built-in sample opens locked');
-  await page.locator('#lock-copy').click();
-  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
+  await page.locator('.dataset-tab.active').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
   await page.locator('#type-search').fill('12784');
   await page.locator('#type-list .type-item').first().click();
   await page.locator('#type-members .type-member-row').click();
@@ -49,30 +49,35 @@ try {
   await captured;
   await page.locator('[name="nPower"]').fill('12');
   releaseEdit();
-  await page.waitForFunction(() => !document.querySelector('#undo-button').disabled);
+  await page.waitForFunction(() => document.body.dataset.canUndo === 'true');
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '12', 'an older apply response must preserve newer typing');
   await activate('my-team');
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#sample-list').innerText(), /真传（仅）团队气劲/);
   assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /团队气劲/);
-  await page.locator('#lock-copy').click();
-  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
+  await page.locator('.dataset-tab.active').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
   await page.locator('#search').fill('弹跳');
   const teamKey = await page.locator('#records-body tr').first().getAttribute('data-key');
   await page.locator('#records-body tr').first().click();
   await page.locator('[name="label"]').fill('团队测试');
   await page.getByRole('button', { name: '保存条目修改' }).click();
-  await page.waitForFunction(() => !document.querySelector('#undo-button').disabled);
+  await page.waitForFunction(() => document.body.dataset.canUndo === 'true');
   await activate('my-target');
   assert.equal(await page.locator('#sample-list button').count(), 3);
   assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /目标监控/);
   if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   for (const filename of ['其他辅助.jx3dat', '技能监控.jx3dat', '自用完整版.jx3dat']) {
     await page.locator('#sample-list button').filter({ hasText: filename }).click();
-    await page.waitForFunction(filename => document.querySelector('#breadcrumb-name')?.textContent === filename, filename);
-    assert.equal(await page.locator('#save-button').isDisabled(), true);
+    await page.waitForFunction(filename => document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.replace(' ·', '') === filename, filename);
+    await page.locator('.dataset-tab.active').click({ button: 'right' });
+    assert.equal(await page.getByRole('menuitem', { name: '导出' }).isDisabled(), true, 'read-only preset cannot export');
+    await page.keyboard.press('Escape');
     assert.equal(await page.locator('#add-button').isDisabled(), true);
-    assert.equal(await page.locator('#new-button').isDisabled(), true);
+    await page.locator('#add-dataset').click();
+    assert.equal(await page.getByRole('menuitem', { name: '新建数据集' }).isDisabled(), true);
+    await page.keyboard.press('Escape');
     assert.equal(await page.locator('#box-tab').isVisible(), false);
   }
   await fs.mkdir('artifacts', { recursive: true });
@@ -81,13 +86,14 @@ try {
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#sample-list').innerText(), /推荐设置关键词/);
   assert.equal(await page.locator('#box-tab').isVisible(), false);
-  await page.locator('#lock-copy').click();
-  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden);
+  await page.locator('.dataset-tab.active').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
   const chatKey = await page.locator('#records-body tr').first().getAttribute('data-key');
   await page.locator('#records-body tr').first().click();
   await page.locator('[name="keyword"]').fill('聊天测试关键词');
   await page.getByRole('button', { name: '保存条目修改' }).click();
-  await page.waitForFunction(() => !document.querySelector('#undo-button').disabled);
+  await page.waitForFunction(() => document.body.dataset.canUndo === 'true');
   await activate('jx-buff');
   assert.equal(await page.locator('#type-search').inputValue(), '12784');
   await page.locator('#type-members .type-member-row').click();
@@ -98,7 +104,7 @@ try {
   assert.equal(applied.dirty, true);
   assert.equal(applied.canUndo, true);
   await page.locator('.inspector-close').click();
-  await page.locator('#undo-button').click();
+  await page.evaluate(() => document.activeElement?.blur()); await page.keyboard.press('Control+z');
   await page.locator('#type-members .type-member-row').click();
   await page.waitForFunction(() => document.querySelector('[name="nPower"]')?.value === '10');
   await page.locator('[name="nPower"]').fill('13');
@@ -106,11 +112,11 @@ try {
   const datasetsBefore = await page.locator('#dataset-tabs .dataset-tab').count();
   if (!await page.locator('.sample-picker').evaluate(node => node.open)) await page.locator('.sample-picker summary').click();
   await page.locator('#sample-list button').click();
-  await page.waitForFunction(() => !document.querySelector('#new-button').disabled);
+  await page.waitForFunction(() => !document.querySelector('#add-dataset').disabled);
   assert.equal(await page.locator('#dataset-tabs .dataset-tab').count(), datasetsBefore, 'opening the same sample must reuse the dataset');
-  await page.waitForFunction(() => document.querySelector('#lock-bar') && !document.querySelector('#lock-bar').hidden);
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active') && !document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
   await page.locator('#dataset-tabs .dataset-tab', { hasText: '版本 2' }).click();
-  await page.waitForFunction(() => document.querySelector('#lock-bar')?.hidden && document.querySelectorAll('#type-members .type-member-row').length === 1);
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本') && document.querySelectorAll('#type-members .type-member-row').length === 1);
   await page.locator('#type-members .type-member-row').click();
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '13', 'the copy keeps its draft');
   await page.locator('.inspector-close').click();
@@ -125,11 +131,11 @@ try {
   assert.equal(await page.locator('#search').inputValue(), '弹跳');
   await page.locator(`#records-body tr[data-key="${teamKey}"]`).click();
   assert.equal(await page.locator('[name="label"]').inputValue(), '团队测试');
-  assert.equal(await page.locator('#dirty-dot').isHidden(), false);
+  assert.equal(!(await page.locator('.dataset-tab.active.dirty').count()), false);
   await activate('chat');
   await page.locator(`#records-body tr[data-key="${chatKey}"]`).click();
   assert.equal(await page.locator('[name="keyword"]').inputValue(), '聊天测试关键词');
-  assert.equal(await page.locator('#dirty-dot').isHidden(), false);
+  assert.equal(!(await page.locator('.dataset-tab.active.dirty').count()), false);
   assert.deepEqual(errors, []);
   console.log('PASS: four feature tabs; sample groups 1/1/3/1; all target presets read-only; independent applied edits, drafts, search, dirty state and undo; no page errors');
 } finally {
