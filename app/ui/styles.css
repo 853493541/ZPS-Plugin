@@ -521,3 +521,11 @@ dialog::backdrop { background: #142e3a66; }
 .detail-modal .level-field .level-choice input { width: 18px; height: 18px; min-height: 0; padding: 0; }
 #toast[popover] { margin: 0; inset: auto; top: 22px; left: 50%; border: 0; }
 #toast[popover]:not(:popover-open) { display: none; }
+
+.history-panel { display: grid; gap: 10px; width: 100%; box-sizing: border-box; max-height: 60vh; overflow-y: auto; }
+.history-entry { box-sizing: border-box; min-width: 0; display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 7px; }
+.history-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.history-text { display: grid; gap: 2px; min-width: 0; }
+.history-meta, .history-path { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.history-more summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.history-changes { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 14px; }

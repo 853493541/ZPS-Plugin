@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import * as codec from '../app/core/documents.mjs';
 import { createFeatureSessions } from '../app/core/feature-sessions.mjs';
+import { createHistory, restoreLabel } from '../app/core/history.mjs';
 import * as featureRegistry from '../app/ui/features.mjs';
 import { createCatalog } from '../app/services/catalog.cjs';
 import { createIconCache } from '../app/services/icons.cjs';
@@ -16,6 +17,7 @@ const ui = path.join(root, 'app/ui');
 const manifest = JSON.parse(await fs.readFile(path.join(root, 'samples/SAMPLES.json'), 'utf8'));
 const files = Object.keys(manifest.files).filter(p => p.endsWith('.jx3dat') || p.includes('团队气劲') && p.endsWith('.txt') || p.includes('推荐设置关键词'));
 const sessions = createFeatureSessions({ codec, ...featureRegistry });
+const history = createHistory({ dir: process.env.PREVIEW_HISTORY_DIR || path.join(root, 'artifacts', `preview-history-${process.pid}`), codec });
 const confirmations = new WeakMap();
 let pending = Promise.resolve();
 const readSample = async file => ({ bytes: await fs.readFile(path.join(root, 'samples', file)), filename: path.basename(file), source: { kind: 'sample', key: file, displayPath: file } });
@@ -81,7 +83,17 @@ const methods = {
   undo: value => sessions.undo(datasetId(value)),
   duplicate: value => sessions.duplicate(datasetId(value), value?.gameVersion),
   renameVersion: value => sessions.renameVersion(datasetId(value), String(value?.gameVersion ?? '')),
-  save: () => { throw Error('Native export is available in the desktop app. Browser preview never writes source files.'); },
+  // Preview never writes files; an export only records the history snapshot.
+  save: async value => {
+    const session = sessions.resolve(datasetId(value));
+    await history.record({ bytes: session.bytes, filename: session.filename, gameVersion: session.gameVersion, exportedPath: '' });
+    return { ...sessions.markSaved(session), exported: true, exportedPath: '', exportedDataset: sessions.summary(session) };
+  },
+  history: filename => history.list(filename),
+  restoreHistory: async id => {
+    const entry = await history.read(id);
+    return sessions.open(entry.bytes, entry.filename, { gameVersion: restoreLabel(entry) });
+  },
   lookup: query => catalog.lookup(query),
   lookupCached: queries => catalog.lookupCached(queries),
   loadIcon: query => iconCache.load(query),
@@ -100,7 +112,7 @@ const bridgeScript = `window.studio ||= Object.freeze(Object.fromEntries(${JSON.
 }])));`;
 function dispatch(method, payload, discardToken) {
   const run = () => methods[method](payload, confirmDiscard(discardToken));
-  if (method === 'lookup' || method === 'lookupCached' || method === 'loadIcon' || method === 'samples' || method === 'updates') return run();
+  if (method === 'lookup' || method === 'lookupCached' || method === 'loadIcon' || method === 'samples' || method === 'updates' || method === 'history') return run();
   const task = pending.then(run);
   pending = task.catch(() => {});
   return task;
