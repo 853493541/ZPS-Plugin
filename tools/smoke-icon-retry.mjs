@@ -67,7 +67,7 @@ try {
     };
   });
   await missing.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:4173');
-  await missing.waitForFunction(() => document.querySelector('#metadata-progress')?.textContent.includes('1/1'));
+  await missing.waitForFunction(() => document.querySelector('#type-members .record-glyph')?.textContent === '未获');
   await missing.locator('#type-members .type-member-row').click();
   assert.match(await missing.locator('#selection-heading .record-glyph').innerText(), /未获/);
   assert.doesNotMatch(await missing.locator('#selection-heading .record-glyph').getAttribute('title'), /待查询|加载中/);

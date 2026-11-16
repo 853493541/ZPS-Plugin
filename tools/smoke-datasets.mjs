@@ -108,19 +108,15 @@ try {
   const discardedA = page.waitForEvent('dialog').then(dialog => dialog.accept());
   await closeTab(datasetA).click(); await discardedA;
   await page.waitForFunction(() => document.querySelectorAll('.dataset-tab').length === 1);
-  await page.locator('.dataset-tab').click({ button: 'right' }); await page.getByRole('menuitem', { name: '关闭' }).click();
-  await page.waitForFunction(() => document.querySelectorAll('.dataset-tab').length === 0);
-  assert.equal(await page.locator('#empty-create').isVisible(), true);
-  assert.equal(await page.locator('#feature-tab-jx-buff').getAttribute('aria-selected'), 'true');
-  await page.getByRole('tab', { name: '茗伊聊天监控' }).click();
-  await page.waitForSelector('#records-body tr');
-  await page.getByRole('tab', { name: '剑心 BUFF增强' }).click();
-  await page.waitForFunction(() => document.querySelector('#feature-tab-jx-buff')?.getAttribute('aria-selected') === 'true' && document.querySelector('#feature-panel-jx-buff')?.getAttribute('aria-busy') === 'false');
-  assert.equal(await page.locator('.dataset-tab').count(), 0, 'closed feature stays empty instead of reopening a sample');
+  await page.locator('.dataset-tab').click({ button: 'right' });
+  assert.equal(await page.getByRole('menuitem', { name: '关闭' }).count(), 0, 'built-in sample cannot be closed');
+  assert.equal(await page.getByRole('menuitem', { name: '重命名版本' }).count(), 0, 'unavailable items are hidden, not greyed');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.dataset-tab').count(), 1, 'the sample stays open');
   await page.setViewportSize({ width: 1050, height: 760 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   assert.deepEqual(errors, []);
-  console.log('PASS same-name datasets, visible file/version, independent drafts/applied bytes/undo, centered modal/Escape, guarded close/cancel, explicit empty feature, compact layout');
+  console.log('PASS same-name datasets, visible file/version, independent drafts/applied bytes/undo, centered modal/Escape, guarded close/cancel, sample cannot close, compact layout');
 } finally {
   await browser.close();
 }

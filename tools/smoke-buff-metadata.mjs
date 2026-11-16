@@ -112,7 +112,7 @@ try {
     };
   }, snapshot);
   await offline.goto(process.env.PREVIEW_URL || 'http://127.0.0.1:4173');
-  await offline.waitForFunction(() => document.querySelector('#metadata-progress')?.textContent.includes('连接中断'));
+  await offline.waitForFunction(() => window.lookupAttempts >= 1 && [...document.querySelectorAll('#type-members .record-glyph')].some(node => node.textContent === '未获'));
   assert.equal(await offline.evaluate(() => window.lookupAttempts), 1, 'a transport error must stop automatic requests');
   await offline.locator('#type-search').fill('12784');
   await offline.locator('#type-list .type-item').first().click();

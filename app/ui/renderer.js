@@ -337,7 +337,6 @@ function refreshMetadata(changedKey) {
     modalMetadataRefresh?.();
     const query = buffQuery(selectedRecord());
     if (!changedKey || query && metadataKey(query) === changedKey) renderSelectionHeading();
-    renderEnrichmentProgress();
     const details = $('lookup-results');
     const detailsQuery = buffQuery(selectedRecord(), state.lookupLevel);
     if (details && !state.lookup && (!changedKey || detailsQuery && metadataKey(detailsQuery) === changedKey)) renderLookupDetails(details, selectedRecord());
@@ -361,18 +360,11 @@ function refreshMetadata(changedKey) {
   }
   const selectedQuery = buffQuery(selectedRecord());
   if (!changedKey || selectedQuery && metadataKey(selectedQuery) === changedKey) renderSelectionHeading();
-  renderEnrichmentProgress();
   const details = $('lookup-results');
   const detailsQuery = buffQuery(selectedRecord(), state.lookupLevel);
   if (details && !state.lookup && (!changedKey || detailsQuery && metadataKey(detailsQuery) === changedKey)) renderLookupDetails(details, selectedRecord());
 }
 
-function renderEnrichmentProgress() {
-  let node = $('metadata-progress');
-  if (!node) { node = element('span', 'metadata-progress'); node.id = 'metadata-progress'; $('document-meta').append(node); }
-  node.hidden = !enrichment?.total;
-  node.textContent = enrichment?.total ? `JX3BOX ${enrichment.done}/${enrichment.total}${enrichment.cached ? ` · 缓存 ${enrichment.cached}` : ''}${enrichment.stopped ? ' · 连接中断，可手动查询' : enrichment.done < enrichment.total ? ' · 读取中' : ' · 已检查'}` : '';
-}
 
 function requestCatalog(query, isCurrent) {
   return isCurrent() ? bridge.lookup(query) : Promise.resolve(null);
@@ -388,7 +380,6 @@ function startEnrichment() {
   const job = { total: queries.size, done: [...queries.keys()].filter((key) => attemptedMetadata.has(key) || metadata.has(key)).length, stopped: enrichmentStopped, cached: 0 };
   enrichment = job;
   const isCurrent = () => generation === documentGeneration;
-  renderEnrichmentProgress();
   if (job.stopped) return;
   (async () => {
     const entries = [...queries];
@@ -460,10 +451,9 @@ function toast(message, error = false) {
 async function run(action) {
   if (state.busy) return;
   state.busy = true;
-  $('status-text').textContent = '正在处理…';
   try { return await action(); }
   catch (error) { toast(error.message || String(error), true); }
-  finally { state.busy = false; renderAvailability(); $('status-text').textContent = state.dirty ? '有未导出的修改' : '准备就绪'; }
+  finally { state.busy = false; renderAvailability(); }
 }
 
 function receive(result, reset = false, restore = false) {
@@ -590,7 +580,7 @@ function datasetMenu(summary, x, y) {
     ['重命名版本', !active || summary.locked, () => renameVersion()],
     ['导出', !active || !state.document?.writable || featureById(state.featureId).kind === 'opaque', () => save()],
     ['文件信息', !active, () => datasetInfo()],
-    ['关闭', false, () => run(() => closeDataset(summary.datasetId))],
+    ['关闭', summary.locked, () => run(() => closeDataset(summary.datasetId))],
   ], x, y);
 }
 
@@ -605,9 +595,9 @@ function addMenu() {
 function showMenu(label, items, x, y) {
   closeMenu();
   const menu = element('div', 'context-menu'); menu.id = 'context-menu'; menu.setAttribute('role', 'menu');
-  for (const [text, disabled, action] of items) {
+  for (const [text, disabled, action] of items.filter(([, hidden]) => !hidden)) {
     const item = element('button', 'context-item', text);
-    item.type = 'button'; item.setAttribute('role', 'menuitem'); item.disabled = disabled || state.busy;
+    item.type = 'button'; item.setAttribute('role', 'menuitem'); item.disabled = state.busy;
     item.addEventListener('click', () => { closeMenu(); action(); });
     menu.append(item);
   }
@@ -683,12 +673,10 @@ function render() {
   renderFeatures();
   renderDatasets();
   renderAvailability();
-  $('document-meta').replaceChildren();
   renderRecords();
   renderTypeWorkspace();
   renderInspector();
   renderSamples();
-  $('status-text').textContent = switching ? '正在切换工作区…' : state.dirty ? '有未导出的修改' : '准备就绪';
 }
 
 function renderAvailability() {
@@ -696,7 +684,6 @@ function renderAvailability() {
   const format = formats[feature.kind];
   for (const button of document.querySelectorAll('.dataset-tab')) button.disabled = state.busy && !switching;
   document.body.dataset.canUndo = String(!state.busy && state.canUndo);
-  $('lock-hint').hidden = !state.document || !state.locked;
   $('add-dataset').disabled = state.busy && !switching;
   $('add-button').textContent = feature.kind === 'jx-buff' ? '＋ 添加 Buff' : feature.kind === 'chat' ? '＋ 添加关键词' : '＋ 新建监控';
   if ($('empty-create')) $('empty-create').disabled = state.busy || !format.add;
