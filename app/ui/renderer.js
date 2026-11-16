@@ -696,6 +696,7 @@ function renderAvailability() {
   const format = formats[feature.kind];
   for (const button of document.querySelectorAll('.dataset-tab')) button.disabled = state.busy && !switching;
   document.body.dataset.canUndo = String(!state.busy && state.canUndo);
+  $('lock-hint').hidden = !state.document || !state.locked;
   $('add-dataset').disabled = state.busy && !switching;
   $('add-button').textContent = feature.kind === 'jx-buff' ? '＋ 添加 Buff' : feature.kind === 'chat' ? '＋ 添加关键词' : '＋ 新建监控';
   if ($('empty-create')) $('empty-create').disabled = state.busy || !format.add;
