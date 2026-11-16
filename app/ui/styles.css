@@ -395,6 +395,16 @@ dialog::backdrop { background: #142e3a66; }
 .font-choice:hover:not(:disabled) { border-color: var(--line-strong); }
 .font-choice.active { border-color: var(--green); background: var(--green-soft); color: var(--accent-ink); }
 .font-choice:disabled { cursor: default; opacity: .6; }
+.font-choice.styled { background: #262c30; border-color: #262c30; padding: 5px 10px; min-height: 36px; }
+.font-choice.styled.active { background: #262c30; border-color: var(--accent-ink); box-shadow: 0 0 0 2px var(--accent-ink); }
+.font-choice.styled:hover:not(:disabled) { border-color: #6b7378; }
+.font-choice.styled:disabled { opacity: 1; }
+.font-sample { font-size: 15px; line-height: 1.2; white-space: nowrap; text-shadow: 0 1px 1px #0008; }
+.font-sample.outlined { text-shadow: -1px -1px 0 var(--font-outline), 1px -1px 0 var(--font-outline), -1px 1px 0 var(--font-outline), 1px 1px 0 var(--font-outline); }
+.font-sample.large { font-size: 18px; }
+.font-sample.bold { font-weight: 700; }
+.font-sample.heavy { font-weight: 900; letter-spacing: .02em; }
+.font-sample.brush { font-family: KaiTi, STKaiti, "楷体", serif; font-size: 17px; font-style: italic; }
 
 .context-menu { position: fixed; z-index: 50; min-width: 160px; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 12px 32px #19313d26; display: grid; }
 .context-item { border: 0; background: transparent; text-align: left; padding: 8px 12px; border-radius: 5px; font-size: 14px; color: var(--ink); cursor: pointer; }
