@@ -507,4 +507,7 @@ dialog::backdrop { background: #142e3a66; }
 .add-dataset:hover:not(:disabled) { color: var(--ink); border-style: solid; }
 .dataset-tab-item .version-input { margin: 8px; }
 @media (max-width: 1200px) { .topbar { padding-inline: 20px; } }
-.lock-hint { margin-left: auto; flex-shrink: 0; padding-left: 16px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+
+.type-workspace { margin: 0; border-width: 0; border-top-width: 0; border-radius: 0; }
+.editor-grid { padding: 0; }
+.topbar { border-bottom: 1px solid var(--line); }

@@ -72,11 +72,12 @@ try {
     await page.locator('#sample-list button').filter({ hasText: filename }).click();
     await page.waitForFunction(filename => document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.replace(' ·', '') === filename, filename);
     await page.locator('.dataset-tab.active').click({ button: 'right' });
-    assert.equal(await page.getByRole('menuitem', { name: '导出' }).isDisabled(), true, 'read-only preset cannot export');
+    assert.equal(await page.getByRole('menuitem', { name: '导出' }).count(), 0, 'read-only preset offers no export');
+    assert.equal(await page.getByRole('menuitem', { name: '关闭' }).count(), 0, 'built-in preset cannot be closed');
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#add-button').isDisabled(), true);
     await page.locator('#add-dataset').click();
-    assert.equal(await page.getByRole('menuitem', { name: '新建数据集' }).isDisabled(), true);
+    assert.equal(await page.getByRole('menuitem', { name: '新建数据集' }).count(), 0, 'unavailable create is hidden');
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#box-tab').isVisible(), false);
   }
