@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('studio', Object.freeze({
   edit: change => invoke('edit', change),
   add: fields => invoke('add', fields),
   remove: change => invoke('remove', change),
+  move: change => invoke('move', change),
   save: value => invoke('save', value),
   history: filename => invoke('history', filename),
   restoreHistory: id => invoke('restoreHistory', id),

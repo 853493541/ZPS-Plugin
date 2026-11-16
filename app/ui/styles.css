@@ -6,6 +6,7 @@
   --muted: #647783;
   --line: #e1e7ec;
   --green: #146c62;
+  --drop-mark: #146c62;
   --green-soft: #e7f4ee;
   --navy: #172c35;
   --side-active: #2b4c50;
@@ -39,6 +40,7 @@
   --line: #303030;
   --line-strong: #4a4a4a;
   --green: #4d4d4d;
+  --drop-mark: #d6d6d6;
   --green-soft: #2f2f2f;
   --accent-ink: #ffffff;
   --navy: #0b0b0b;
@@ -68,6 +70,7 @@
     --line: #303030;
     --line-strong: #4a4a4a;
     --green: #4d4d4d;
+    --drop-mark: #d6d6d6;
     --green-soft: #2f2f2f;
     --accent-ink: #ffffff;
     --navy: #0b0b0b;
@@ -408,6 +411,10 @@ dialog::backdrop { background: #142e3a66; }
 #type-members .type-member-row:hover { border-color: var(--line-strong); background: var(--selected); }
 #type-members .type-member-row.selected { border-color: var(--green); background: var(--green-soft); }
 #type-members .type-member-row.dragging { opacity: .5; }
+#type-members .type-member-row.drop-before.drop-x { box-shadow: inset 4px 0 0 var(--drop-mark); }
+#type-members .type-member-row.drop-after.drop-x { box-shadow: inset -4px 0 0 var(--drop-mark); }
+#type-members .type-member-row.drop-before.drop-y { box-shadow: inset 0 4px 0 var(--drop-mark); }
+#type-members .type-member-row.drop-after.drop-y { box-shadow: inset 0 -4px 0 var(--drop-mark); }
 #type-members .type-member-row[draggable="true"] { cursor: grab; }
 #type-members .type-member-open { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; background: transparent; text-align: left; cursor: pointer; min-width: 0; }
 #type-members .type-member-copy { display: grid; gap: 3px; min-width: 0; }
