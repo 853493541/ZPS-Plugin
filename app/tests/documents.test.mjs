@@ -4,7 +4,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import iconv from 'iconv-lite';
-import { openDocument, editDocument, createDocument, addRecord, deleteRecord, classStyleFields } from '../core/documents.mjs';
+import { openDocument, editDocument, createDocument, addRecord, deleteRecord, moveRecord, classStyleFields } from '../core/documents.mjs';
 import { typeSettings } from '../ui/jx-workspace.mjs';
 
 const root = fileURLToPath(new URL('../../samples/', import.meta.url));
@@ -227,4 +227,29 @@ test('deleting a buff removes only its rule and keeps the file valid', async () 
   }
   assert.throws(() => deleteRecord(real, 'BuffData.jx3dat', { key: 'class:沉默' }), /只能删除/);
   assert.throws(() => deleteRecord(real, 'BuffData.jx3dat', { key: 'buff:999999999' }), /找不到/);
+});
+
+test('moving a buff changes only its place in the list and keeps every byte of every rule', async () => {
+  const real = await sample('BuffData.jx3dat');
+  const before = openDocument(real, 'BuffData.jx3dat');
+  const keys = before.records.filter(item => item.key.startsWith('buff:')).map(item => item.key);
+  const n = keys.length;
+  const fields = document => Object.fromEntries(document.records.map(item => [item.key, JSON.stringify(item.fields)]));
+  for (const [from, to, place] of [[0, 5, 'before'], [5, 0, 'before'], [3, 4, 'after'], [n - 1, 0, 'before'], [0, n - 1, 'after'], [n - 2, n - 1, 'after']]) {
+    const bytes = Buffer.from(moveRecord(real, 'BuffData.jx3dat', { key: keys[from], [place]: keys[to] }));
+    const after = openDocument(bytes, 'BuffData.jx3dat');
+    const expected = keys.filter(key => key !== keys[from]);
+    expected.splice(expected.indexOf(keys[to]) + (place === 'after' ? 1 : 0), 0, keys[from]);
+    assert.deepEqual(after.records.filter(item => item.key.startsWith('buff:')).map(item => item.key), expected, `${from} ${place} ${to}`);
+    assert.deepEqual(fields(after), fields(before), 'no rule changes');
+    assert.equal(bytes.length, real.length, 'no stray text left behind');
+  }
+  assert.ok(Buffer.from(moveRecord(real, 'BuffData.jx3dat', { key: keys[1], before: keys[2] })).equals(real), 'already in place is a no-op');
+  for (const source of ['return { tClass = {}, tBuff = { [1] = { nClass = "a" }, [2] = { nClass = "a" } } }', 'return { tClass = {}, tBuff = { [1] = { nClass = "a" }; [2] = { nClass = "a" }; } }']) {
+    assert.deepEqual(openDocument(moveRecord(gbk(source), 'x.jx3dat', { key: 'buff:2', before: 'buff:1' }), 'x.jx3dat').records.map(item => item.key), ['buff:2', 'buff:1'], source);
+    assert.deepEqual(openDocument(moveRecord(gbk(source), 'x.jx3dat', { key: 'buff:1', after: 'buff:2' }), 'x.jx3dat').records.map(item => item.key), ['buff:2', 'buff:1'], source);
+  }
+  assert.throws(() => moveRecord(real, 'BuffData.jx3dat', { key: keys[0], before: 'class:沉默' }), /排序位置/);
+  assert.throws(() => moveRecord(real, 'BuffData.jx3dat', { key: keys[0], before: keys[1], after: keys[2] }), /排序位置/);
+  assert.throws(() => moveRecord(real, 'BuffData.jx3dat', { key: 'buff:999999999', before: keys[1] }), /找不到/);
 });

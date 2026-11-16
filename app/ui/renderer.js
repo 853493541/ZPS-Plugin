@@ -834,6 +834,26 @@ function deleteBuff(record) {
   });
 }
 
+let draggingBuff = null;
+
+// Cards sit in columns when wide enough, so the pointer's side of the card decides; in one column, its half.
+function dropPlace(row, event) {
+  const box = row.getBoundingClientRect();
+  const horizontal = row.offsetWidth < row.parentElement.clientWidth * 0.6;
+  return (horizontal ? event.clientX - box.left < box.width / 2 : event.clientY - box.top < box.height / 2) ? 'before' : 'after';
+}
+
+function clearDropMarks() {
+  for (const node of document.querySelectorAll('#type-members .drop-before, #type-members .drop-after')) node.classList.remove('drop-before', 'drop-after', 'drop-x', 'drop-y');
+}
+
+function reorderBuff(key, place, target) {
+  run(async () => {
+    await draftNotifications;
+    receive(await bridge.move(datasetPayload({ key, [place]: target })));
+  });
+}
+
 function moveBuff(key, name) {
   const record = state.document?.records.find(item => item.key === key);
   if (!record || record.fields.nClass === name) return;
@@ -1092,9 +1112,24 @@ function renderTypeLists(changedKey) {
       open.addEventListener('click', () => openDetail(record));
       if (state.document?.writable) {
         row.draggable = true;
-        row.title = '拖到左侧类型即可移入该类型';
-        row.addEventListener('dragstart', event => { event.dataTransfer.setData('application/x-zps-buff', record.key); event.dataTransfer.effectAllowed = 'move'; row.classList.add('dragging'); });
-        row.addEventListener('dragend', () => row.classList.remove('dragging'));
+        row.title = '拖动可调整顺序；拖到左侧类型即可移入该类型';
+        row.addEventListener('dragstart', event => { draggingBuff = record.key; event.dataTransfer.setData('application/x-zps-buff', record.key); event.dataTransfer.effectAllowed = 'move'; row.classList.add('dragging'); });
+        row.addEventListener('dragend', () => { draggingBuff = null; row.classList.remove('dragging'); clearDropMarks(); });
+        row.addEventListener('dragover', event => {
+          if (!draggingBuff || draggingBuff === record.key || !records.some(item => item.key === draggingBuff)) return;
+          event.preventDefault(); event.dataTransfer.dropEffect = 'move';
+          const place = dropPlace(row, event);
+          if (!row.classList.contains(`drop-${place}`)) { clearDropMarks(); row.classList.add(`drop-${place}`, row.offsetWidth < members.clientWidth * 0.6 ? 'drop-x' : 'drop-y'); }
+        });
+        row.addEventListener('dragleave', event => { if (!row.contains(event.relatedTarget)) row.classList.remove('drop-before', 'drop-after', 'drop-x', 'drop-y'); });
+        row.addEventListener('drop', event => {
+          const key = draggingBuff;
+          if (!key || key === record.key || !records.some(item => item.key === key)) return;
+          event.preventDefault(); event.stopPropagation();
+          const place = dropPlace(row, event);
+          clearDropMarks();
+          reorderBuff(key, place, record.key);
+        });
       }
       row.addEventListener('contextmenu', event => {
         event.preventDefault();

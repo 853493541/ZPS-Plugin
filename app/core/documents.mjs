@@ -303,10 +303,44 @@ export function deleteRecord(bytes, filename, change) {
   const id = Number(change.key.slice(5));
   const index = document.buffs.entries.findIndex(item => item.key === id);
   if (index < 0) fail('找不到要删除的 Buff。');
-  const item = document.buffs.entries[index];
-  const next = document.buffs.entries[index + 1];
-  const end = next ? next.start : item.separator ? item.node.end + document.text.slice(item.node.end).search(/[,;]/) + 1 : item.node.end;
-  return patchesResult(document, [{ start: item.start, end, text: '' }], bytes);
+  const [start, end] = entrySpan(document.text, document.buffs.entries, index);
+  return patchesResult(document, [{ start, end, text: '' }], bytes);
+}
+
+// The text an entry owns: from its key through its separator, and the line break before it when it is last.
+function entrySpan(text, entries, index) {
+  const after = item => item.separator ? item.node.end + text.slice(item.node.end).search(/[,;]/) + 1 : item.node.end;
+  const item = entries[index];
+  const next = entries[index + 1];
+  if (next) return [item.start, next.start];
+  return [index > 0 ? after(entries[index - 1]) : item.start, after(item)];
+}
+
+// Moves one buff entry so it sits just before or after another; nothing else in the file changes.
+export function moveRecord(bytes, filename, change) {
+  const document = inspect(bytes, filename);
+  if (!document.writable || document.kind !== 'jx-buff' || typeof change?.key !== 'string' || !change.key.startsWith('buff:')) fail('只能调整 Buff 的顺序。');
+  const target = change.before ?? change.after;
+  if (typeof target !== 'string' || !target.startsWith('buff:') || (change.before !== undefined) === (change.after !== undefined)) fail('无效的排序位置。');
+  const entries = document.buffs.entries;
+  const index = entries.findIndex(item => item.key === Number(change.key.slice(5)));
+  const other = entries.findIndex(item => item.key === Number(target.slice(5)));
+  if (index < 0 || other < 0) fail('找不到要排序的 Buff。');
+  if (index === other || change.before !== undefined && other === index + 1 || change.after !== undefined && other === index - 1) return patchesResult(document, [], bytes);
+  const { text } = document;
+  const item = entries[index];
+  const [from, to] = entrySpan(text, entries, index);
+  const core = text.slice(item.start, item.node.end);
+  const anchor = entries[other];
+  const gap = (text.slice(0, anchor.start).match(/(\r?\n[ \t]*)$/) || [, ' '])[1];
+  let at, insert;
+  if (change.before !== undefined) { at = anchor.start; insert = `${core},${gap}`; }
+  else {
+    at = anchor.separator ? anchor.node.end + text.slice(anchor.node.end).search(/[,;]/) + 1 : anchor.node.end;
+    insert = `${anchor.separator ? '' : ','}${gap}${core},`;
+  }
+  const patch = at <= from ? { start: at, end: to, text: insert + text.slice(at, from) } : { start: from, end: at, text: text.slice(to, at) + insert };
+  return patchesResult(document, [patch], bytes);
 }
 
 export function createDocument(kind) {
