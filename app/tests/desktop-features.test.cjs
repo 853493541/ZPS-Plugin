@@ -103,6 +103,13 @@ test('desktop IPC adds independent datasets, exports inactive targets and guards
   const output = openDocument(await fs.readFile(saveFile), saveFile);
   assert.equal(output.records.find(record => record.id === 12784).fields.nPower, 19);
   assert.deepEqual(await fs.readFile(fileOne), original, 'import never overwrites the original');
+  const [snapshot] = await invoke('history', saved.exportedDataset.filename);
+  assert.equal(snapshot.exportedPath, saveFile, 'export is kept in history');
+  const restored = await invoke('restoreHistory', snapshot.id);
+  assert.match(restored.gameVersion, /^历史 /, 'history opens as its own tab');
+  assert.equal(restored.document.records.find(record => record.id === 12784).fields.nPower, 19);
+  await invoke('closeDataset', restored.datasetId);
+  assert.equal((await invoke('activateDataset', firstFile.datasetId)).datasetId, firstFile.datasetId);
   openFiles = [fileOne];
   const retained = await invoke('open');
   assert.equal(retained.datasetId, firstFile.datasetId);

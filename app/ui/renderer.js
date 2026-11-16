@@ -591,6 +591,7 @@ function datasetMenu(summary, x, y) {
     ['复制', false, () => duplicateDataset(summary)],
     ['重命名', !active || summary.locked, () => renameVersion()],
     ['导出', !active || !state.document?.writable || featureById(state.featureId).kind === 'opaque', () => save()],
+    ['历史', false, () => showHistory(summary)],
     ['文件信息', !active, () => datasetInfo()],
     ['关闭', summary.locked, () => run(() => closeDataset(summary.datasetId))],
   ], x, y);
@@ -660,6 +661,58 @@ function renameVersion() {
 document.addEventListener('pointerdown', event => { if (!event.target.closest?.('#context-menu')) closeMenu(); });
 window.addEventListener('blur', closeMenu);
 window.addEventListener('resize', closeMenu);
+
+function historyTime(iso) {
+  const date = new Date(iso);
+  const pad = number => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function historyCounts(changes) {
+  if (changes.first) return `首次导出 · ${changes.total} 条`;
+  const parts = [['新增', changes.added], ['删除', changes.removed], ['修改', changes.changed]].filter(([, list]) => list.length).map(([word, list]) => `${word} ${list.length}`);
+  return parts.length ? parts.join(' · ') : '内容无变化';
+}
+
+function historyDetails(changes) {
+  const list = element('ul', 'history-changes');
+  const add = (word, item, extra = '') => list.append(element('li', `history-change ${word === '新增' ? 'added' : word === '删除' ? 'removed' : 'changed'}`, `${word}　${item.name}${extra}`));
+  for (const item of changes.added) add('新增', item);
+  for (const item of changes.removed) add('删除', item);
+  for (const item of changes.changed) add('修改', item, `（${item.fields.map(field => fieldLabels[field] || field).join('、')}）`);
+  return list;
+}
+
+async function showHistory(summary) {
+  const entries = await bridge.history(summary.filename).catch(error => { toast(error.message, true); return null; });
+  if (!entries) return;
+  const content = element('div', 'history-panel');
+  if (!entries.length) content.append(element('p', 'muted-text', '还没有历史记录。每次导出都会自动保存一份。'));
+  for (const entry of entries) {
+    const row = element('div', 'history-entry');
+    const head = element('div', 'history-head');
+    const text = element('div', 'history-text');
+    text.append(element('strong', '', historyTime(entry.createdAt)), element('span', 'history-meta', [entry.gameVersion, historyCounts(entry.changes)].filter(Boolean).join(' · ')));
+    const restore = element('button', 'button history-open', '打开');
+    restore.type = 'button';
+    restore.addEventListener('click', () => run(async () => {
+      await draftNotifications;
+      const result = await bridge.restoreHistory(entry.id);
+      if (receive(result, true)) { closeModal(); toast(`已打开（${result.gameVersion}）。`); }
+    }));
+    head.append(text, restore);
+    row.append(head);
+    const detailCount = entry.changes.added.length + entry.changes.removed.length + entry.changes.changed.length;
+    if (detailCount) {
+      const more = element('details', 'history-more');
+      more.append(element('summary', '', '查看变化'), historyDetails(entry.changes));
+      row.append(more);
+    }
+    if (entry.exportedPath) row.append(element('span', 'history-path', entry.exportedPath));
+    content.append(row);
+  }
+  showModal(`历史 · ${fileName(summary.filename)}`, content);
+}
 
 function datasetInfo() {
   if (!state.document) return;
@@ -1628,7 +1681,7 @@ function addRecord() {
 
 
 const open = () => run(async () => { await draftNotifications; return receive(await bridge.open(), true); });
-const save = () => run(async () => { if (state.document?.writable) { await draftNotifications; const result = await bridge.save(datasetPayload()); if (receive(result)) toast('配置已导出。'); } });
+const save = () => run(async () => { if (state.document?.writable) { await draftNotifications; const result = await bridge.save(datasetPayload()); if (receive(result)) toast(result.historyError || '配置已导出。', Boolean(result.historyError)); } });
 $('empty-open').addEventListener('click', open);
 $('add-dataset').addEventListener('click', addMenu);
 const undo = () => run(async () => {

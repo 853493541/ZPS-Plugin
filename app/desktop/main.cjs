@@ -11,7 +11,7 @@ const { createUpdateChecks } = require('../services/update-checks.cjs');
 const root = path.resolve(__dirname, '../..');
 const samplesRoot = app.isPackaged ? path.join(process.resourcesPath, 'samples') : path.join(root, 'samples');
 const uiURL = pathToFileURL(path.join(root, 'app/ui/index.html')).href;
-let win, codec, catalog, iconCache, sessions, featureRegistry;
+let win, codec, catalog, iconCache, sessions, featureRegistry, history, restoreHistory;
 let sampleList = [];
 let updateState = { status: 'idle' };
 let installIntent = { phase: 'idle' };
@@ -85,7 +85,10 @@ async function save(session = sessions.active) {
   const { canceled, filePath } = await dialog.showSaveDialog(win, { title: '导出数据副本', defaultPath: path.join(app.getPath('documents'), `${stem}${version}_edited${ext}`), filters: [{ name: '插件数据', extensions: ext === '.txt' ? ['txt'] : ['jx3dat'] }] });
   if (canceled || !filePath) return null;
   await atomicExport(filePath, session.bytes);
-  return { ...sessions.markSaved(session), exported: true, exportedPath: filePath, exportedDataset: sessions.summary(session) };
+  let historyError;
+  try { await history.record({ bytes: session.bytes, filename: session.filename, gameVersion: session.gameVersion, exportedPath: filePath }); }
+  catch { historyError = '导出成功，但没能保存历史记录。'; }
+  return { ...sessions.markSaved(session), exported: true, exportedPath: filePath, exportedDataset: sessions.summary(session), ...(historyError ? { historyError } : {}) };
 }
 function publicUpdateState() {
   const { blocked, message } = installIntent;
@@ -163,6 +166,12 @@ async function start() {
   featureRegistry = await import('../ui/features.mjs');
   const { createFeatureSessions } = await import('../core/feature-sessions.mjs');
   sessions = createFeatureSessions({ codec, ...featureRegistry });
+  const { createHistory, restoreLabel } = await import('../core/history.mjs');
+  history = createHistory({ dir: path.join(app.getPath('userData'), 'history'), codec });
+  restoreHistory = async id => {
+    const entry = await history.read(id);
+    return sessions.open(entry.bytes, entry.filename, { gameVersion: restoreLabel(entry) });
+  };
   const manifest = JSON.parse(await fs.readFile(path.join(samplesRoot, 'SAMPLES.json'), 'utf8'));
   sampleList = Object.keys(manifest.files).filter(file => /\.jx3dat$/i.test(file) || /团队气劲\/[^/]+\.txt$/.test(file) || /推荐设置关键词\.txt$/.test(file)).map(file => ({ path: file, name: file, filename: path.basename(file), ...(manifest.files[file].modifiedAt ? { modifiedAt: manifest.files[file].modifiedAt } : {}) }));
   catalog = createCatalog({ fetch: (...args) => net.fetch(...args), cacheDir: path.join(app.getPath('userData'), 'buff-cache') });
@@ -209,12 +218,14 @@ async function start() {
     undo: value => sessions.undo(datasetId(value)),
     duplicate: value => sessions.duplicate(datasetId(value), value?.gameVersion),
     renameVersion: value => sessions.renameVersion(datasetId(value), String(value?.gameVersion ?? '')),
+    history: filename => history.list(filename),
+    restoreHistory: id => restoreHistory(id),
     save: value => save(sessions.resolve(datasetId(value))), lookup: query => catalog.lookup(query), lookupCached: queries => catalog.lookupCached(queries), loadIcon: query => iconCache.load(query), updates
   };
   for (const [name, handler] of Object.entries(handlers)) {
     ipcMain.handle(`studio:${name}`, (event, payload) => {
       if (event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame || event.senderFrame.url !== uiURL) throw new Error('Untrusted IPC sender');
-      if (name === 'lookup' || name === 'lookupCached' || name === 'loadIcon' || name === 'samples' || name === 'updates' && payload !== 'install') return handler(payload);
+      if (name === 'lookup' || name === 'lookupCached' || name === 'loadIcon' || name === 'samples' || name === 'history' || name === 'updates' && payload !== 'install') return handler(payload);
       return enqueue(() => handler(payload));
     });
   }
