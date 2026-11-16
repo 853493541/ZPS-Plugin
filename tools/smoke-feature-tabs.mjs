@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 
 const url = process.env.PREVIEW_URL || 'http://127.0.0.1:4173';
-const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
 try {
   const page = await browser.newPage({ viewport: { width: 1536, height: 1050 } });
   const errors = [];
@@ -30,8 +30,8 @@ try {
   assert.equal(await page.locator('#sample-list button').count(), 1);
   assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /剑心|BUFF/i);
   await page.locator('.dataset-tab.active').click({ button: 'right' });
-  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
-  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
+  await page.getByRole('menuitem', { name: '复制', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.includes('（副本'));
   await page.locator('#type-search').fill('12784');
   await page.locator('#type-list .type-item').first().click();
   await page.locator('#type-members .type-member-row').click();
@@ -56,8 +56,8 @@ try {
   assert.match(await page.locator('#sample-list').innerText(), /真传（仅）团队气劲/);
   assert.match(await page.locator('#feature-tabs [aria-selected="true"]').innerText(), /团队气劲/);
   await page.locator('.dataset-tab.active').click({ button: 'right' });
-  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
-  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
+  await page.getByRole('menuitem', { name: '复制', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.includes('（副本'));
   await page.locator('#search').fill('弹跳');
   const teamKey = await page.locator('#records-body tr').first().getAttribute('data-key');
   await page.locator('#records-body tr').first().click();
@@ -88,8 +88,8 @@ try {
   assert.match(await page.locator('#sample-list').innerText(), /推荐设置关键词/);
   assert.equal(await page.locator('#box-tab').isVisible(), false);
   await page.locator('.dataset-tab.active').click({ button: 'right' });
-  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
-  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
+  await page.getByRole('menuitem', { name: '复制', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.includes('（副本'));
   const chatKey = await page.locator('#records-body tr').first().getAttribute('data-key');
   await page.locator('#records-body tr').first().click();
   await page.locator('[name="keyword"]').fill('聊天测试关键词');
@@ -115,9 +115,9 @@ try {
   await page.locator('#sample-list button').click();
   await page.waitForFunction(() => !document.querySelector('#add-dataset').disabled);
   assert.equal(await page.locator('#dataset-tabs .dataset-tab').count(), datasetsBefore, 'opening the same sample must reuse the dataset');
-  await page.waitForFunction(() => document.querySelector('.dataset-tab.active') && !document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
-  await page.locator('#dataset-tabs .dataset-tab', { hasText: '版本 2' }).click();
-  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本') && document.querySelectorAll('#type-members .type-member-row').length === 1);
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active') && !document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.includes('（副本'));
+  await page.locator('#dataset-tabs .dataset-tab', { hasText: '（副本）' }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.includes('（副本') && document.querySelectorAll('#type-members .type-member-row').length === 1);
   await page.locator('#type-members .type-member-row').click();
   assert.equal(await page.locator('[name="nPower"]').inputValue(), '13', 'the copy keeps its draft');
   await page.locator('.inspector-close').click();

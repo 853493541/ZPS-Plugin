@@ -32,9 +32,11 @@ export function createFeatureSessions({ codec, featureById, featureForKind }) {
     return gameVersion;
   }
   function nextVersion(original) {
-    const taken = [...sessions.values()].filter(item => item.featureId === original.featureId && item.filename === original.filename)
-      .map(item => /^版本 (\d+)$/.exec(item.gameVersion)?.[1]).filter(Boolean).map(Number);
-    return `版本 ${Math.max(1, ...taken) + 1}`;
+    const taken = new Set([...sessions.values()].filter(item => item.featureId === original.featureId && item.filename === original.filename).map(item => item.gameVersion));
+    if (!taken.has('副本')) return '副本';
+    let number = 2;
+    while (taken.has(`副本 ${number}`)) number++;
+    return `副本 ${number}`;
   }
   function prepare(bytes, filename, { dirty = false, source = { kind: 'new', key: randomUUID(), displayPath: filename }, gameVersion = '' } = {}) {
     if (typeof filename !== 'string' || !filename.trim() || filename.length > 255 || /[\x00-\x1f]/.test(filename)) throw new Error('Invalid dataset filename');

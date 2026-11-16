@@ -29,12 +29,12 @@ try {
     await page.waitForSelector('#detail-modal[open]');
   }
   assert.equal(await page.locator('.dataset-tab.active .dataset-tab-name').innerText(), 'BuffData.jx3dat');
-  assert.equal(await page.locator('.dataset-tab.active .dataset-tab-secondary').count(), 0, 'no version placeholder');
+  assert.equal((await page.locator('.dataset-tab.active .dataset-tab-name').innerText()).includes('（'), false, 'no version placeholder');
   assert.equal(await page.locator('.dataset-close').count(), 0, 'tabs have no close button');
   await page.locator('.dataset-tab.active').click({ button: 'right' });
-  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
-  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
-  assert.equal(await page.locator('.dataset-tab.active .dataset-tab-secondary').innerText(), '版本 2', 'copy is named 版本 2');
+  await page.getByRole('menuitem', { name: '复制', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.includes('（副本'));
+  assert.equal((await page.locator('.dataset-tab.active .dataset-tab-name').innerText()).replace(' ·', ''), 'BuffData.jx3dat（副本）', 'copy is named after the original');
   const original = await snapshot();
   const datasetA = original.datasetId;
   await openBuff();
@@ -50,7 +50,7 @@ try {
   const datasetB = current.datasetId;
   assert.notEqual(datasetA, datasetB);
   assert.equal(current.gameVersion, '预案 B');
-  assert.equal(await page.locator('.dataset-tab.active .dataset-tab-secondary').innerText(), '预案 B');
+  assert.match(await page.locator('.dataset-tab.active .dataset-tab-name').innerText(), /（预案 B）/);
   assert.equal(current.document.records.length, 0);
   await page.locator('#add-type-button').click();
   await page.locator('#modal [name="name"]').fill('团队控制');
@@ -110,7 +110,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('.dataset-tab').length === 1);
   await page.locator('.dataset-tab').click({ button: 'right' });
   assert.equal(await page.getByRole('menuitem', { name: '关闭' }).count(), 0, 'built-in sample cannot be closed');
-  assert.equal(await page.getByRole('menuitem', { name: '重命名版本' }).count(), 0, 'unavailable items are hidden, not greyed');
+  assert.equal(await page.getByRole('menuitem', { name: '重命名', exact: true }).count(), 0, 'unavailable items are hidden, not greyed');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('.dataset-tab').count(), 1, 'the sample stays open');
   await page.setViewportSize({ width: 1050, height: 760 });

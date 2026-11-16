@@ -440,12 +440,24 @@ function element(tag, className, text) {
   return node;
 }
 
+function raiseToast() {
+  const node = $('toast');
+  if (node.hidden || typeof node.showPopover !== 'function') return;
+  try { if (node.matches(':popover-open')) node.hidePopover(); node.showPopover(); } catch {}
+}
+
+// A window opened after the toast would cover it, so lift the toast back above it.
+new MutationObserver(records => {
+  if (records.some(record => record.target.tagName === 'DIALOG' && record.target.open)) raiseToast();
+}).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
+
 function toast(message, error = false) {
   clearTimeout(toastTimer);
   $('toast').textContent = message;
   $('toast').className = error ? 'error' : '';
   $('toast').hidden = false;
-  toastTimer = setTimeout(() => { $('toast').hidden = true; }, error ? 6500 : 3500);
+  raiseToast();
+  toastTimer = setTimeout(() => { $('toast').hidden = true; try { $('toast').hidePopover?.(); } catch {} }, error ? 6500 : 3500);
 }
 
 async function run(action) {
@@ -528,11 +540,11 @@ function renderDatasets() {
     button.tabIndex = summary.datasetId === viewKey() ? 0 : -1;
     const dirty = summary.datasetId === viewKey() ? state.dirty || [...state.drafts].some(([key, draft]) => draftIsDirty(key, draft)) : summary.dirty || summary.hasDrafts;
     button.classList.toggle('dirty', Boolean(dirty));
-    button.append(element('span', 'dataset-tab-name', `${fileName(summary.filename)}${dirty ? ' ·' : ''}`));
+    button.append(element('span', 'dataset-tab-name', `${fileName(summary.filename)}${summary.gameVersion ? `（${summary.gameVersion}）` : ''}${dirty ? ' ·' : ''}`));
     const duplicates = summaries.filter(item => fileName(item.filename) === fileName(summary.filename) && versionLabel(item) === versionLabel(summary)).length > 1;
     const sourcePath = summary.source?.displayPath || summary.filename;
     const parent = duplicates ? summary.source?.kind === 'new' ? '新建' : String(sourcePath || '').replace(/[\\/][^\\/]+$/, '') : '';
-    const secondary = versionLabel(summary) || parent;
+    const secondary = parent;
     if (secondary) button.append(element('span', 'dataset-tab-secondary', secondary));
     button.title = [sourcePath, versionLabel(summary), dirty ? '有未导出或未应用的修改' : ''].filter(Boolean).join('\n');
     button.addEventListener('click', () => activateDataset(summary.datasetId));
@@ -576,8 +588,8 @@ function closeMenu() { $('context-menu')?.remove(); }
 function datasetMenu(summary, x, y) {
   const active = summary.datasetId === viewKey();
   showMenu(fileName(summary.filename), [
-    ['复制为新版本', false, () => duplicateDataset(summary)],
-    ['重命名版本', !active || summary.locked, () => renameVersion()],
+    ['复制', false, () => duplicateDataset(summary)],
+    ['重命名', !active || summary.locked, () => renameVersion()],
     ['导出', !active || !state.document?.writable || featureById(state.featureId).kind === 'opaque', () => save()],
     ['文件信息', !active, () => datasetInfo()],
     ['关闭', summary.locked, () => run(() => closeDataset(summary.datasetId))],
@@ -619,7 +631,7 @@ function duplicateDataset(summary) {
   run(async () => {
     await draftNotifications;
     const result = await bridge.duplicate({ datasetId: summary.datasetId });
-    if (receive(result, true)) toast(`已复制为“${result.gameVersion}”，可以开始编辑。右键标签可重命名。`);
+    if (receive(result, true)) toast(`已复制为（${result.gameVersion}），可以开始编辑。`);
   });
 }
 
@@ -685,13 +697,13 @@ function renderAvailability() {
   for (const button of document.querySelectorAll('.dataset-tab')) button.disabled = state.busy && !switching;
   document.body.dataset.canUndo = String(!state.busy && state.canUndo);
   $('add-dataset').disabled = state.busy && !switching;
-  $('add-button').textContent = feature.kind === 'jx-buff' ? '＋ 添加 Buff' : feature.kind === 'chat' ? '＋ 添加关键词' : '＋ 新建监控';
+  $('add-button').textContent = feature.kind === 'jx-buff' ? '添加 Buff' : feature.kind === 'chat' ? '添加关键词' : '新建监控';
   if ($('empty-create')) $('empty-create').disabled = state.busy || !format.add;
   $('add-button').hidden = feature.kind === 'opaque';
   $('add-button').disabled = state.busy || !state.document?.writable || !format.add;
   $('search').disabled = switching;
   for (const node of document.querySelectorAll('#type-workspace button, #type-workspace input')) {
-    const editOnly = node.matches('.border-choice, .font-choice, .switch-option, .type-name-edit, #add-type-button, #assign-member-button, #type-settings-button');
+    const editOnly = node.matches('.border-choice, .font-choice, #type-enable, #add-type-button, #assign-member-button, #type-settings-button');
     node.disabled = state.busy || !state.document || editOnly && !state.document.writable;
   }
   const group = currentType();
@@ -724,7 +736,7 @@ function renderTypeWorkspace() {
   if (!$('type-search')) {
     const master = element('aside', 'type-master');
     const heading = element('div', 'type-master-header');
-    heading.append(element('h3', '', '类型'), actionButton('＋ 新建类型', 'add-type-button', addType));
+    heading.append(element('h3', '', '类型'), actionButton('新建类型', 'add-type-button', addType));
     const tabs = element('div', 'type-tabs'); tabs.id = 'type-tabs'; tabs.setAttribute('role', 'tablist');
     for (const [tab, label] of [['builtin', '默认'], ['custom', '自定义']]) {
       const button = element('button', 'type-tab', label);
@@ -760,6 +772,15 @@ function renderTypeWorkspace() {
   renderAvailability();
 }
 
+function deleteBuff(record) {
+  run(async () => {
+    await draftNotifications;
+    const result = await bridge.remove(datasetPayload({ key: record.key }));
+    if (result?.document) { state.drafts.delete(record.key); if (state.selected === record.key) { state.selected = null; closeDetail(false); } }
+    if (receive(result)) toast(`已删除 ${recordName(record)}。按 Ctrl+Z 可撤销。`);
+  });
+}
+
 function moveBuff(key, name) {
   const record = state.document?.records.find(item => item.key === key);
   if (!record || record.fields.nClass === name) return;
@@ -788,18 +809,40 @@ function editType(group, fields) {
   });
 }
 
-function typeSwitch(label, value, onChange, disabled) {
-  const wrap = element('div', 'type-switch');
-  wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', label);
-  for (const [option, text] of [[true, '开启'], [false, '关闭']]) {
-    const button = element('button', `switch-option${value === option ? ' active' : ''}`, text);
-    button.type = 'button'; button.disabled = disabled;
-    button.setAttribute('aria-pressed', String(value === option));
-    button.addEventListener('click', () => { if (value !== option) onChange(option); });
-    wrap.append(button);
-  }
-  return wrap;
+function levelField(value, readonly) {
+  const field = element('div', 'field level-field');
+  field.append(element('span', '', '生效等级'));
+  const hidden = element('input'); hidden.type = 'hidden'; hidden.name = 'tLevel'; hidden.dataset.valueType = 'json';
+  const levels = element('div', 'level-choices');
+  const current = { ...(value || {}) };
+  const sync = () => { hidden.value = JSON.stringify(current); };
+  hidden.addEventListener('zps-restore', () => { try { const restored = JSON.parse(hidden.value); for (const key of Object.keys(current)) delete current[key]; Object.assign(current, restored); paint(); } catch {} });
+  const paint = () => {
+    levels.replaceChildren();
+    for (const level of Object.keys(current).map(Number).sort((x, y) => x - y)) {
+      const label = element('label', 'level-choice');
+      const box = element('input'); box.type = 'checkbox'; box.checked = current[level] === true; box.disabled = readonly;
+      box.addEventListener('change', () => { current[level] = box.checked; sync(); hidden.dispatchEvent(new Event('input', { bubbles: true })); });
+      label.append(box, element('span', '', String(level)));
+      levels.append(label);
+    }
+    if (!readonly) {
+      const add = element('input', 'level-add'); add.type = 'number'; add.min = '0'; add.step = '1'; add.placeholder = '加等级'; add.setAttribute('aria-label', '添加等级');
+      add.addEventListener('keydown', event => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        const level = Number(add.value);
+        if (!Number.isSafeInteger(level) || level < 0 || level in current) return;
+        current[level] = true; sync(); paint(); hidden.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      levels.append(add);
+    }
+  };
+  sync(); paint();
+  field.append(levels, hidden);
+  return field;
 }
+
 
 function settingRow(label, ...controls) {
   const row = element('div', 'type-setting-row');
@@ -822,7 +865,7 @@ function renderTypeHeader() {
   if (!$('type-detail-header')) return;
   const group = currentType();
   const header = $('type-detail-header');
-  const assign = actionButton('＋ 添加 Buff', 'assign-member-button', assignMember);
+  const assign = actionButton('添加 Buff', 'assign-member-button', assignMember);
   assign.disabled = !group || !state.document?.writable;
   if (!group) {
     const intro = element('div', 'type-card-title');
@@ -854,10 +897,10 @@ function renderTypeHeader() {
   const line = element('div', 'type-title-line');
   const heading = element('h2', '', typeLabel(group.name)); heading.id = 'type-name';
   line.append(heading);
-  if (group.record) {
-    const pen = element('button', 'type-name-edit', '✎');
-    pen.id = 'type-name-edit'; pen.type = 'button'; pen.title = '重命名类型'; pen.setAttribute('aria-label', '重命名类型'); pen.disabled = locked;
-    pen.addEventListener('click', () => {
+  if (group.record && state.document?.writable) {
+    heading.classList.add('editable'); heading.tabIndex = 0; heading.title = '点击重命名'; heading.setAttribute('role', 'button');
+    const startEdit = () => {
+      if (state.busy) return;
       const name = element('input', 'type-name-input');
       name.id = 'type-name-input'; name.value = group.name; name.setAttribute('aria-label', '类型名称');
       let done = false;
@@ -872,12 +915,20 @@ function renderTypeHeader() {
         if (event.key === 'Escape') { event.preventDefault(); finish(false); }
       });
       name.addEventListener('blur', () => finish(true));
-      heading.replaceWith(name); pen.hidden = true;
+      heading.replaceWith(name);
       name.focus(); name.select();
-    });
-    line.append(pen);
+    };
+    heading.addEventListener('click', startEdit);
+    heading.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); startEdit(); } });
   }
   line.append(element('span', 'type-count-badge', `${group.members.length} 个 Buff`));
+  if (group.record) {
+    const toggle = element('label', 'type-enable');
+    const box = element('input'); box.type = 'checkbox'; box.id = 'type-enable'; box.checked = fields.bEnable !== false; box.disabled = locked;
+    box.addEventListener('change', () => editType(group, { bEnable: box.checked }));
+    toggle.append(box, element('span', '', '启用'));
+    line.append(toggle);
+  }
   title.append(line);
   top.append(title, assign);
   header.replaceChildren(top);
@@ -894,7 +945,6 @@ function renderTypeHeader() {
     return;
   }
   const settings = element('div', 'type-card-settings');
-  settings.append(settingRow('启用', typeSwitch('启用', fields.bEnable, value => editType(group, { bEnable: value }), locked)));
   const borders = element('div', 'border-choices');
   const choice = (enabled, number, active, title, change) => {
     const button = element('button', `border-choice${active ? ' active' : ''}`);
@@ -943,7 +993,12 @@ function renderTypeLists(changedKey) {
     const button = element('button', `type-item${group.name === state.selectedType ? ' active' : ''}`);
     button.type = 'button'; button.dataset.type = group.name;
     button.setAttribute('aria-pressed', String(group.name === state.selectedType));
-    button.append(borderSwatch(group.record?.fields.bBorderEnable, group.record?.fields.nBorder), element('span', 'type-name', typeLabel(group.name)), element('span', 'type-count', group.members.length));
+    const style = group.record?.fields || group.shadow?.fields;
+    const preview = group.members[0] ? memberIcon(group.members[0], style) : borderSwatch(style?.bBorderEnable, style?.nBorder);
+    preview.classList.add('type-preview');
+    const label = element('span', 'type-name', typeLabel(group.name));
+    if (group.record?.fields.bEnable === false) label.append(element('span', 'type-off', '停用'));
+    button.append(preview, label, element('span', 'type-count', group.members.length));
     button.addEventListener('dragover', event => {
       if (!state.document?.writable || !event.dataTransfer.types.includes('application/x-zps-buff')) return;
       event.preventDefault(); event.dataTransfer.dropEffect = 'move'; button.classList.add('drop-target');
@@ -988,10 +1043,14 @@ function renderTypeLists(changedKey) {
         row.addEventListener('dragstart', event => { event.dataTransfer.setData('application/x-zps-buff', record.key); event.dataTransfer.effectAllowed = 'move'; row.classList.add('dragging'); });
         row.addEventListener('dragend', () => row.classList.remove('dragging'));
       }
+      row.addEventListener('contextmenu', event => {
+        event.preventDefault();
+        showMenu(recordName(record), [['删除 Buff', !state.document?.writable, () => deleteBuff(record)]], event.clientX, event.clientY);
+      });
       row.append(open);
       members.append(row);
     }
-    if (!records.length) members.append(element('p', 'type-empty', !currentType() ? '添加类型后，就可以放入 Buff。' : state.typeSearch ? '当前类型中没有匹配的 Buff。' : '此类型还没有 Buff。点击“＋ 添加 Buff”开始。'));
+    if (!records.length) members.append(element('p', 'type-empty', !currentType() ? '添加类型后，就可以放入 Buff。' : state.typeSearch ? '当前类型中没有匹配的 Buff。' : '此类型还没有 Buff。点击“添加 Buff”开始。'));
   }
   list.scrollTop = scroll[0]; members.scrollTop = scroll[1];
   if (focusedType !== undefined) [...list.children].find(node => node.dataset.type === focusedType)?.focus({ preventScroll: true });
@@ -1198,7 +1257,7 @@ function fieldInput(key, value, options = {}) {
   if (typeof value === 'number') input.step = 'any';
   input.readOnly = Boolean(options.readonly);
   field.append(input);
-  if (complex) field.append(element('small', '', 'JSON 值，保留数组或对象结构。'));
+  if (complex && key !== 'tLevel') field.append(element('small', '', 'JSON 值，保留数组或对象结构。'));
   return field;
 }
 
@@ -1344,7 +1403,7 @@ function renderInspector() {
   const advanced = element('details', 'advanced-fields');
   advanced.append(element('summary', '', record.key.startsWith('class:') ? '高级样式与原始字段' : '高级字段'));
   for (const [key, value] of Object.entries(originalFields || {})) {
-    const input = jx && key === 'nClass' ? membershipField(value) : fieldInput(key, value, { readonly: !state.document.writable || key === 'raw' || value !== null && typeof value === 'object' && key !== 'tLevel' });
+    const input = jx && key === 'nClass' ? membershipField(value) : jx && key === 'tLevel' && value && typeof value === 'object' ? levelField(value, !state.document.writable) : fieldInput(key, value, { readonly: !state.document.writable || key === 'raw' || value !== null && typeof value === 'object' && key !== 'tLevel' });
     (fieldLabels[key] && key !== 'raw' ? form : advanced).append(input);
   }
   if (advanced.children.length > 1) form.append(advanced);
@@ -1356,6 +1415,7 @@ function renderInspector() {
         option.value = draft.values.nClass; input.append(option);
       }
       input.value = draft.values[input.name];
+      input.dispatchEvent(new Event('zps-restore'));
     }
   }
   if (draft) trackDraft(form, record.key);

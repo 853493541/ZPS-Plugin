@@ -4,7 +4,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import iconv from 'iconv-lite';
-import { openDocument, editDocument, createDocument, addRecord, classStyleFields } from '../core/documents.mjs';
+import { openDocument, editDocument, createDocument, addRecord, deleteRecord, classStyleFields } from '../core/documents.mjs';
 import { typeSettings } from '../ui/jx-workspace.mjs';
 
 const root = fileURLToPath(new URL('../../samples/', import.meta.url));
@@ -207,4 +207,24 @@ test('type settings: new types take chosen settings and missing settings can be 
   const filled = openDocument(editDocument(real, 'BuffData.jx3dat', { key: partial.key, fields: { nFont: 42 } }), 'BuffData.jx3dat');
   assert.equal(filled.records.find(item => item.key === partial.key).fields.nFont, 42);
   assert.equal(filled.records.length, openDocument(real, 'BuffData.jx3dat').records.length);
+});
+
+test('deleting a buff removes only its rule and keeps the file valid', async () => {
+  const real = await sample('BuffData.jx3dat');
+  const before = openDocument(real, 'BuffData.jx3dat');
+  const buffs = before.records.filter(item => item.key.startsWith('buff:'));
+  for (const target of [buffs[0], buffs[Math.floor(buffs.length / 2)], buffs.at(-1)]) {
+    const after = openDocument(deleteRecord(real, 'BuffData.jx3dat', { key: target.key }), 'BuffData.jx3dat');
+    assert.equal(after.records.length, before.records.length - 1, `${target.key} removed`);
+    assert.equal(after.records.some(item => item.key === target.key), false);
+    assert.deepEqual(after.records.filter(item => item.key !== target.key).map(item => item.key), before.records.filter(item => item.key !== target.key).map(item => item.key), 'every other record kept in order');
+  }
+  for (const source of ['return { tClass = {}, tBuff = { [1] = { nClass = "a" }, [2] = { nClass = "b" } } }', 'return { tClass = {}, tBuff = { [1] = { nClass = "a" }; [2] = { nClass = "b" }; } }']) {
+    for (const key of ['buff:1', 'buff:2']) {
+      const result = openDocument(deleteRecord(gbk(source), 'x.jx3dat', { key }), 'x.jx3dat');
+      assert.deepEqual(result.records.map(item => item.key), [key === 'buff:1' ? 'buff:2' : 'buff:1'], `${source} ${key}`);
+    }
+  }
+  assert.throws(() => deleteRecord(real, 'BuffData.jx3dat', { key: 'class:沉默' }), /只能删除/);
+  assert.throws(() => deleteRecord(real, 'BuffData.jx3dat', { key: 'buff:999999999' }), /找不到/);
 });

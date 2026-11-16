@@ -56,6 +56,7 @@ function parseLua(source) {
       while (source[at] !== '}') {
         if (at >= source.length || entries.length > 100000) error();
         space();
+        const entryStart = at;
         let key;
         let keyNode;
         if (source[at] === '[' && !/^\[(=*)\[/.test(source.slice(at))) {
@@ -70,7 +71,7 @@ function parseLua(source) {
         const node = value(depth + 1);
         if (own(result, key)) fail(`Lua 数据含重复键 ${key}，无法安全编辑。`);
         result[key] = node.value;
-        const item = { key, keyNode, node };
+        const item = { key, keyNode, node, start: entryStart };
         entries.push(item);
         space();
         if (source[at] === ',' || source[at] === ';') { item.separator = true; at++; space(); }
@@ -294,6 +295,18 @@ export function editDocument(bytes, filename, change) {
     if (text !== line.raw) patches.push({ start: line.start, end: line.end, text });
   }
   return patchesResult(document, patches, bytes);
+}
+
+export function deleteRecord(bytes, filename, change) {
+  const document = inspect(bytes, filename);
+  if (!document.writable || document.kind !== 'jx-buff' || typeof change?.key !== 'string' || !change.key.startsWith('buff:')) fail('只能删除 Buff 条目。');
+  const id = Number(change.key.slice(5));
+  const index = document.buffs.entries.findIndex(item => item.key === id);
+  if (index < 0) fail('找不到要删除的 Buff。');
+  const item = document.buffs.entries[index];
+  const next = document.buffs.entries[index + 1];
+  const end = next ? next.start : item.separator ? item.node.end + document.text.slice(item.node.end).search(/[,;]/) + 1 : item.node.end;
+  return patchesResult(document, [{ start: item.start, end, text: '' }], bytes);
 }
 
 export function createDocument(kind) {
