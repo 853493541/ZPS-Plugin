@@ -59,7 +59,7 @@ test('desktop IPC adds independent datasets, exports inactive targets and guards
   assert.equal(jx.document.writable, false, 'built-in sample opens locked');
   await assert.rejects(invoke('edit', { key: buff.key, fields: { nPower: 11 } }), /锁定/);
   const jxCopy = await invoke('duplicate', { datasetId: jx.datasetId });
-  assert.equal(jxCopy.gameVersion, '版本 2');
+  assert.equal(jxCopy.gameVersion, '副本');
   await invoke('edit', { datasetId: jxCopy.datasetId, key: buff.key, fields: { nPower: 11 } });
   const team = await invoke('activateFeature', 'my-team');
   const teamCopy = await invoke('duplicate', { datasetId: team.datasetId });

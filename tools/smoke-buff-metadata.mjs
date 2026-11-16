@@ -9,7 +9,7 @@ const document = openDocument(await fs.readFile(`samples/${sample}`), 'BuffData.
 const fixture = JSON.parse(await fs.readFile('app/tests/fixtures/jx3box/std-12784-level-1.json', 'utf8'));
 document.records = [12784, 27038, 51406, 22468].map(id => document.records.find(record => record.id === id));
 const snapshot = JSON.parse(JSON.stringify({ filename: 'BuffData.jx3dat', dirty: false, canUndo: false, document }));
-const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
 const errors = [];
 try {
   const page = await browser.newPage();

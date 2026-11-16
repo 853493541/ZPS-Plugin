@@ -36,7 +36,7 @@
         <aside class="inspector" aria-label="条目详情"><div class="inspector-heading"><span>条目详情</span><span class="inspector-status" id="inspector-status">未选择</span></div><div id="selection-heading" class="selection-heading"><div class="record-glyph big">⌘</div><h3>条目详情</h3><p>从配置库中选择一个条目</p></div><div class="inspector-tabs" role="tablist"><button class="active" id="config-tab" role="tab" aria-selected="true">编辑</button><button id="box-tab" role="tab" aria-selected="false">JX3BOX <span>↗</span></button><button id="source-tab" role="tab" aria-selected="false">原始数据</button></div><div class="inspector-content" id="inspector-content"></div></aside>
   </div></dialog>
   <dialog id="modal"><form id="modal-form"><header class="modal-header"><div><div class="eyebrow" id="modal-eyebrow">ZPS STUDIO</div><h2 id="modal-title"></h2></div><button class="icon-button" type="button" id="modal-close" aria-label="关闭">×</button></header><div id="modal-content"></div><footer class="modal-actions"><button class="button" type="button" id="modal-cancel">取消</button><button class="button primary" type="submit" id="modal-submit">确定</button></footer></form></dialog>
-  <div id="toast" role="status" aria-live="polite" hidden></div>
+  <div id="toast" role="status" aria-live="polite" popover="manual" hidden></div>
   <script type="module" src="renderer.js"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 
 const fixture = JSON.parse(await fs.readFile('app/tests/fixtures/jx3box/std-12784-level-1.json', 'utf8'));
 
-const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
 try {
   const page = await browser.newPage();
   const errors = [];

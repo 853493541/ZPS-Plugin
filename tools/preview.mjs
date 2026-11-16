@@ -77,6 +77,7 @@ const methods = {
   },
   edit: change => mutate('editDocument', change),
   add: fields => mutate('addRecord', fields),
+  remove: change => mutate('deleteRecord', change),
   undo: value => sessions.undo(datasetId(value)),
   duplicate: value => sessions.duplicate(datasetId(value), value?.gameVersion),
   renameVersion: value => sessions.renameVersion(datasetId(value), String(value?.gameVersion ?? '')),

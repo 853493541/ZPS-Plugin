@@ -24,8 +24,8 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   assert.equal(await page.locator('#assign-member-button').isDisabled(), true, 'built-in sample opens locked');
   await page.locator('.dataset-tab.active').click({ button: 'right' });
-  await page.getByRole('menuitem', { name: '复制为新版本' }).click();
-  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-secondary')?.textContent.startsWith('版本'));
+  await page.getByRole('menuitem', { name: '复制', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('.dataset-tab.active .dataset-tab-name')?.textContent.includes('（副本'));
 
   await page.locator('#type-search').fill('逃兵');
   await page.waitForFunction(() => document.querySelectorAll('#type-list .type-item').length === 1);
@@ -68,7 +68,7 @@ try {
   await page.locator('.inspector-close').click();
   await page.locator('#type-search').fill('草稿目标');
   await page.locator('#type-list .type-item').click();
-  await page.locator('#type-name-edit').click();
+  await page.locator('#type-name').click();
   await page.locator('#type-name-input').fill('草稿新目标');
   await page.locator('#type-name-input').press('Enter');
   await page.waitForFunction(() => document.querySelector('#type-name')?.textContent === '草稿新目标');
@@ -95,7 +95,7 @@ try {
   await page.locator('#add-buff-move').click();
   await page.waitForSelector('#type-members [data-key="buff:12784"]');
   assert.match(await page.locator('#type-detail-header').innerText(), /1 个 Buff/);
-  await page.locator('#type-name-edit').click();
+  await page.locator('#type-name').click();
   await page.locator('#type-name-input').fill('工作流重命名');
   await page.locator('#type-name-input').press('Enter');
   await page.waitForFunction(() => document.querySelector('#type-name')?.textContent === '工作流重命名');

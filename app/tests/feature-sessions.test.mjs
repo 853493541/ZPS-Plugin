@@ -300,13 +300,13 @@ test('built-in samples are locked; copies open as numbered versions that can be 
   assert.throws(() => sessions.mutate('editDocument', { key: 'buff:244', fields: { nPower: 33 } }, sample.datasetId), /锁定/);
   assert.throws(() => sessions.renameVersion(sample.datasetId, 'x'), /锁定/);
   const copy = sessions.duplicate(sample.datasetId);
-  assert.equal(copy.gameVersion, '版本 2');
+  assert.equal(copy.gameVersion, '副本');
   assert.equal(copy.locked, false);
   assert.equal(copy.document.writable, true);
   assert.equal(copy.dirty, true, 'copy starts unexported');
   const edited = sessions.mutate('editDocument', { key: 'buff:244', fields: { nPower: 33 } }, copy.datasetId);
   assert.equal(power(edited), 33);
-  assert.equal(sessions.duplicate(copy.datasetId).gameVersion, '版本 3', 'next copy takes the next number');
+  assert.equal(sessions.duplicate(copy.datasetId).gameVersion, '副本 2', 'next copy takes the next free name');
   assert.equal(power(sessions.duplicate(copy.datasetId)), 33, 'copy carries applied edits');
   const renamed = sessions.renameVersion(copy.datasetId, '  预案 B ');
   assert.equal(renamed.gameVersion, '预案 B');
