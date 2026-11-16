@@ -66,3 +66,34 @@ export function rebaseMembershipDraft(draft, previous, next) {
   if (!draft || draft.values.nClass !== previous.fields.nClass || previous.fields.nClass === next.fields.nClass) return draft;
   return { ...draft, values: { ...draft.values, nClass: next.fields.nClass }, fields: draft.fields ? { ...draft.fields, nClass: next.fields.nClass } : null };
 }
+
+// The plugin's font list as it looks in game, top to bottom. size: 1 normal, 2 large; weight: 1 bold, 2 heavy.
+export const fontRows = [
+  { color: '#f4f4f4', outline: '#20262a' },
+  { color: '#ffffff' },
+  { color: '#ffef3a' },
+  { color: '#45e6f0' },
+  { color: '#2fdc4a' },
+  { color: '#ff8282' },
+  { color: '#ecec6e', outline: '#7c7c7c', weight: 1 },
+  { color: '#ff2a2a' },
+  { color: '#40d840' },
+  { color: '#ffffff', brush: true },
+  { color: '#bff2dc', brush: true },
+  { color: '#ff9a1a', brush: true },
+  { color: '#ffee22', outline: '#000000', size: 2 },
+  { color: '#ff2020', outline: '#000000', size: 2 },
+  { color: '#40e8f8', outline: '#000000', size: 2 },
+  { color: '#ffd21f', outline: '#000000', size: 2 },
+  { color: '#ff1a1a', outline: '#000000', size: 2, weight: 2 },
+  { color: '#fff21a', outline: '#000000', size: 2, weight: 2 },
+  { color: '#ffffff', outline: '#000000', size: 2, weight: 2 },
+];
+
+// Font number in the data file → row in that list. A best guess until checked in game; 沉默 (235) is red.
+export const fontRowByNumber = { 2: 2, 17: 6, 40: 7, 99: 8, 159: 13, 186: 5, 187: 15, 205: 12, 235: 14, 245: 11, 256: 17 };
+
+export function fontPreview(number) {
+  const row = fontRowByNumber[number];
+  return row ? { row, ...fontRows[row - 1] } : null;
+}

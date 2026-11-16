@@ -1,5 +1,5 @@
 import { features, featureById, featureForKind, featureForSample } from './features.mjs';
-import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft, typeSettings, borderNumbers, borderPreview, typeTabs, enabledLevels } from './jx-workspace.mjs';
+import { projectTypes, searchTypes, matchingMembers, typeLabel, rebaseMembershipDraft, typeSettings, borderNumbers, borderPreview, typeTabs, enabledLevels, fontPreview } from './jx-workspace.mjs';
 
 const $ = (id) => document.getElementById(id);
 const themes = [['light', '浅色'], ['dark', '深色'], ['system', '跟随系统']];
@@ -1033,11 +1033,15 @@ function renderTypeHeader() {
   if (fields.bBorderEnable === true && !borderNumbers.includes(fields.nBorder)) choice(true, fields.nBorder, true, `边框 ${fields.nBorder ?? '未设置'}（暂无预览图）`, {});
   settings.append(settingRow('图标边框', borders));
   const fonts = element('div', 'font-choices');
-  const used = [...new Set(typeGroups().map(item => item.record?.fields.nFont).filter(Number.isSafeInteger))].sort((x, y) => x - y);
+  const used = [...new Set(typeGroups().map(item => item.record?.fields.nFont).filter(Number.isSafeInteger))];
   if (Number.isSafeInteger(fields.nFont) && !used.includes(fields.nFont)) used.push(fields.nFont);
+  // Known fonts follow the order of the in-game list; unknown numbers come after, smallest first.
+  used.sort((x, y) => (fontPreview(x)?.row ?? 1000 + x) - (fontPreview(y)?.row ?? 1000 + y));
   const fontOff = fields.bFontEnable !== true;
-  const fontChoice = (text, active, title, onClick) => {
-    const button = element('button', `font-choice${active ? ' active' : ''}`, text);
+  const fontChoice = (text, active, title, onClick, number) => {
+    const style = number === undefined ? null : fontPreview(number);
+    const button = element('button', `font-choice${active ? ' active' : ''}${style ? ' styled' : ''}`, style ? undefined : text);
+    if (style) button.append(fontSample(style));
     button.type = 'button'; button.disabled = locked; button.title = title; button.setAttribute('aria-pressed', String(active));
     button.addEventListener('click', onClick);
     fonts.append(button);
@@ -1046,10 +1050,22 @@ function renderTypeHeader() {
   used.forEach((value, index) => {
     const active = !fontOff && fields.nFont === value;
     const count = typeGroups().filter(item => item.record?.fields.nFont === value).length;
-    fontChoice(String(index + 1), active, `字体编号 ${value} · 文件中 ${count} 个类型使用`, () => { if (!active) editType(group, { bFontEnable: true, nFont: value }); });
+    fontChoice(`#${value}`, active, `字体编号 ${value} · 文件中 ${count} 个类型使用`, () => { if (!active) editType(group, { bFontEnable: true, nFont: value }); }, value);
   });
   settings.append(settingRow('文字字体', fonts));
   header.append(settings);
+}
+
+function fontSample(style, text = '字体预览') {
+  const sample = element('span', 'font-sample', text);
+  sample.style.color = style.color;
+  if (style.outline) sample.style.setProperty('--font-outline', style.outline);
+  sample.classList.toggle('outlined', Boolean(style.outline));
+  sample.classList.toggle('large', style.size === 2);
+  sample.classList.toggle('bold', style.weight === 1);
+  sample.classList.toggle('heavy', style.weight === 2);
+  sample.classList.toggle('brush', Boolean(style.brush));
+  return sample;
 }
 
 function renderTypeLists(changedKey) {
